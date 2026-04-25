@@ -1,5 +1,5 @@
 // app/reward.tsx  — Full-screen reward + reflection modal
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,13 +13,12 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
-  withSequence,
   withDelay,
-  Easing,
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
+import { Typography, Spacing, Radius } from '@/constants/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useUserStore } from '@/stores/userStore';
 import { SageAvatar } from '@/components/SageAvatar';
@@ -37,11 +36,15 @@ function XPCard({
   label,
   color,
   delay,
+  bgCard,
+  border,
 }: {
   value: string | number;
   label: string;
   color: string;
   delay: number;
+  bgCard: string;
+  border: string;
 }) {
   const scale = useSharedValue(0.6);
   const opacity = useSharedValue(0);
@@ -57,7 +60,7 @@ function XPCard({
   }));
 
   return (
-    <Animated.View style={[styles.xpCard, style]}>
+    <Animated.View style={[styles.xpCard, { backgroundColor: bgCard, borderColor: border }, style]}>
       <Text style={[styles.xpNum, { color }]}>{value}</Text>
       <Text style={[styles.xpLabel, { color: `${color}88` }]}>{label}</Text>
     </Animated.View>
@@ -65,6 +68,7 @@ function XPCard({
 }
 
 export default function RewardScreen() {
+  const C = useThemeColors();
   const router = useRouter();
   const {
     subject,
@@ -75,19 +79,17 @@ export default function RewardScreen() {
     setFeeling,
     reset,
   } = useSessionStore();
-  const { streakDays, totalXp, sessions, name, addSession, addXP, incrementStreak, setSuggestion, setLoadingInsights } =
+  const { streakDays, sessions, name, addSession, addXP, incrementStreak, setSuggestion, setLoadingInsights } =
     useUserStore();
 
   const sageBounce = useSharedValue(0.5);
   const sageOpacity = useSharedValue(0);
 
   useEffect(() => {
-    // Entrance animation for Sage
     sageBounce.value = withSpring(1, { damping: 12, stiffness: 160 });
     sageOpacity.value = withTiming(1, { duration: 400 });
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    // Record the completed session into user store
     const newSession: Session = {
       id: `session-${Date.now()}`,
       subject,
@@ -105,8 +107,6 @@ export default function RewardScreen() {
     addSession(newSession);
     addXP(xpEarned);
     if (streakDays > 0) incrementStreak();
-
-    // Fire off AI suggestion generation async
     fetchSuggestion([newSession, ...sessions]);
   }, []);
 
@@ -116,7 +116,7 @@ export default function RewardScreen() {
       const suggestion = await generateSageSuggestion(allSessions.slice(0, 30), name);
       setSuggestion(suggestion);
     } catch (e) {
-      // Fail silently — the user never sees a broken state
+      // Fail silently
     } finally {
       setLoadingInsights(false);
     }
@@ -140,58 +140,56 @@ export default function RewardScreen() {
   const newStreak = streakDays + 1;
 
   return (
-    <SafeAreaView style={styles.safe}>
-      {/* Glow bg element */}
-      <View style={styles.glow} pointerEvents="none" />
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.bgSession }}>
+      <View style={[styles.glow, { backgroundColor: C.purpleDim }]} pointerEvents="none" />
 
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Sage avatar ── */}
         <Animated.View style={sageStyle}>
           <SageAvatar size={80} state="celebrate" />
         </Animated.View>
 
-        {/* ── Title ── */}
-        <Text style={styles.title}>Session complete!</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { color: C.textPrimary }]}>Session complete!</Text>
+        <Text style={[styles.subtitle, { color: C.textTertiary }]}>
           {durationMinutes} min · {subject}
         </Text>
 
-        {/* ── XP cards ── */}
         <View style={styles.xpRow}>
-          <XPCard value={focusScore} label="Focus" color={Colors.green} delay={100} />
-          <XPCard value={`+${xpEarned}`} label="XP" color={Colors.purple} delay={220} />
-          <XPCard value={newStreak} label="Streak" color={Colors.amber} delay={340} />
+          <XPCard value={focusScore} label="Focus" color={C.green} delay={100} bgCard={C.bgCard} border={C.border} />
+          <XPCard value={`+${xpEarned}`} label="XP" color={C.purple} delay={220} bgCard={C.bgCard} border={C.border} />
+          <XPCard value={newStreak} label="Streak" color={C.amber} delay={340} bgCard={C.bgCard} border={C.border} />
         </View>
 
-        {/* ── Feeling prompt ── */}
-        <Text style={styles.sectionLabel}>How did it feel?</Text>
+        <Text style={[styles.sectionLabel, { color: C.textTertiary }]}>How did it feel?</Text>
         <View style={styles.feelRow}>
           {FEELINGS.map((f) => (
             <Pressable
               key={f.key}
-              style={[styles.feelBtn, feeling === f.key && styles.feelBtnSel]}
+              style={[
+                styles.feelBtn,
+                { backgroundColor: C.bgInput, borderColor: C.border },
+                feeling === f.key && { backgroundColor: C.purpleDim, borderColor: C.purpleBorder },
+              ]}
               onPress={() => {
                 setFeeling(f.key);
                 Haptics.selectionAsync();
               }}
             >
-              <Text style={[styles.feelText, feeling === f.key && styles.feelTextSel]}>
+              <Text style={[styles.feelText, { color: C.textTertiary }, feeling === f.key && { color: C.purple }]}>
                 {f.label}
               </Text>
             </Pressable>
           ))}
         </View>
 
-        {/* ── Sage message card ── */}
-        <View style={styles.sageCard}>
+        <View style={[styles.sageCard, { backgroundColor: C.bgCard, borderColor: C.border }]}>
           <View style={styles.sageCardTop}>
             <SageAvatar size={30} state="watching" />
-            <Text style={styles.sageName}>Sage says</Text>
+            <Text style={[styles.sageName, { color: C.purple }]}>Sage says</Text>
           </View>
-          <Text style={styles.sageMsg}>
+          <Text style={[styles.sageMsg, { color: C.textSecondary }]}>
             {focusScore >= 85
               ? `You crushed it! Your peak hours are paying off. Keep this momentum going tomorrow.`
               : focusScore >= 65
@@ -200,13 +198,12 @@ export default function RewardScreen() {
           </Text>
         </View>
 
-        {/* ── CTA buttons ── */}
-        <Pressable style={styles.primaryBtn} onPress={handleViewInsights}>
+        <Pressable style={[styles.primaryBtn, { backgroundColor: C.purple }]} onPress={handleViewInsights}>
           <Text style={styles.primaryBtnText}>See my insights</Text>
         </Pressable>
 
-        <Pressable style={styles.secondaryBtn} onPress={handleDone}>
-          <Text style={styles.secondaryBtnText}>Back to setup</Text>
+        <Pressable style={[styles.secondaryBtn, { backgroundColor: C.bgInput, borderColor: C.border }]} onPress={handleDone}>
+          <Text style={[styles.secondaryBtnText, { color: C.textTertiary }]}>Back to setup</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>
@@ -214,16 +211,11 @@ export default function RewardScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: Colors.bgSession,
-  },
   glow: {
     position: 'absolute',
     width: 300,
     height: 300,
     borderRadius: 150,
-    backgroundColor: Colors.purpleDim,
     top: '20%',
     alignSelf: 'center',
     opacity: 0.6,
@@ -240,12 +232,10 @@ const styles = StyleSheet.create({
     fontFamily: Typography.fontSans,
     fontSize: Typography.size['2xl'],
     fontWeight: Typography.weight.semibold,
-    color: Colors.textPrimary,
   },
   subtitle: {
     fontFamily: Typography.fontMono,
     fontSize: Typography.size.sm,
-    color: Colors.textTertiary,
     marginBottom: Spacing.sm,
   },
 
@@ -255,9 +245,7 @@ const styles = StyleSheet.create({
     marginVertical: Spacing.md,
   },
   xpCard: {
-    backgroundColor: Colors.bgCard,
     borderWidth: 0.5,
-    borderColor: Colors.border,
     borderRadius: Radius.lg,
     paddingVertical: Spacing.base,
     paddingHorizontal: Spacing.lg,
@@ -280,7 +268,6 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontFamily: Typography.fontMono,
     fontSize: Typography.size.xs,
-    color: Colors.textTertiary,
     letterSpacing: 1,
     textTransform: 'uppercase',
     alignSelf: 'flex-start',
@@ -293,29 +280,19 @@ const styles = StyleSheet.create({
   },
   feelBtn: {
     flex: 1,
-    backgroundColor: Colors.bgInput,
     borderWidth: 0.5,
-    borderColor: Colors.border,
     borderRadius: Radius.md,
     paddingVertical: Spacing.md,
     alignItems: 'center',
   },
-  feelBtnSel: {
-    backgroundColor: Colors.purpleDim,
-    borderColor: Colors.purpleBorder,
-  },
   feelText: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.base,
-    color: Colors.textTertiary,
   },
-  feelTextSel: { color: Colors.purple },
 
   sageCard: {
     width: '100%',
-    backgroundColor: Colors.bgCard,
     borderWidth: 0.5,
-    borderColor: Colors.border,
     borderRadius: Radius.xl,
     padding: Spacing.base,
     gap: Spacing.sm,
@@ -328,19 +305,16 @@ const styles = StyleSheet.create({
   sageName: {
     fontFamily: Typography.fontMono,
     fontSize: Typography.size.xs,
-    color: Colors.purple,
     letterSpacing: 0.5,
   },
   sageMsg: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.sm,
-    color: Colors.textSecondary,
     lineHeight: 20,
   },
 
   primaryBtn: {
     width: '100%',
-    backgroundColor: Colors.purple,
     borderRadius: Radius.lg,
     paddingVertical: Spacing.base,
     alignItems: 'center',
@@ -354,9 +328,7 @@ const styles = StyleSheet.create({
   },
   secondaryBtn: {
     width: '100%',
-    backgroundColor: Colors.bgInput,
     borderWidth: 0.5,
-    borderColor: Colors.border,
     borderRadius: Radius.lg,
     paddingVertical: Spacing.base,
     alignItems: 'center',
@@ -364,6 +336,5 @@ const styles = StyleSheet.create({
   secondaryBtnText: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.base,
-    color: Colors.textTertiary,
   },
 });

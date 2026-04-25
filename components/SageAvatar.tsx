@@ -9,7 +9,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { Colors } from '@/constants/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type SageState = 'idle' | 'watching' | 'nudge' | 'alert' | 'celebrate';
 
@@ -27,8 +27,9 @@ const STATE_COLORS: Record<SageState, { ring: string; glow: string }> = {
 };
 
 export function SageAvatar({ size = 48, state = 'watching' }: SageAvatarProps) {
+  const C = useThemeColors();
   const scale = useSharedValue(1);
-  const colors = STATE_COLORS[state];
+  const stateColors = STATE_COLORS[state];
 
   useEffect(() => {
     if (state === 'celebrate') {
@@ -72,15 +73,15 @@ export function SageAvatar({ size = 48, state = 'watching' }: SageAvatarProps) {
           width: size + 8,
           height: size + 8,
           borderRadius: (size + 8) / 2,
-          backgroundColor: colors.glow,
-          borderColor: colors.ring,
+          backgroundColor: stateColors.glow,
+          borderColor: stateColors.ring,
         },
         animStyle,
       ]}
     >
       <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <Ellipse cx={cx} cy={size * 0.88} rx={bodyRx} ry={bodyRy} fill={Colors.purpleMid} />
-        <Circle cx={cx} cy={size * 0.42} r={headR} fill={Colors.purple} />
+        <Ellipse cx={cx} cy={size * 0.88} rx={bodyRx} ry={bodyRy} fill={C.purpleMid} />
+        <Circle cx={cx} cy={size * 0.42} r={headR} fill={C.purple} />
         <Circle cx={cx - headR * 0.28} cy={size * 0.4} r={headR * 0.18} fill="#e0d7ff" />
         <Circle cx={cx + headR * 0.28} cy={size * 0.4} r={headR * 0.18} fill="#e0d7ff" />
         {state === 'celebrate' ? (

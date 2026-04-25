@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
+import { Typography, Spacing, Radius } from '@/constants/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useUserStore } from '@/stores/userStore';
 import { useTimer } from '@/hooks/useTimer';
@@ -19,6 +20,7 @@ import { SageOverlay } from '@/components/SageOverlay';
 import { StatCard } from '@/components/StatCard';
 
 export default function SessionScreen() {
+  const C = useThemeColors();
   const router = useRouter();
   const {
     isActive,
@@ -34,13 +36,10 @@ export default function SessionScreen() {
 
   const { streakDays, totalXp, totalSessions } = useUserStore();
 
-  // Kick the timer hook — it manages AppState distraction detection
   useTimer();
 
-  // If user lands here without an active session (e.g. deep link), redirect to setup
   useEffect(() => {
     if (!isActive) {
-      // Give Reanimated a tick before navigating
       const t = setTimeout(() => router.replace('/(tabs)'), 100);
       return () => clearTimeout(t);
     }
@@ -66,28 +65,22 @@ export default function SessionScreen() {
   }
 
   const totalSeconds = durationMinutes * 60;
-  const progress = totalSeconds > 0 ? secondsRemaining / totalSeconds : 1;
-  const minutesLeft = Math.ceil(secondsRemaining / 60);
 
-  // Focus badge color changes with sage state
   const focusBadgeColor =
     sageState === 'alert'
-      ? Colors.red
+      ? C.red
       : sageState === 'nudge'
-      ? Colors.amber
-      : Colors.green;
+      ? C.amber
+      : C.green;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.bgSession }}>
       <View style={styles.container}>
 
-        {/* ── Subject label ── */}
-        <Text style={styles.subject}>{subject}</Text>
+        <Text style={[styles.subject, { color: C.textTertiary }]}>{subject}</Text>
 
-        {/* ── Timer ring ── */}
         <TimerRing secondsRemaining={secondsRemaining} totalSeconds={totalSeconds} />
 
-        {/* ── Focus state badge ── */}
         <View style={[styles.focusBadge, { borderColor: `${focusBadgeColor}44`, backgroundColor: `${focusBadgeColor}12` }]}>
           <View style={[styles.focusDot, { backgroundColor: focusBadgeColor }]} />
           <Text style={[styles.focusText, { color: focusBadgeColor }]}>
@@ -99,23 +92,23 @@ export default function SessionScreen() {
           </Text>
         </View>
 
-        {/* ── Sage overlay ── */}
         <SageOverlay
           sageState={sageState}
           message={sageMessage}
           onDismiss={sageState === 'nudge' || sageState === 'alert' ? clearDistraction : undefined}
         />
 
-        {/* ── Stats row ── */}
         <View style={styles.statsRow}>
           <StatCard value={totalSessions} label="Total" />
-          <StatCard value={streakDays} label="Streak" valueColor={Colors.amber} />
-          <StatCard value={totalXp} label="XP" valueColor={Colors.purple} />
+          <StatCard value={streakDays} label="Streak" valueColor={C.amber} />
+          <StatCard value={totalXp} label="XP" valueColor={C.purple} />
         </View>
 
-        {/* ── End early ── */}
-        <Pressable style={styles.endBtn} onPress={handleEndEarly}>
-          <Text style={styles.endBtnText}>End session early</Text>
+        <Pressable
+          style={[styles.endBtn, { backgroundColor: C.bgInput, borderColor: C.border }]}
+          onPress={handleEndEarly}
+        >
+          <Text style={[styles.endBtnText, { color: C.textTertiary }]}>End session early</Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -123,10 +116,6 @@ export default function SessionScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: Colors.bgSession,
-  },
   container: {
     flex: 1,
     alignItems: 'center',
@@ -134,16 +123,13 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xl,
     gap: Spacing.base,
   },
-
   subject: {
     fontFamily: Typography.fontMono,
     fontSize: Typography.size.sm,
-    color: Colors.textTertiary,
     letterSpacing: 1,
     textTransform: 'uppercase',
     marginTop: Spacing.lg,
   },
-
   focusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -163,19 +149,15 @@ const styles = StyleSheet.create({
     fontSize: Typography.size.sm,
     fontWeight: Typography.weight.medium,
   },
-
   statsRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
     width: '100%',
   },
-
   endBtn: {
     marginTop: 'auto',
     width: '100%',
-    backgroundColor: Colors.bgInput,
     borderWidth: 0.5,
-    borderColor: Colors.border,
     borderRadius: Radius.lg,
     paddingVertical: Spacing.md,
     alignItems: 'center',
@@ -183,6 +165,5 @@ const styles = StyleSheet.create({
   endBtnText: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.base,
-    color: Colors.textTertiary,
   },
 });

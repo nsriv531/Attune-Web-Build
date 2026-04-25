@@ -7,10 +7,10 @@ import Animated, {
   withTiming,
   Easing,
   interpolateColor,
-  useDerivedValue,
 } from 'react-native-reanimated';
-import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { Colors, Typography, RING_RADIUS, RING_CIRCUMFERENCE, RING_SIZE } from '@/constants/theme';
+import Svg, { Circle } from 'react-native-svg';
+import { Typography, RING_RADIUS, RING_CIRCUMFERENCE, RING_SIZE } from '@/constants/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -26,7 +26,13 @@ function formatTime(seconds: number): string {
 }
 
 export function TimerRing({ secondsRemaining, totalSeconds }: TimerRingProps) {
-  const progress = useSharedValue(1); // 1 = full, 0 = empty
+  const C = useThemeColors();
+  const progress = useSharedValue(1);
+  const accentColor = useSharedValue(C.purple);
+
+  useEffect(() => {
+    accentColor.value = C.purple;
+  }, [C.purple]);
 
   useEffect(() => {
     const pct = totalSeconds > 0 ? secondsRemaining / totalSeconds : 1;
@@ -40,18 +46,19 @@ export function TimerRing({ secondsRemaining, totalSeconds }: TimerRingProps) {
     const offset = RING_CIRCUMFERENCE * (1 - progress.value);
     return {
       strokeDashoffset: offset,
-      // Shift from purple → teal as session progresses
-      stroke: interpolateColor(progress.value, [0, 0.5, 1], ['#5eead4', '#a78bfa', '#a78bfa']),
+      stroke: interpolateColor(
+        progress.value,
+        [0, 0.5, 1],
+        ['#5eead4', accentColor.value, accentColor.value]
+      ),
     };
   });
 
   const timeString = formatTime(secondsRemaining);
-  const minutesLeft = Math.ceil(secondsRemaining / 60);
 
   return (
     <View style={styles.wrap}>
       <Svg width={RING_SIZE} height={RING_SIZE} viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}>
-        {/* Track */}
         <Circle
           cx={RING_SIZE / 2}
           cy={RING_SIZE / 2}
@@ -60,7 +67,6 @@ export function TimerRing({ secondsRemaining, totalSeconds }: TimerRingProps) {
           stroke="rgba(255,255,255,0.05)"
           strokeWidth={8}
         />
-        {/* Progress */}
         <AnimatedCircle
           cx={RING_SIZE / 2}
           cy={RING_SIZE / 2}
@@ -73,16 +79,14 @@ export function TimerRing({ secondsRemaining, totalSeconds }: TimerRingProps) {
           rotation={-90}
           origin={`${RING_SIZE / 2}, ${RING_SIZE / 2}`}
         />
-        {/* Inner fill to hide track behind centre */}
         <Circle
           cx={RING_SIZE / 2}
           cy={RING_SIZE / 2}
           r={RING_RADIUS - 10}
-          fill={Colors.bgSession}
+          fill={C.bgSession}
         />
       </Svg>
 
-      {/* Time display — floats over the SVG */}
       <View style={styles.timeOverlay} pointerEvents="none">
         <Text style={styles.timeNum}>{timeString}</Text>
         <Text style={styles.timeLbl}>remaining</Text>
@@ -107,13 +111,13 @@ const styles = StyleSheet.create({
     fontFamily: Typography.fontMono,
     fontSize: Typography.size['4xl'],
     fontWeight: Typography.weight.light,
-    color: Colors.textPrimary,
+    color: '#ffffff',
     letterSpacing: -1,
   },
   timeLbl: {
     fontFamily: Typography.fontMono,
     fontSize: Typography.size.xs,
-    color: Colors.textTertiary,
+    color: 'rgba(255,255,255,0.28)',
     letterSpacing: 1,
     textTransform: 'uppercase',
     marginTop: 4,

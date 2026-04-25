@@ -9,11 +9,11 @@ import {
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
-import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
+import { Typography, Spacing, Radius } from '@/constants/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useUserStore } from '@/stores/userStore';
 import { SageAvatar } from '@/components/SageAvatar';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 type InsightTagColor = 'purple' | 'green' | 'amber';
 
 interface AIInsight {
@@ -24,7 +24,6 @@ interface AIInsight {
   tagColor: InsightTagColor;
 }
 
-// ─── Seed insights (shown before user has 5+ sessions) ───────────────────────
 const SEED_INSIGHTS: AIInsight[] = [
   {
     id: '1',
@@ -49,7 +48,6 @@ const SEED_INSIGHTS: AIInsight[] = [
   },
 ];
 
-// Demo heatmap so the screen looks real before any sessions are logged
 const SEED_HEATMAP: number[][] = [
   [0.30, 0.75, 0.90, 0.65, 0.80, 0.10, 0.10],
   [0.70, 0.95, 1.00, 0.85, 0.95, 0.15, 0.12],
@@ -60,46 +58,37 @@ const SEED_HEATMAP: number[][] = [
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const TIME_SLOTS = ['8am', '10am', '2pm', '8pm'];
 
-const TAG_STYLES: Record<InsightTagColor, { bg: string; color: string }> = {
-  purple: { bg: 'rgba(167,139,250,0.18)', color: Colors.purple },
-  green:  { bg: 'rgba(74,222,128,0.14)',  color: Colors.green  },
-  amber:  { bg: 'rgba(251,191,36,0.14)',  color: Colors.amber  },
-};
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-function intensityToColor(v: number): string {
+function intensityToColor(v: number, accent: string): string {
   if (v < 0.05) return 'rgba(255,255,255,0.04)';
-  if (v < 0.30) return 'rgba(167,139,250,0.18)';
-  if (v < 0.55) return 'rgba(167,139,250,0.38)';
-  if (v < 0.75) return 'rgba(167,139,250,0.62)';
-  return 'rgba(167,139,250,0.92)';
+  // Build opacity variants of the accent hex color
+  if (v < 0.30) return `${accent}2e`;
+  if (v < 0.55) return `${accent}61`;
+  if (v < 0.75) return `${accent}9e`;
+  return `${accent}eb`;
 }
 
-// ─── Subcomponents ───────────────────────────────────────────────────────────
 function HeatmapGrid({ data }: { data: number[][] }) {
+  const C = useThemeColors();
   const screenW = Dimensions.get('window').width;
-  // Available width = screen - screen padding (48) - card padding (32) - label col (40)
   const innerW = Math.max(220, screenW - 48 - 32 - 40);
   const gap = 4;
   const cellW = Math.floor((innerW - gap * 6) / 7);
 
   return (
     <View style={hm.wrap}>
-      {/* Day header row */}
       <View style={hm.row}>
         <View style={hm.labelCol} />
         {DAYS.map((d, i) => (
           <View key={i} style={[hm.dayCell, { width: cellW }]}>
-            <Text style={hm.dayText}>{d}</Text>
+            <Text style={[hm.dayText, { color: C.textTertiary }]}>{d}</Text>
           </View>
         ))}
       </View>
 
-      {/* Time-slot rows */}
       {TIME_SLOTS.map((slot, rowIdx) => (
         <View key={slot} style={hm.row}>
           <View style={hm.labelCol}>
-            <Text style={hm.slotText}>{slot}</Text>
+            <Text style={[hm.slotText, { color: C.textTertiary }]}>{slot}</Text>
           </View>
           {DAYS.map((_, colIdx) => {
             const v = data[rowIdx]?.[colIdx] ?? 0;
@@ -108,7 +97,7 @@ function HeatmapGrid({ data }: { data: number[][] }) {
                 key={colIdx}
                 style={[
                   hm.cell,
-                  { width: cellW, backgroundColor: intensityToColor(v) },
+                  { width: cellW, backgroundColor: intensityToColor(v, C.purple) },
                 ]}
               />
             );
@@ -116,36 +105,41 @@ function HeatmapGrid({ data }: { data: number[][] }) {
         </View>
       ))}
 
-      {/* Legend */}
       <View style={hm.legend}>
         <View style={[hm.legendDot, { backgroundColor: 'rgba(255,255,255,0.04)' }]} />
-        <Text style={hm.legendText}>None</Text>
-        <View style={[hm.legendDot, { backgroundColor: 'rgba(167,139,250,0.38)' }]} />
-        <Text style={hm.legendText}>Medium</Text>
-        <View style={[hm.legendDot, { backgroundColor: 'rgba(167,139,250,0.92)' }]} />
-        <Text style={hm.legendText}>Peak</Text>
+        <Text style={[hm.legendText, { color: C.textTertiary }]}>None</Text>
+        <View style={[hm.legendDot, { backgroundColor: `${C.purple}61` }]} />
+        <Text style={[hm.legendText, { color: C.textTertiary }]}>Medium</Text>
+        <View style={[hm.legendDot, { backgroundColor: `${C.purple}eb` }]} />
+        <Text style={[hm.legendText, { color: C.textTertiary }]}>Peak</Text>
       </View>
     </View>
   );
 }
 
 function InsightCard({ insight }: { insight: AIInsight }) {
-  const tag = TAG_STYLES[insight.tagColor];
+  const C = useThemeColors();
+  const tagStyles: Record<InsightTagColor, { bg: string; color: string }> = {
+    purple: { bg: C.purpleDim, color: C.purple },
+    green:  { bg: 'rgba(74,222,128,0.14)',  color: C.green },
+    amber:  { bg: 'rgba(251,191,36,0.14)',  color: C.amber },
+  };
+  const tag = tagStyles[insight.tagColor];
   return (
-    <View style={s.insightCard}>
+    <View style={[s.insightCard, { backgroundColor: C.bgCard, borderColor: C.border }]}>
       <View style={s.insightTop}>
-        <Text style={s.insightTitle}>{insight.title}</Text>
+        <Text style={[s.insightTitle, { color: C.textPrimary }]}>{insight.title}</Text>
         <View style={[s.insightTag, { backgroundColor: tag.bg }]}>
           <Text style={[s.insightTagText, { color: tag.color }]}>{insight.tag}</Text>
         </View>
       </View>
-      <Text style={s.insightBody}>{insight.body}</Text>
+      <Text style={[s.insightBody, { color: C.textSecondary }]}>{insight.body}</Text>
     </View>
   );
 }
 
-// ─── Main screen ─────────────────────────────────────────────────────────────
 export default function InsightsScreen() {
+  const C = useThemeColors();
   const sessions          = useUserStore((st) => st.sessions);
   const insights          = useUserStore((st) => st.insights);
   const suggestion        = useUserStore((st) => st.suggestion);
@@ -159,11 +153,7 @@ export default function InsightsScreen() {
 
   const heatmapData = useMemo(() => {
     if (hasRealData) {
-      try {
-        return getHeatmap();
-      } catch {
-        return SEED_HEATMAP;
-      }
+      try { return getHeatmap(); } catch { return SEED_HEATMAP; }
     }
     return SEED_HEATMAP;
   }, [sessions.length, hasRealData]);
@@ -175,87 +165,82 @@ export default function InsightsScreen() {
     : 0;
 
   return (
-    <SafeAreaView style={s.safe}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
       <ScrollView
-        style={s.scroll}
+        style={{ flex: 1 }}
         contentContainerStyle={s.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Header ── */}
-        <Text style={s.title}>Your focus</Text>
-        <Text style={s.subtitle}>
+        <Text style={[s.title, { color: C.textPrimary }]}>Your focus</Text>
+        <Text style={[s.subtitle, { color: C.textTertiary }]}>
           {totalSessions} sessions · {streakDays} day streak
         </Text>
 
-        {/* ── Stat row ── */}
         <View style={s.statsRow}>
-          <View style={s.statBox}>
-            <Text style={[s.statNum, { color: Colors.purple }]}>{totalXp}</Text>
-            <Text style={s.statLbl}>Total XP</Text>
+          <View style={[s.statBox, { backgroundColor: C.bgCard, borderColor: C.border }]}>
+            <Text style={[s.statNum, { color: C.purple }]}>{totalXp}</Text>
+            <Text style={[s.statLbl, { color: C.textTertiary }]}>Total XP</Text>
           </View>
-          <View style={s.statBox}>
-            <Text style={[s.statNum, { color: Colors.amber }]}>{streakDays}</Text>
-            <Text style={s.statLbl}>Streak</Text>
+          <View style={[s.statBox, { backgroundColor: C.bgCard, borderColor: C.border }]}>
+            <Text style={[s.statNum, { color: C.amber }]}>{streakDays}</Text>
+            <Text style={[s.statLbl, { color: C.textTertiary }]}>Streak</Text>
           </View>
-          <View style={s.statBox}>
-            <Text style={[s.statNum, { color: Colors.green }]}>
-              {avgFocus || '--'}
-            </Text>
-            <Text style={s.statLbl}>Avg focus</Text>
+          <View style={[s.statBox, { backgroundColor: C.bgCard, borderColor: C.border }]}>
+            <Text style={[s.statNum, { color: C.green }]}>{avgFocus || '--'}</Text>
+            <Text style={[s.statLbl, { color: C.textTertiary }]}>Avg focus</Text>
           </View>
         </View>
 
-        {/* ── Heatmap card ── */}
-        <View style={s.heatmapCard}>
-          <Text style={s.cardLabel}>Weekly focus heatmap</Text>
+        <View style={[s.heatmapCard, { backgroundColor: C.bgCard, borderColor: C.border }]}>
+          <Text style={[s.cardLabel, { color: C.textTertiary }]}>Weekly focus heatmap</Text>
           {!hasRealData && (
-            <Text style={s.seedNote}>
+            <Text style={[s.seedNote, { color: C.textHint }]}>
               Complete 3+ sessions to see your real patterns
             </Text>
           )}
           <HeatmapGrid data={heatmapData} />
         </View>
 
-        {/* ── Sage suggestion ── */}
         {isLoadingInsights ? (
-          <View style={s.loadingCard}>
-            <ActivityIndicator color={Colors.purple} size="small" />
-            <Text style={s.loadingText}>Sage is analysing your sessions…</Text>
+          <View style={[s.loadingCard, { backgroundColor: C.bgCard, borderColor: C.border }]}>
+            <ActivityIndicator color={C.purple} size="small" />
+            <Text style={[s.loadingText, { color: C.textTertiary }]}>Sage is analysing your sessions…</Text>
           </View>
         ) : suggestion ? (
-          <View style={s.suggestionCard}>
+          <View style={[s.suggestionCard, { backgroundColor: C.bgCard, borderColor: C.purpleBorder }]}>
             <View style={s.suggestionTop}>
               <SageAvatar size={28} state="watching" />
-              <Text style={s.suggestionTitle}>Sage's recommendation</Text>
+              <Text style={[s.suggestionTitle, { color: C.purple }]}>Sage's recommendation</Text>
             </View>
-            <Text style={s.suggestionBody}>{suggestion.message}</Text>
+            <Text style={[s.suggestionBody, { color: C.textSecondary }]}>{suggestion.message}</Text>
             {suggestion.pills && suggestion.pills.length > 0 && (
               <View style={s.pillRow}>
                 {suggestion.pills.map((p, i) => (
-                  <View key={i} style={s.pill}>
-                    <Text style={s.pillText}>{p.label}</Text>
+                  <View key={i} style={[s.pill, { backgroundColor: C.purpleDim, borderColor: C.purpleBorder }]}>
+                    <Text style={[s.pillText, { color: C.purple }]}>{p.label}</Text>
                   </View>
                 ))}
               </View>
             )}
           </View>
         ) : (
-          <View style={s.suggestionCard}>
+          <View style={[s.suggestionCard, { backgroundColor: C.bgCard, borderColor: C.purpleBorder }]}>
             <View style={s.suggestionTop}>
               <SageAvatar size={28} state="watching" />
-              <Text style={s.suggestionTitle}>Sage's recommendation</Text>
+              <Text style={[s.suggestionTitle, { color: C.purple }]}>Sage's recommendation</Text>
             </View>
-            <Text style={s.suggestionBody}>
+            <Text style={[s.suggestionBody, { color: C.textSecondary }]}>
               Complete a few more sessions and I'll start surfacing patterns specific to you. For now — your morning sessions tend to hit hardest. Lean into that.
             </Text>
             <View style={s.pillRow}>
-              <View style={s.pill}><Text style={s.pillText}>Try · 45min · 9am</Text></View>
+              <View style={[s.pill, { backgroundColor: C.purpleDim, borderColor: C.purpleBorder }]}>
+                <Text style={[s.pillText, { color: C.purple }]}>Try · 45min · 9am</Text>
+              </View>
             </View>
           </View>
         )}
 
-        {/* ── Insight cards ── */}
-        <Text style={s.sectionTitle}>Insights</Text>
+        <Text style={[s.sectionTitle, { color: C.textPrimary }]}>Insights</Text>
         {displayInsights.map((it) => (
           <InsightCard key={it.id} insight={it} />
         ))}
@@ -266,23 +251,18 @@ export default function InsightsScreen() {
   );
 }
 
-// ─── Styles ──────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
-  scroll: { flex: 1 },
   content: { padding: Spacing.xl },
 
   title: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.xl,
     fontWeight: Typography.weight.semibold,
-    color: Colors.textPrimary,
     marginBottom: 4,
   },
   subtitle: {
     fontFamily: Typography.fontMono,
     fontSize: Typography.size.sm,
-    color: Colors.textTertiary,
     marginBottom: Spacing.lg,
   },
 
@@ -293,9 +273,7 @@ const s = StyleSheet.create({
   },
   statBox: {
     flex: 1,
-    backgroundColor: Colors.bgCard,
     borderWidth: 0.5,
-    borderColor: Colors.border,
     borderRadius: Radius.lg,
     padding: Spacing.md,
     alignItems: 'center',
@@ -308,16 +286,13 @@ const s = StyleSheet.create({
   statLbl: {
     fontFamily: Typography.fontMono,
     fontSize: Typography.size.xs,
-    color: Colors.textTertiary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginTop: 2,
   },
 
   heatmapCard: {
-    backgroundColor: Colors.bgCard,
     borderWidth: 0.5,
-    borderColor: Colors.border,
     borderRadius: Radius.xl,
     padding: Spacing.base,
     marginBottom: Spacing.base,
@@ -325,7 +300,6 @@ const s = StyleSheet.create({
   cardLabel: {
     fontFamily: Typography.fontMono,
     fontSize: Typography.size.xs,
-    color: Colors.textTertiary,
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: Spacing.md,
@@ -333,7 +307,6 @@ const s = StyleSheet.create({
   seedNote: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.sm,
-    color: Colors.textHint,
     marginBottom: Spacing.sm,
     fontStyle: 'italic',
   },
@@ -342,9 +315,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: Colors.bgCard,
     borderWidth: 0.5,
-    borderColor: Colors.border,
     borderRadius: Radius.xl,
     padding: Spacing.base,
     marginBottom: Spacing.base,
@@ -352,13 +323,10 @@ const s = StyleSheet.create({
   loadingText: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.sm,
-    color: Colors.textTertiary,
   },
 
   suggestionCard: {
-    backgroundColor: Colors.bgCard,
     borderWidth: 0.5,
-    borderColor: Colors.purpleBorder,
     borderRadius: Radius.xl,
     padding: Spacing.base,
     marginBottom: Spacing.base,
@@ -372,13 +340,11 @@ const s = StyleSheet.create({
   suggestionTitle: {
     fontFamily: Typography.fontMono,
     fontSize: Typography.size.sm,
-    color: Colors.purple,
     fontWeight: Typography.weight.medium,
   },
   suggestionBody: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.base,
-    color: Colors.textSecondary,
     lineHeight: 22,
   },
   pillRow: {
@@ -388,9 +354,7 @@ const s = StyleSheet.create({
     marginTop: 4,
   },
   pill: {
-    backgroundColor: 'rgba(167,139,250,0.18)',
     borderWidth: 0.5,
-    borderColor: Colors.purpleBorder,
     borderRadius: Radius.full,
     paddingHorizontal: Spacing.md,
     paddingVertical: 5,
@@ -398,20 +362,16 @@ const s = StyleSheet.create({
   pillText: {
     fontFamily: Typography.fontMono,
     fontSize: Typography.size.xs,
-    color: Colors.purple,
   },
 
   sectionTitle: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.lg,
     fontWeight: Typography.weight.semibold,
-    color: Colors.textPrimary,
     marginBottom: Spacing.md,
   },
   insightCard: {
-    backgroundColor: Colors.bgCard,
     borderWidth: 0.5,
-    borderColor: Colors.border,
     borderRadius: Radius.xl,
     padding: Spacing.base,
     marginBottom: Spacing.md,
@@ -426,7 +386,6 @@ const s = StyleSheet.create({
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.base,
     fontWeight: Typography.weight.semibold,
-    color: Colors.textPrimary,
     flex: 1,
     marginRight: Spacing.sm,
   },
@@ -443,12 +402,10 @@ const s = StyleSheet.create({
   insightBody: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.sm,
-    color: Colors.textSecondary,
     lineHeight: 20,
   },
 });
 
-// Standalone styles for the heatmap subcomponent
 const hm = StyleSheet.create({
   wrap: { gap: 4 },
   row: {
@@ -467,12 +424,10 @@ const hm = StyleSheet.create({
   dayText: {
     fontFamily: Typography.fontMono,
     fontSize: Typography.size.xs,
-    color: Colors.textTertiary,
   },
   slotText: {
     fontFamily: Typography.fontMono,
     fontSize: 9,
-    color: Colors.textTertiary,
   },
   cell: {
     height: 26,
@@ -492,7 +447,6 @@ const hm = StyleSheet.create({
   legendText: {
     fontFamily: Typography.fontMono,
     fontSize: 9,
-    color: Colors.textTertiary,
     marginRight: 6,
   },
 });

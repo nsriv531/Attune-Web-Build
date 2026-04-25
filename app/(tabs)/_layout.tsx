@@ -1,10 +1,10 @@
 // app/(tabs)/_layout.tsx
 import { Tabs } from 'expo-router';
-import { View, StyleSheet } from 'react-native';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
-import { Colors, Typography } from '@/constants/theme';
+import { StyleSheet } from 'react-native';
+import Svg, { Circle, Path } from 'react-native-svg';
+import { Typography } from '@/constants/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
-// ─── Icon components ──────────────────────────────────────────────────────────
 function IconSetup({ color }: { color: string }) {
   return (
     <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
@@ -52,13 +52,22 @@ function IconProfile({ color }: { color: string }) {
 }
 
 export default function TabsLayout() {
+  const C = useThemeColors();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: Colors.purple,
-        tabBarInactiveTintColor: Colors.textHint,
+        tabBarStyle: {
+          backgroundColor: C.bgCard,
+          borderTopColor: C.border,
+          borderTopWidth: 0.5,
+          height: 72,
+          paddingBottom: 8,
+          paddingTop: 6,
+        },
+        tabBarActiveTintColor: C.purple,
+        tabBarInactiveTintColor: C.textHint,
         tabBarLabelStyle: styles.tabLabel,
       }}
     >
@@ -95,14 +104,6 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: Colors.bgCard,
-    borderTopColor: Colors.border,
-    borderTopWidth: 0.5,
-    height: 72,
-    paddingBottom: 8,
-    paddingTop: 6,
-  },
   tabLabel: {
     fontFamily: Typography.fontMono,
     fontSize: 9,
