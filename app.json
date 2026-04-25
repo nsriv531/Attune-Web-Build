@@ -17,7 +17,9 @@
       "bundleIdentifier": "com.studyloop.app",
       "infoPlist": {
         "NSCameraUsageDescription": "StudyLoop uses your camera to optionally detect attention during study sessions. All processing happens on your device — nothing is recorded or uploaded.",
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
@@ -35,12 +37,7 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      [
-        "expo-av",
-        {
-          "microphonePermission": false
-        }
-      ]
+      "expo-audio"
     ],
     "scheme": "studyloop",
     "experiments": {
