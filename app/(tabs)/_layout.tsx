@@ -58,9 +58,8 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarStyle: styles.tabBar,
         tabBarActiveTintColor: Colors.purple,
-        tabBarInactiveTintColor: Colors.textTertiary,
+        tabBarInactiveTintColor: Colors.textHint,
         tabBarLabelStyle: styles.tabLabel,
-        tabBarShowLabel: false,
       }}
     >
       <Tabs.Screen
@@ -97,15 +96,17 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: '#13131a',
-    borderTopColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: Colors.bgCard,
+    borderTopColor: Colors.border,
     borderTopWidth: 0.5,
     height: 72,
     paddingBottom: 8,
-    paddingTop: 8,
+    paddingTop: 6,
   },
   tabLabel: {
     fontFamily: Typography.fontMono,
-    fontSize: 10,
+    fontSize: 9,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
 });

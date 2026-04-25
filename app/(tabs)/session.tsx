@@ -72,7 +72,7 @@ export default function SessionScreen() {
   // Focus badge color changes with sage state
   const focusBadgeColor =
     sageState === 'alert'
-      ? '#f87171'
+      ? Colors.red
       : sageState === 'nudge'
       ? Colors.amber
       : Colors.green;

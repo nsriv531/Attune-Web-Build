@@ -133,7 +133,7 @@ export default function ProfileScreen() {
                 </View>
                 <View style={styles.sessionRight}>
                   <Text style={[styles.sessionScore, {
-                    color: s.focusScore >= 80 ? Colors.green : s.focusScore >= 60 ? Colors.amber : '#f87171'
+                    color: s.focusScore >= 80 ? Colors.green : s.focusScore >= 60 ? Colors.amber : Colors.red
                   }]}>
                     {s.focusScore}
                   </Text>
