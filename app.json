@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "StudyLoop",
+    "slug": "studyloop",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0e0e12",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0e0e12"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.studyloop.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "StudyLoop uses your camera to optionally detect attention during study sessions. All processing happens on your device — nothing is recorded or uploaded.",
+        "UIBackgroundModes": ["audio"]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0e0e12"
+      },
+      "package": "com.studyloop.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-av",
+        {
+          "microphonePermission": false
+        }
+      ]
+    ],
+    "scheme": "studyloop",
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
