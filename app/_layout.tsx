@@ -1,4 +1,3 @@
-// app/_layout.tsx
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -7,8 +6,13 @@ import * as SplashScreen from 'expo-splash-screen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native';
+import { ConvexProvider, ConvexReactClient } from "convex/react";
 
 SplashScreen.preventAutoHideAsync();
+
+// Initialize the Convex client
+// .env file should use EXPO_PUBLIC_CONVEX_URL
+const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,16 +39,19 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={styles.root}>
-      <QueryClientProvider client={queryClient}>
-        <StatusBar style="light" />
-        <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen
-            name="reward"
-            options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
-          />
-        </Stack>
-      </QueryClientProvider>
+      {/* ConvexProvider*/}
+      <ConvexProvider client={convex}>
+        <QueryClientProvider client={queryClient}>
+          <StatusBar style="light" />
+          <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen
+              name="reward"
+              options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
+            />
+          </Stack>
+        </QueryClientProvider>
+      </ConvexProvider>
     </GestureHandlerRootView>
   );
 }
