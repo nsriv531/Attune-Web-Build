@@ -1,0 +1,33 @@
+name: Only dev can merge to main
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+
+permissions:
+  contents: read
+
+jobs:
+  validate-source-branch:
+    name: validate-source-branch
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ensure PR source branch is dev
+        run: |
+          echo "Source branch: $GITHUB_HEAD_REF"
+          echo "Target branch: $GITHUB_BASE_REF"
+
+          if [ "$GITHUB_HEAD_REF" != "dev" ]; then
+            echo "Only pull requests from dev can be merged into main."
+            echo "Please merge your feature branch into dev first, then open a PR from dev into main."
+            exit 1
+          fi
+
+          echo "Valid PR: dev -> main"
