@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # StudyLoop
 
 A focus session app built on the **Cue → Focus → Reward → Reflection → Smart Suggestion** loop.  
@@ -152,3 +153,6 @@ npx expo start --port 8082
 
 **App shows blank screen**
 Press `r` in the terminal to reload, or shake your phone and tap "Reload".
+=======
+# react-native-app
+>>>>>>> 63294e82514e4b1ca3dac237035aa3066d689f6b
