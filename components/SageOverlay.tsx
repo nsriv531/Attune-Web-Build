@@ -1,12 +1,11 @@
 // components/SageOverlay.tsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withTiming,
-  useEffect as useReanimatedEffect,
 } from 'react-native-reanimated';
 import { SageAvatar } from './SageAvatar';
 import { Colors, Typography, Radius, Spacing } from '@/constants/theme';
@@ -47,7 +46,7 @@ export function SageOverlay({ sageState, message, onDismiss }: SageOverlayProps)
   const translateY = useSharedValue(20);
   const opacity = useSharedValue(0);
 
-  useReanimatedEffect(() => {
+  useEffect(() => {
     if (sageState !== 'idle') {
       translateY.value = withSpring(0, { damping: 18, stiffness: 200 });
       opacity.value = withTiming(1, { duration: 250 });

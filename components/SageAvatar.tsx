@@ -1,6 +1,6 @@
 // components/SageAvatar.tsx
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useEffect } from 'react';
+import { StyleSheet } from 'react-native';
 import Svg, { Circle, Ellipse, Path } from 'react-native-svg';
 import Animated, {
   useSharedValue,
@@ -8,7 +8,6 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
-  useEffect as useReanimatedEffect,
 } from 'react-native-reanimated';
 import { Colors } from '@/constants/theme';
 
@@ -31,8 +30,7 @@ export function SageAvatar({ size = 48, state = 'watching' }: SageAvatarProps) {
   const scale = useSharedValue(1);
   const colors = STATE_COLORS[state];
 
-  // Bounce animation for celebrate state
-  useReanimatedEffect(() => {
+  useEffect(() => {
     if (state === 'celebrate') {
       scale.value = withRepeat(
         withSequence(
@@ -61,32 +59,33 @@ export function SageAvatar({ size = 48, state = 'watching' }: SageAvatarProps) {
     transform: [{ scale: scale.value }],
   }));
 
-  const svgSize = size;
-  const cx = svgSize / 2;
-  const headR = svgSize * 0.33;
-  const bodyRx = svgSize * 0.38;
-  const bodyRy = svgSize * 0.18;
+  const cx = size / 2;
+  const headR = size * 0.33;
+  const bodyRx = size * 0.38;
+  const bodyRy = size * 0.18;
 
   return (
-    <Animated.View style={[styles.wrap, { width: size + 8, height: size + 8, borderRadius: (size + 8) / 2, backgroundColor: colors.glow, borderColor: colors.ring }, animStyle]}>
-      <Svg width={svgSize} height={svgSize} viewBox={`0 0 ${svgSize} ${svgSize}`}>
-        {/* Body */}
-        <Ellipse
-          cx={cx}
-          cy={svgSize * 0.88}
-          rx={bodyRx}
-          ry={bodyRy}
-          fill={Colors.purpleMid}
-        />
-        {/* Head */}
-        <Circle cx={cx} cy={svgSize * 0.42} r={headR} fill={Colors.purple} />
-        {/* Eyes */}
-        <Circle cx={cx - headR * 0.28} cy={svgSize * 0.4} r={headR * 0.18} fill="#e0d7ff" />
-        <Circle cx={cx + headR * 0.28} cy={svgSize * 0.4} r={headR * 0.18} fill="#e0d7ff" />
-        {/* Smile — changes with state */}
+    <Animated.View
+      style={[
+        styles.wrap,
+        {
+          width: size + 8,
+          height: size + 8,
+          borderRadius: (size + 8) / 2,
+          backgroundColor: colors.glow,
+          borderColor: colors.ring,
+        },
+        animStyle,
+      ]}
+    >
+      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <Ellipse cx={cx} cy={size * 0.88} rx={bodyRx} ry={bodyRy} fill={Colors.purpleMid} />
+        <Circle cx={cx} cy={size * 0.42} r={headR} fill={Colors.purple} />
+        <Circle cx={cx - headR * 0.28} cy={size * 0.4} r={headR * 0.18} fill="#e0d7ff" />
+        <Circle cx={cx + headR * 0.28} cy={size * 0.4} r={headR * 0.18} fill="#e0d7ff" />
         {state === 'celebrate' ? (
           <Path
-            d={`M ${cx - headR * 0.3} ${svgSize * 0.5} Q ${cx} ${svgSize * 0.58} ${cx + headR * 0.3} ${svgSize * 0.5}`}
+            d={`M ${cx - headR * 0.3} ${size * 0.5} Q ${cx} ${size * 0.58} ${cx + headR * 0.3} ${size * 0.5}`}
             stroke="#e0d7ff"
             strokeWidth={headR * 0.1}
             strokeLinecap="round"
@@ -94,7 +93,7 @@ export function SageAvatar({ size = 48, state = 'watching' }: SageAvatarProps) {
           />
         ) : state === 'alert' ? (
           <Path
-            d={`M ${cx - headR * 0.25} ${svgSize * 0.54} Q ${cx} ${svgSize * 0.5} ${cx + headR * 0.25} ${svgSize * 0.54}`}
+            d={`M ${cx - headR * 0.25} ${size * 0.54} Q ${cx} ${size * 0.5} ${cx + headR * 0.25} ${size * 0.54}`}
             stroke="#e0d7ff"
             strokeWidth={headR * 0.09}
             strokeLinecap="round"
@@ -102,7 +101,7 @@ export function SageAvatar({ size = 48, state = 'watching' }: SageAvatarProps) {
           />
         ) : (
           <Path
-            d={`M ${cx - headR * 0.28} ${svgSize * 0.5} Q ${cx} ${svgSize * 0.56} ${cx + headR * 0.28} ${svgSize * 0.5}`}
+            d={`M ${cx - headR * 0.28} ${size * 0.5} Q ${cx} ${size * 0.56} ${cx + headR * 0.28} ${size * 0.5}`}
             stroke="#e0d7ff"
             strokeWidth={headR * 0.09}
             strokeLinecap="round"
