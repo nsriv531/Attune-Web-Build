@@ -1,5 +1,5 @@
 // app/(tabs)/profile.tsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   SafeAreaView,
   Pressable,
+  TouchableOpacity,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Typography, Spacing, Radius } from '@/constants/theme';
@@ -14,7 +15,9 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useThemeStore } from '@/stores/themeStore';
 import { PALETTES, PALETTE_ORDER, type PaletteKey } from '@/constants/palettes';
 import { useUserStore } from '@/stores/userStore';
+import { useAvatarCustomizationStore } from '@/stores/avatarCustomizationStore';
 import { SageAvatar } from '@/components/SageAvatar';
+import { AvatarCustomizationShop } from '@/components/AvatarCustomizationShop';
 
 const LEVEL_NAMES = ['Seedling', 'Sprout', 'Scholar', 'Focus Pro', 'Sage'];
 const LEVEL_XP    = [0, 200, 500, 1000, 2000];
@@ -52,6 +55,14 @@ export default function ProfileScreen() {
   const C = useThemeColors();
   const { paletteKey, setPalette } = useThemeStore();
   const { name, totalXp, streakDays, totalSessions, sessions } = useUserStore();
+  const { loadFromStorage, coins } = useAvatarCustomizationStore();
+  
+  const [shopVisible, setShopVisible] = useState(false);
+
+  // Load customization data on mount
+  useEffect(() => {
+    loadFromStorage();
+  }, []);
 
   const level = getLevel(totalXp);
   const levelName = LEVEL_NAMES[level - 1];
@@ -81,6 +92,19 @@ export default function ProfileScreen() {
           <View style={[styles.levelBadge, { backgroundColor: C.purpleDim, borderColor: C.purpleBorder }]}>
             <Text style={[styles.levelBadgeText, { color: C.purple }]}>Level {level} · {levelName}</Text>
           </View>
+          
+          {/* Customization Button */}
+          <TouchableOpacity
+            style={[styles.customizeButton, { backgroundColor: C.bgCard, borderColor: C.purple }]}
+            onPress={() => setShopVisible(true)}
+          >
+            <Text style={[styles.customizeButtonText, { color: C.purple }]}>
+              ✨ Customize Avatar
+            </Text>
+            <View style={[styles.coinBadge, { backgroundColor: C.amber }]}>
+              <Text style={styles.coinBadgeText}>{coins}</Text>
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* ── XP progress bar ── */}
@@ -194,6 +218,9 @@ export default function ProfileScreen() {
 
         <View style={{ height: 32 }} />
       </ScrollView>
+      
+      {/* Avatar Customization Shop Modal */}
+      <AvatarCustomizationShop visible={shopVisible} onClose={() => setShopVisible(false)} />
     </SafeAreaView>
   );
 }
@@ -384,5 +411,36 @@ const styles = StyleSheet.create({
     fontSize: 9,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+
+  // ── Avatar Customization ──
+  customizeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1.5,
+    borderRadius: Radius.lg,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.base,
+    marginTop: Spacing.base,
+    gap: Spacing.sm,
+  },
+  customizeButtonText: {
+    fontFamily: Typography.fontSans,
+    fontSize: Typography.size.sm,
+    fontWeight: Typography.weight.semibold,
+  },
+  coinBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    borderRadius: Radius.full,
+    minWidth: 36,
+    alignItems: 'center',
+  },
+  coinBadgeText: {
+    fontFamily: Typography.fontMono,
+    fontSize: Typography.size.xs,
+    fontWeight: Typography.weight.semibold,
+    color: '#1a1a1a',
   },
 });

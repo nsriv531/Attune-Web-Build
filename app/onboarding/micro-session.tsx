@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -21,7 +21,7 @@ type MicroSageState = 'watching' | 'nudge' | 'celebrate';
 
 export default function MicroSessionScreen() {
   const router = useRouter();
-  const { sageForm, subjects } = useOnboardingStore();
+  const { sageForm, subjects, completeOnboarding } = useOnboardingStore();
 
   const [countdown, setCountdown] = useState(SESSION_SECONDS);
   const [sageState, setSageState] = useState<MicroSageState>('watching');
@@ -29,6 +29,12 @@ export default function MicroSessionScreen() {
   const [showMessage, setShowMessage] = useState(false);
   const [done, setDone] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const handleExitEarly = async () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    await completeOnboarding();
+    router.replace('/(tabs)' as never);
+  };
 
   const ringPulse = useSharedValue(1);
   const messageOpacity = useSharedValue(0);
@@ -162,6 +168,13 @@ export default function MicroSessionScreen() {
         <Text style={styles.note}>
           {countdown === 0 ? 'Session complete.' : 'Stay with it. Sage is watching.'}
         </Text>
+
+        {/* Exit button */}
+        {countdown > 0 && !done && (
+          <TouchableOpacity style={styles.exitButton} onPress={handleExitEarly}>
+            <Text style={styles.exitButtonText}>Exit Early</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -224,5 +237,21 @@ const styles = StyleSheet.create({
     color: Colors.textTertiary,
     textAlign: 'center',
     letterSpacing: 0.3,
+  },
+  exitButton: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    backgroundColor: Colors.bgCard,
+    borderWidth: 1,
+    borderColor: Colors.borderMid,
+    borderRadius: 8,
+    marginTop: Spacing.md,
+  },
+  exitButtonText: {
+    fontFamily: Typography.fontSans,
+    fontSize: Typography.size.sm,
+    fontWeight: Typography.weight.medium,
+    color: Colors.textSecondary,
+    textAlign: 'center',
   },
 });
