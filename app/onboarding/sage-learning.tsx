@@ -16,9 +16,9 @@ import { useOnboardingStore } from '@/stores/onboardingStore';
 import { Colors, Typography, Spacing } from '@/constants/theme';
 
 const LINES = [
-  'Reading your distraction profile...',
-  'Calibrating session length...',
-  'Tuning Sage's coaching style...',
+  "Reading your distraction profile...",
+  "Calibrating session length...",
+  "Tuning Sage's coaching style...",
 ];
 
 function FadeLine({ text, delay }: { text: string; delay: number }) {
@@ -44,8 +44,8 @@ export default function SageLearningScreen() {
   useEffect(() => {
     breathScale.value = withRepeat(
       withSequence(
-        withTiming(1.06, { duration: 1800, easing: Easing.inOut(Easing.sine) }),
-        withTiming(1, { duration: 1800, easing: Easing.inOut(Easing.sine) })
+        withTiming(1.06, { duration: 1800, easing: Easing.inOut(Easing.sin) }),
+        withTiming(1, { duration: 1800, easing: Easing.inOut(Easing.sin) })
       ),
       -1,
       true

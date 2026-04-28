@@ -20,8 +20,8 @@ function ParticleDot({ x, y, delay }: { x: string; y: string; delay: number }) {
     opacity.value = withRepeat(
       withSequence(
         withTiming(0, { duration: delay }),
-        withTiming(0.4, { duration: 1200, easing: Easing.inOut(Easing.sine) }),
-        withTiming(0, { duration: 1200, easing: Easing.inOut(Easing.sine) })
+        withTiming(0.4, { duration: 1200, easing: Easing.inOut(Easing.sin) }),
+        withTiming(0, { duration: 1200, easing: Easing.inOut(Easing.sin) })
       ),
       -1,
       false
@@ -29,8 +29,8 @@ function ParticleDot({ x, y, delay }: { x: string; y: string; delay: number }) {
     translateY.value = withRepeat(
       withSequence(
         withTiming(0, { duration: delay }),
-        withTiming(-12, { duration: 2400, easing: Easing.inOut(Easing.sine) }),
-        withTiming(0, { duration: 2400, easing: Easing.inOut(Easing.sine) })
+        withTiming(-12, { duration: 2400, easing: Easing.inOut(Easing.sin) }),
+        withTiming(0, { duration: 2400, easing: Easing.inOut(Easing.sin) })
       ),
       -1,
       false
@@ -46,7 +46,7 @@ function ParticleDot({ x, y, delay }: { x: string; y: string; delay: number }) {
     <Animated.View
       style={[
         styles.particle,
-        { left: x, top: y },
+        { left: x, top: y } as any,
         style,
       ]}
     />

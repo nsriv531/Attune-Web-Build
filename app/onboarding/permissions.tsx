@@ -46,7 +46,6 @@ function PermissionRow({
 
 export default function PermissionsScreen() {
   const router = useRouter();
-  const { setNotificationsGranted } = useOnboardingStore();
   const [notifGranted, setNotifGranted] = useState(false);
   const [screenTimeGranted, setScreenTimeGranted] = useState(false);
 
@@ -66,7 +65,6 @@ export default function PermissionsScreen() {
   async function handleAllowNotifications() {
     // In production: call expo-notifications requestPermissionsAsync()
     setNotifGranted(true);
-    setNotificationsGranted(true);
   }
 
   function handleAllowScreenTime() {

@@ -9,6 +9,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { Colors } from '@/constants/theme';
 
 export type SageState = 'idle' | 'watching' | 'nudge' | 'alert' | 'celebrate';
 export type SageForm = 'orb' | 'crystal' | 'flame' | 'constellation';
