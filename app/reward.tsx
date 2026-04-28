@@ -142,7 +142,7 @@ export default function RewardScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       {/* Glow bg element */}
-      <View style={styles.glow} pointerEvents="none" />
+      <View style={[styles.glow, { pointerEvents: 'none' }]} />
 
       <ScrollView
         contentContainerStyle={styles.content}

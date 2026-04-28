@@ -71,7 +71,7 @@ export function TimerRing({ secondsRemaining, totalSeconds }: TimerRingProps) {
           strokeDasharray={RING_CIRCUMFERENCE}
           animatedProps={animatedProps}
           rotation={-90}
-          origin={`${RING_SIZE / 2}, ${RING_SIZE / 2}`}
+          transformOrigin={`${RING_SIZE / 2}px ${RING_SIZE / 2}px`}
         />
         {/* Inner fill to hide track behind centre */}
         <Circle
@@ -83,7 +83,7 @@ export function TimerRing({ secondsRemaining, totalSeconds }: TimerRingProps) {
       </Svg>
 
       {/* Time display — floats over the SVG */}
-      <View style={styles.timeOverlay} pointerEvents="none">
+      <View style={[styles.timeOverlay, { pointerEvents: 'none' }]}>
         <Text style={styles.timeNum}>{timeString}</Text>
         <Text style={styles.timeLbl}>remaining</Text>
       </View>

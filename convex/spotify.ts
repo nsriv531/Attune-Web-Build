@@ -102,3 +102,14 @@ export const getValidToken = action({
     return data.access_token;
   },
 });
+
+export const proxyTracks = action({
+  args: { categoryId: v.string(), limit: v.number() },
+  handler: async (ctx, args) => {
+    const response = await fetch(
+      `https://api.freetouse.com/v3/music/categories/${args.categoryId}/tracks?limit=${args.limit}&offset=0&order=random`
+    );
+    const json = await response.json();
+    return json;
+  },
+});

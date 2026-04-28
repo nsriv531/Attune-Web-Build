@@ -1,3 +1,5 @@
+import { api } from '../convex/_generated/api';
+
 export interface FreeToUseTrack {
   id: string;
   title: string;
@@ -11,15 +13,12 @@ const CATEGORY_MAP: Record<string, string> = {
   'white-noise': 'b5bc7541-bdc2-d42a-3986-572fddd29753', // Ambient
 };
 
-export async function fetchTracksByCategory(categoryKey: string, limit = 10): Promise<FreeToUseTrack[]> {
+export async function fetchTracksByCategory(convex: any, categoryKey: string, limit = 10): Promise<FreeToUseTrack[]> {
   const categoryId = CATEGORY_MAP[categoryKey];
   if (!categoryId) return [];
 
   try {
-    const response = await fetch(
-      `https://api.freetouse.com/v3/music/categories/${categoryId}/tracks?limit=${limit}&offset=0&order=random`
-    );
-    const json = await response.json();
+    const json = await convex.action(api.spotify.proxyTracks, { categoryId, limit });
 
     if (!json.ok) return [];
 
@@ -30,7 +29,7 @@ export async function fetchTracksByCategory(categoryKey: string, limit = 10): Pr
       url: track.files.mp3,
     }));
   } catch (error) {
-    console.error('Error fetching tracks from FreeToUse:', error);
+    console.error('Error fetching tracks via Convex proxy:', error);
     return [];
   }
 }

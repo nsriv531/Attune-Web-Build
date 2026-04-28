@@ -13,19 +13,14 @@ interface MediaPlayerProps {
   loading?: boolean;
 }
 
-export function MediaPlayer({ player, track, onNext, onPrev, loading }: MediaPlayerProps) {
+/**
+ * Presenter component that safely uses the audio status hook
+ */
+function MediaPlayerContent({ player, track, onNext, onPrev }: { player: any, track: FreeToUseTrack, onNext: () => void, onPrev: () => void }) {
+  // Safe hook call
   const status = useAudioPlayerStatus(player);
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator color={Colors.purple} />
-        <Text style={styles.loadingText}>Fetching ritual sounds...</Text>
-      </View>
-    );
-  }
-
-  if (!player || !track) return null;
+  if (!player || typeof player.pause !== 'function') return null;
 
   const togglePlay = () => {
     if (status.playing) {
@@ -69,6 +64,23 @@ export function MediaPlayer({ player, track, onNext, onPrev, loading }: MediaPla
       </View>
     </View>
   );
+}
+
+export function MediaPlayer({ player, track, onNext, onPrev, loading }: MediaPlayerProps) {
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator color={Colors.purple} size="small" />
+        <Text style={styles.loadingText}>Fetching ritual sounds...</Text>
+      </View>
+    );
+  }
+
+  if (!player || !track) {
+    return null;
+  }
+
+  return <MediaPlayerContent player={player} track={track} onNext={onNext} onPrev={onPrev} />;
 }
 
 const styles = StyleSheet.create({
