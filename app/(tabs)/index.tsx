@@ -1,5 +1,5 @@
 // app/(tabs)/index.tsx  — Setup / Cue screen
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,16 +8,24 @@ import {
   Pressable,
   SafeAreaView,
 } from 'react-native';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withTiming, 
+  Easing 
+} from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useUserStore } from '@/stores/userStore';
+import { useRitualAudio } from '@/hooks/useAudioPlayer';
 import type { SessionDuration, RitualSound } from '@/types';
 
 const DURATIONS: SessionDuration[] = [25, 45, 60, 90];
 const SOUNDS: { key: RitualSound; label: string }[] = [
-  { key: 'lofi-rain',   label: 'Lo-fi rain' },
+  { key: 'lofi',        label: 'Lo-fi' },
+  { key: 'rain',        label: 'Rain' },
   { key: 'forest',      label: 'Forest' },
   { key: 'white-noise', label: 'White noise' },
   { key: 'silence',     label: 'Silence' },
@@ -35,6 +43,28 @@ export default function SetupScreen() {
   const { name, streakDays, suggestion } = useUserStore();
   const { subject, durationMinutes, ritualSound, setSubject, setDuration, setRitualSound, startSession } =
     useSessionStore();
+
+  // Enable preview audio
+  const { previewTimerActive } = useRitualAudio(true);
+
+  // Animation for preview progress
+  const previewProgress = useSharedValue(0);
+
+  useEffect(() => {
+    if (previewTimerActive) {
+      previewProgress.value = 0;
+      previewProgress.value = withTiming(1, { 
+        duration: 15000, 
+        easing: Easing.linear 
+      });
+    } else {
+      previewProgress.value = 0;
+    }
+  }, [previewTimerActive]);
+
+  const animatedProgressStyle = useAnimatedStyle(() => ({
+    width: `${(1 - previewProgress.value) * 100}%`,
+  }));
 
   const [showSubjectPicker, setShowSubjectPicker] = useState(false);
 
@@ -149,6 +179,17 @@ export default function SetupScreen() {
             </Pressable>
           ))}
         </View>
+
+        {/* ── Preview Indicator ── */}
+        {ritualSound !== 'silence' && previewTimerActive && (
+          <View style={styles.previewCard}>
+            <View style={styles.previewDot} />
+            <Text style={styles.previewText}>
+              Previewing {SOUNDS.find(s => s.key === ritualSound)?.label}...
+            </Text>
+            <Animated.View style={[styles.previewProgressBar, animatedProgressStyle]} />
+          </View>
+        )}
 
         <View style={styles.spacer} />
 
@@ -344,9 +385,42 @@ const styles = StyleSheet.create({
     fontSize: Typography.size.sm,
     color: Colors.textTertiary,
   },
-  soundTextSel: { color: Colors.textPrimary },
+  soundTextSel: { color: Colors.purple },
+
+  previewCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: 'rgba(167,139,250,0.08)',
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 10,
+    marginTop: -Spacing.xs,
+  },
+  previewDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.purple,
+  },
+  previewText: {
+    fontFamily: Typography.fontMono,
+    fontSize: 11,
+    color: Colors.purple,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  previewProgressBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    height: 2,
+    backgroundColor: Colors.purple,
+    borderRadius: Radius.full,
+  },
 
   spacer: { flex: 1, minHeight: Spacing.xl },
+
 
   startBtn: {
     backgroundColor: Colors.purple,
