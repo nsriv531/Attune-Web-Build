@@ -8,7 +8,10 @@
  * @module
  */
 
-import type * as tasks from "../tasks.js";
+import type * as recommendations from "../recommendations.js";
+import type * as sessions from "../sessions.js";
+import type * as spotify from "../spotify.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -17,7 +20,10 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  tasks: typeof tasks;
+  recommendations: typeof recommendations;
+  sessions: typeof sessions;
+  spotify: typeof spotify;
+  users: typeof users;
 }>;
 
 /**

@@ -9,9 +9,10 @@ import { StyleSheet } from 'react-native';
 
 // Clerk & Convex
 import * as SecureStore from 'expo-secure-store';
-import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
+import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-expo';
 import { ConvexProviderWithClerk } from 'convex/react-clerk';
-import { ConvexReactClient } from 'convex/react';
+import { ConvexReactClient, useMutation } from 'convex/react';
+import { api } from '../convex/_generated/api';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -51,6 +52,22 @@ const tokenCache = {
 /* =========================
    3. INITIAL LAYOUT (AUTH LOGIC)
 ========================= */
+function AuthSync() {
+  const { isSignedIn, user } = useUser();
+  const storeUser = useMutation(api.users.store);
+
+  useEffect(() => {
+    if (isSignedIn && user) {
+      storeUser({
+        name: user.fullName || user.username || 'User',
+        email: user.primaryEmailAddress?.emailAddress,
+      });
+    }
+  }, [isSignedIn, user, storeUser]);
+
+  return null;
+}
+
 function InitialLayout() {
   const { isLoaded, isSignedIn } = useAuth();
   const segments = useSegments();
@@ -72,18 +89,21 @@ function InitialLayout() {
   }, [isSignedIn, isLoaded, segments]);
 
   return (
-    <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
-      <Stack.Screen name="sign-in" />
-      <Stack.Screen name="sign-up" />
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen
-        name="reward"
-        options={{
-          presentation: 'fullScreenModal',
-          animation: 'slide_from_bottom',
-        }}
-      />
-    </Stack>
+    <>
+      <AuthSync />
+      <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
+        <Stack.Screen name="sign-in" />
+        <Stack.Screen name="sign-up" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="reward"
+          options={{
+            presentation: 'fullScreenModal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+      </Stack>
+    </>
   );
 }
 
