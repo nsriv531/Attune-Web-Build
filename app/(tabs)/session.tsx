@@ -15,9 +15,11 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useUserStore } from '@/stores/userStore';
 import { useTimer } from '@/hooks/useTimer';
+import { useRitualAudio } from '@/hooks/useAudioPlayer';
 import { TimerRing } from '@/components/TimerRing';
 import { SageOverlay } from '@/components/SageOverlay';
 import { StatCard } from '@/components/StatCard';
+import { MediaPlayer } from '@/components/MediaPlayer';
 
 export default function SessionScreen() {
   const C = useThemeColors();
@@ -29,6 +31,7 @@ export default function SessionScreen() {
     secondsRemaining,
     sageState,
     sageMessage,
+    ritualSound,
     endSession,
     clearDistraction,
     startSession,
@@ -37,7 +40,11 @@ export default function SessionScreen() {
   const { streakDays, totalXp, totalSessions } = useUserStore();
 
   useTimer();
+  
+  // Handle Ritual Audio
+  const { player, currentTrack, nextTrack, prevTrack, loading } = useRitualAudio();
 
+  // If user lands here without an active session (e.g. deep link), redirect to setup
   useEffect(() => {
     if (!isActive) {
       const t = setTimeout(() => router.replace('/(tabs)'), 100);
@@ -92,6 +99,16 @@ export default function SessionScreen() {
           </Text>
         </View>
 
+        {/* ── Audio Controls ── */}
+        <MediaPlayer
+          player={player}
+          track={currentTrack}
+          onNext={nextTrack}
+          onPrev={prevTrack}
+          loading={loading}
+        />
+
+        {/* ── Sage overlay ── */}
         <SageOverlay
           sageState={sageState}
           message={sageMessage}
@@ -149,6 +166,22 @@ const styles = StyleSheet.create({
     fontSize: Typography.size.sm,
     fontWeight: Typography.weight.medium,
   },
+
+  audioBadge: {
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 4,
+    borderRadius: Radius.full,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+  },
+  audioText: {
+    fontFamily: Typography.fontMono,
+    fontSize: 10,
+    color: Colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+
   statsRow: {
     flexDirection: 'row',
     gap: Spacing.sm,

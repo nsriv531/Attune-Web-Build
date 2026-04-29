@@ -38,6 +38,7 @@
       "expo-router",
       "expo-font",
       "expo-audio",
+      "expo-secure-store",
       "expo-web-browser"
     ],
     "scheme": "studyloop",

@@ -8,13 +8,23 @@
  * @module
  */
 
+import type * as recommendations from "../recommendations.js";
+import type * as sessions from "../sessions.js";
+import type * as spotify from "../spotify.js";
+import type * as users from "../users.js";
+
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
 } from "convex/server";
 
-declare const fullApi: ApiFromModules<{}>;
+declare const fullApi: ApiFromModules<{
+  recommendations: typeof recommendations;
+  sessions: typeof sessions;
+  spotify: typeof spotify;
+  users: typeof users;
+}>;
 
 /**
  * A utility for referencing Convex functions in your app's public API.

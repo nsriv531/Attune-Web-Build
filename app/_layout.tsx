@@ -1,4 +1,3 @@
-// app/_layout.tsx
 import { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -7,40 +6,117 @@ import * as SplashScreen from 'expo-splash-screen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ONBOARDING_STORAGE_KEY } from '@/stores/onboardingStore';
+
+// Clerk & Convex
+import * as SecureStore from 'expo-secure-store';
+import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-expo';
+import { ConvexProviderWithClerk } from 'convex/react-clerk';
+import { ConvexReactClient, useMutation } from 'convex/react';
+import { api } from '../convex/_generated/api';
 
 SplashScreen.preventAutoHideAsync();
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: { staleTime: 1000 * 60 * 5 },
-  },
-});
+/* =========================
+   1. ENV VALIDATION
+========================= */
+const CONVEX_URL = process.env.EXPO_PUBLIC_CONVEX_URL;
+const CLERK_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
-function NavigationGuard() {
-  const router = useRouter();
-  const segments = useSegments();
+if (!CONVEX_URL || !CLERK_KEY) {
+  throw new Error('Missing EXPO_PUBLIC_CONVEX_URL or EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in .env');
+}
+
+/* =========================
+   2. CLIENTS & CACHE
+========================= */
+const convex = new ConvexReactClient(CONVEX_URL);
+const queryClient = new QueryClient();
+
+const tokenCache = {
+  async getToken(key: string) {
+    try {
+      return await SecureStore.getItemAsync(key);
+    } catch (err) {
+      return null;
+    }
+  },
+  async saveToken(key: string, value: string) {
+    try {
+      await SecureStore.setItemAsync(key, value);
+    } catch (err) {
+      return; 
+    }
+  },
+};
+
+/* =========================
+   3. INITIAL LAYOUT (AUTH LOGIC)
+========================= */
+function AuthSync() {
+  const { isSignedIn, user } = useUser();
+  const storeUser = useMutation(api.users.store);
 
   useEffect(() => {
-    AsyncStorage.getItem(ONBOARDING_STORAGE_KEY).then((val) => {
-      const inOnboarding = (segments[0] as string) === 'onboarding';
-      if (!val && !inOnboarding) {
-        router.replace('/onboarding' as never);
-      }
-    });
-  }, []);
+    if (isSignedIn && user) {
+      storeUser({
+        name: user.fullName || user.username || 'User',
+        email: user.primaryEmailAddress?.emailAddress,
+      });
+    }
+  }, [isSignedIn, user, storeUser]);
 
   return null;
 }
 
+function InitialLayout() {
+  const { isLoaded, isSignedIn } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    // Check if the user is currently within the auth screens (sign-in/sign-up)
+    const inAuthGroup = segments[0] === 'sign-in' || segments[0] === 'sign-up';
+
+    if (!isSignedIn && !inAuthGroup) {
+      // If NOT logged in and NOT on an auth page, send them to sign-in
+      router.replace('/sign-in');
+    } else if (isSignedIn && inAuthGroup) {
+      // If logged in but trying to access auth pages, send them home
+      router.replace('/(tabs)');
+    }
+  }, [isSignedIn, isLoaded, segments]);
+
+  return (
+    <>
+      <AuthSync />
+      <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
+        <Stack.Screen name="sign-in" />
+        <Stack.Screen name="sign-up" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="reward"
+          options={{
+            presentation: 'fullScreenModal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+      </Stack>
+    </>
+  );
+}
+
+/* =========================
+   4. ROOT LAYOUT (PROVIDERS)
+========================= */
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    DMSans:            require('../assets/fonts/DMSans-Regular.ttf'),
-    'DMSans-Medium':   require('../assets/fonts/DMSans-Medium.ttf'),
+    DMSans: require('../assets/fonts/DMSans-Regular.ttf'),
+    'DMSans-Medium': require('../assets/fonts/DMSans-Medium.ttf'),
     'DMSans-SemiBold': require('../assets/fonts/DMSans-SemiBold.ttf'),
-    DMMono:            require('../assets/fonts/DMMono-Regular.ttf'),
-    'DMMono-Medium':   require('../assets/fonts/DMMono-Medium.ttf'),
+    DMMono: require('../assets/fonts/DMMono-Regular.ttf'),
+    'DMMono-Medium': require('../assets/fonts/DMMono-Medium.ttf'),
   });
 
   useEffect(() => {
@@ -53,18 +129,14 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={styles.root}>
-      <QueryClientProvider client={queryClient}>
-        <StatusBar style="light" />
-        <NavigationGuard />
-        <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen
-            name="reward"
-            options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
-          />
-          <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
-        </Stack>
-      </QueryClientProvider>
+      <ClerkProvider publishableKey={CLERK_KEY!} tokenCache={tokenCache}>
+        <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+          <QueryClientProvider client={queryClient}>
+            <StatusBar style="light" />
+            <InitialLayout />
+          </QueryClientProvider>
+        </ConvexProviderWithClerk>
+      </ClerkProvider>
     </GestureHandlerRootView>
   );
 }

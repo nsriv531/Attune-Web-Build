@@ -140,8 +140,9 @@ export default function RewardScreen() {
   const newStreak = streakDays + 1;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bgSession }}>
-      <View style={[styles.glow, { backgroundColor: C.purpleDim }]} pointerEvents="none" />
+    <SafeAreaView style={styles.safe}>
+      {/* Glow bg element */}
+      <View style={[styles.glow, { pointerEvents: 'none' }]} />
 
       <ScrollView
         contentContainerStyle={styles.content}

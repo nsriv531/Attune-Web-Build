@@ -96,7 +96,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   subject: 'Biology — Chapter 7',
   subjectId: 'bio-1',
   durationMinutes: 45,
-  ritualSound: 'lofi-rain',
+  ritualSound: 'silence',
 
   isActive: false,
   isPaused: false,

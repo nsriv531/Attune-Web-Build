@@ -7,7 +7,7 @@ export type Subject = {
   sessionCount: number;
 };
 
-export type RitualSound = 'lofi-rain' | 'forest' | 'white-noise' | 'silence';
+export type RitualSound = 'lofi' | 'rain' | 'forest' | 'white-noise' | 'silence';
 
 export type SessionDuration = 25 | 45 | 60 | 90;
 
