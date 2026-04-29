@@ -1,38 +1,38 @@
-// lib/supabase.ts
-import 'react-native-url-polyfill/auto';
-import { createClient } from '@supabase/supabase-js';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
-
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    // AsyncStorage on native; localStorage (default) on web
-    storage: Platform.OS === 'web' ? undefined : AsyncStorage,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-  },
-});
-
-export async function saveSession(session: any) {
-  const { data, error } = await supabase.from('sessions').insert(session).select().single();
-  if (error) throw error;
-  return data;
-}
-
-export async function fetchRecentSessions(userId: string, limit = 30) {
-  const { data, error } = await supabase
-    .from('sessions')
-    .select('*')
-    .eq('user_id', userId)
-    .order('started_at', { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  return data ?? [];
-}
+// // lib/supabase.ts
+// import 'react-native-url-polyfill/auto';
+// import { createClient } from '@supabase/supabase-js';
+// import AsyncStorage from '@react-native-async-storage/async-storage';
+// import { Platform } from 'react-native';
+// 
+// const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
+// const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
+// 
+// export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+//   auth: {
+//     // AsyncStorage on native; localStorage (default) on web
+//     storage: Platform.OS === 'web' ? undefined : AsyncStorage,
+//     autoRefreshToken: true,
+//     persistSession: true,
+//     detectSessionInUrl: false,
+//   },
+// });
+// 
+// export async function saveSession(session: any) {
+//   const { data, error } = await supabase.from('sessions').insert(session).select().single();
+//   if (error) throw error;
+//   return data;
+// }
+// 
+// export async function fetchRecentSessions(userId: string, limit = 30) {
+//   const { data, error } = await supabase
+//     .from('sessions')
+//     .select('*')
+//     .eq('user_id', userId)
+//     .order('started_at', { ascending: false })
+//     .limit(limit);
+//   if (error) throw error;
+//   return data ?? [];
+// }
 
 
 

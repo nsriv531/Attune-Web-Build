@@ -56,8 +56,8 @@ jobs:
       - name: Build preview
         run: eas build --platform all --profile preview --non-interactive
         env:
-          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          # EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          # EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
 
   eas-production:
     name: EAS Production Build
@@ -84,5 +84,5 @@ jobs:
       - name: Build production
         run: eas build --platform all --profile production --non-interactive --auto-submit
         env:
-          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          # EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          # EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
