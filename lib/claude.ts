@@ -1,21 +1,8 @@
-// // lib/claude.ts
-// // Calls your Supabase Edge Function which proxies to the Claude API.
-// // Keep the API key server-side only — never ship it in the app bundle.
-// 
-// import { supabase } from './supabase';
-// import type { Session, SmartSuggestion } from '@/types';
-// 
-// export async function generateSageSuggestion(
-//   sessions: Session[],
-//   userName: string
-// ): Promise<SmartSuggestion> {
-//   const { data, error } = await supabase.functions.invoke('sage-suggestion', {
-//     body: { sessions, userName },
-//   });
-// 
-//   if (error) throw error;
-//   return data as SmartSuggestion;
-// }
+// lib/claude.ts
+// Calls your Supabase Edge Function which proxies to the Claude API.
+// Keep the API key server-side only — never ship it in the app bundle.
+
+import type { Session, SmartSuggestion } from '@/types';
 
 // ─── Prompt template (mirrored in the Edge Function) ─────────────────────────
 // This is the system prompt used server-side. Keep it here as reference.
