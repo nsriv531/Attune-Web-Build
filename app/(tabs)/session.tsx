@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Typography, Spacing, Radius } from '@/constants/theme';
+import { Typography, Spacing, Radius, Colors } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useUserStore } from '@/stores/userStore';
