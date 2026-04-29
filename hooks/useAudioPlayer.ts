@@ -68,6 +68,21 @@ export function useRitualAudio(isPreview = false) {
 
   const currentTrack = ritualSound === 'lofi' ? playlist[currentIndex] : null;
 
+  const nextTrack = () => {
+    if (ritualSound !== 'lofi' || playlist.length === 0) return;
+    setCurrentIndex((prev) => (prev + 1) % playlist.length);
+  };
+
+  const prevTrack = () => {
+    if (ritualSound !== 'lofi' || playlist.length === 0) return;
+    setCurrentIndex((prev) => (prev - 1 + playlist.length) % playlist.length);
+  };
+
+  const nextTrackRef = useRef(nextTrack);
+  useEffect(() => {
+    nextTrackRef.current = nextTrack;
+  }, [nextTrack]);
+
   // Manage player lifecycle
   useEffect(() => {
     let source: any = null;
@@ -87,16 +102,32 @@ export function useRitualAudio(isPreview = false) {
     if (!source) return;
 
     let newPlayer: any = null;
+    let subscription: any = null;
+
     try {
       newPlayer = createAudioPlayer(source);
       // Local sounds loop, Lo-fi tracks go to next
       newPlayer.loop = ritualSound !== 'lofi';
+      
+      if (ritualSound === 'lofi') {
+        subscription = newPlayer.addListener('playbackStatusUpdate', (status: any) => {
+          if (status.didJustFinish) {
+            nextTrackRef.current();
+          }
+        });
+      }
+
       setPlayer(newPlayer);
     } catch (e) {
       console.error("Failed to create audio player", e);
     }
 
     return () => {
+      if (subscription) {
+        try {
+          subscription.remove();
+        } catch (e) {}
+      }
       if (newPlayer) {
         try {
           newPlayer.pause();
@@ -129,16 +160,6 @@ export function useRitualAudio(isPreview = false) {
       console.error("Failed to sync play/pause state", e);
     }
   }, [isActive, isPaused, player, isPreview, previewTimerActive]);
-
-  const nextTrack = () => {
-    if (ritualSound !== 'lofi' || playlist.length === 0) return;
-    setCurrentIndex((prev) => (prev + 1) % playlist.length);
-  };
-
-  const prevTrack = () => {
-    if (ritualSound !== 'lofi' || playlist.length === 0) return;
-    setCurrentIndex((prev) => (prev - 1 + playlist.length) % playlist.length);
-  };
 
   return {
     player,
