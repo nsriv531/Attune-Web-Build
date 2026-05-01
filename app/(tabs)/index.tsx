@@ -23,7 +23,7 @@ import { useUserStore } from '@/stores/userStore';
 import { useRitualAudio } from '@/hooks/useAudioPlayer';
 import type { SessionDuration, RitualSound } from '@/types';
 
-const DURATIONS: SessionDuration[] = [25, 45, 60, 90];
+const DURATIONS: SessionDuration[] = [1, 25, 45, 60, 90];
 const SOUNDS: { key: RitualSound; label: string }[] = [
   { key: 'lofi',        label: 'Lo-fi' },
   { key: 'rain',        label: 'Rain' },

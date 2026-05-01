@@ -9,7 +9,7 @@ export type Subject = {
 
 export type RitualSound = 'lofi' | 'rain' | 'forest' | 'white-noise' | 'silence';
 
-export type SessionDuration = 25 | 45 | 60 | 90;
+export type SessionDuration = 1 | 25 | 45 | 60 | 90;
 
 export type FocusFeeling = 'solid' | 'good' | 'rough';
 

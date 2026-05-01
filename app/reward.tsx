@@ -1,5 +1,5 @@
 // app/reward.tsx  — Full-screen reward + reflection modal
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -24,6 +24,9 @@ import { useUserStore } from '@/stores/userStore';
 import { SageAvatar } from '@/components/SageAvatar';
 import { generateSageSuggestion } from '@/lib/claude';
 import type { FocusFeeling, Session } from '@/types';
+import { useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { useAuth } from '@clerk/clerk-expo';
 
 const FEELINGS: { key: FocusFeeling; label: string }[] = [
   { key: 'solid', label: 'Solid' },
@@ -82,6 +85,11 @@ export default function RewardScreen() {
   const { streakDays, sessions, name, addSession, addXP, incrementStreak, setSuggestion, setLoadingInsights } =
     useUserStore();
 
+  const { isSignedIn } = useAuth();
+  const saveSessionMutation = useMutation(api.sessions.saveSession);
+  const updateSessionFeelingMutation = useMutation(api.sessions.updateSessionFeeling);
+  const [savedSessionId, setSavedSessionId] = useState<string | null>(null);
+
   const sageBounce = useSharedValue(0.5);
   const sageOpacity = useSharedValue(0);
 
@@ -108,7 +116,39 @@ export default function RewardScreen() {
     addXP(xpEarned);
     if (streakDays > 0) incrementStreak();
     fetchSuggestion([newSession, ...sessions]);
+    saveToBackend();
   }, []);
+
+  async function saveToBackend() {
+    if (!isSignedIn) return;
+    
+    const state = useSessionStore.getState();
+    try {
+      const response = await saveSessionMutation({
+        subject: state.subject,
+        subjectId: state.subjectId,
+        plannedDuration: state.durationMinutes,
+        actualDuration: state.secondsElapsed,
+        focusScore: state.focusScore,
+        xpEarned: state.xpEarned,
+        status: 'completed',
+        feeling: state.feeling || undefined,
+        tags: [],
+        note: undefined,
+        startedAt: Date.now() - state.secondsElapsed * 1000,
+        distractions: state.distractionEvents.map((d) => ({
+          type: d.type,
+          durationSeconds: d.durationSeconds,
+          timestamp: d.timestamp,
+        })),
+      });
+      if (response && response.sessionId) {
+        setSavedSessionId(response.sessionId);
+      }
+    } catch (error) {
+      console.error('Failed to save session to Convex', error);
+    }
+  }
 
   async function fetchSuggestion(allSessions: Session[]) {
     try {
@@ -175,6 +215,11 @@ export default function RewardScreen() {
               ]}
               onPress={() => {
                 setFeeling(f.key);
+                if (savedSessionId) {
+                  updateSessionFeelingMutation({ sessionId: savedSessionId as any, feeling: f.key }).catch((e) => 
+                    console.error('Failed to update feeling in Convex', e)
+                  );
+                }
                 Haptics.selectionAsync();
               }}
             >

@@ -20,7 +20,7 @@ SplashScreen.preventAutoHideAsync();
    0. DEV FLAGS
 ========================= */
 // 🛠 DEV ONLY — flip to false (or delete) before shipping
-const BYPASS_AUTH = __DEV__ && true;
+const BYPASS_AUTH = __DEV__ && false;
 
 /* =========================
    1. ENV VALIDATION
