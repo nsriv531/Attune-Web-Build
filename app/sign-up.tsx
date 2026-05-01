@@ -2,10 +2,12 @@ import { useState } from "react";
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { useSignUp } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
+import { useAuthStore } from '@/stores/authStore';
 
 export default function SignUpScreen() {
   const { signUp, setActive, isLoaded } = useSignUp();
   const router = useRouter();
+  const setGuest = useAuthStore((s) => s.setGuest);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

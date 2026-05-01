@@ -6,8 +6,8 @@ import { useSessionStore } from '@/stores/sessionStore';
 import { useRouter } from 'expo-router';
 
 export function useTimer() {
-  const { isActive, isPaused, secondsRemaining, tick, endSession, recordDistraction, clearDistraction } =
-    useSessionStore();
+  const isActive = useSessionStore((s) => s.isActive);
+  const isPaused = useSessionStore((s) => s.isPaused);
   const router = useRouter();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const appStateRef = useRef<AppStateStatus>('active');
@@ -87,5 +87,4 @@ export function useTimer() {
     };
   }, [isActive]);
 
-  return { secondsRemaining };
 }
