@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Attune - Resources Library</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#ffddb4",
+                        "on-surface": "#071e27",
+                        "on-primary-fixed-variant": "#633f00",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed": "#1e1c0e",
+                        "on-surface-variant": "#514536",
+                        "on-tertiary-container": "#465359",
+                        "error": "#ba1a1a",
+                        "secondary-fixed-dim": "#ccc6b1",
+                        "surface-variant": "#cfe6f2",
+                        "on-secondary-fixed-variant": "#4a4737",
+                        "on-secondary-container": "#676351",
+                        "secondary": "#625f4d",
+                        "primary-container": "#ffb74d",
+                        "error-container": "#ffdad6",
+                        "surface-container-highest": "#cfe6f2",
+                        "outline": "#837564",
+                        "tertiary-container": "#b9c7ce",
+                        "surface-container-low": "#e6f6ff",
+                        "background": "#f3faff",
+                        "tertiary-fixed-dim": "#bbc9d0",
+                        "on-secondary": "#ffffff",
+                        "inverse-primary": "#ffb954",
+                        "tertiary-fixed": "#d7e5ec",
+                        "on-primary-fixed": "#291800",
+                        "surface-dim": "#c7dde9",
+                        "primary": "#835500",
+                        "on-primary-container": "#714900",
+                        "on-error-container": "#93000a",
+                        "surface-bright": "#f3faff",
+                        "surface": "#f3faff",
+                        "surface-container": "#dbf1fe",
+                        "outline-variant": "#d6c4b0",
+                        "primary-fixed-dim": "#ffb954",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-background": "#071e27",
+                        "secondary-fixed": "#e9e2cc",
+                        "on-tertiary-fixed-variant": "#3c494f",
+                        "on-tertiary-fixed": "#101d23",
+                        "inverse-surface": "#1e333c",
+                        "secondary-container": "#e6e0c9",
+                        "surface-container-high": "#d5ecf8",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#835500",
+                        "inverse-on-surface": "#dff4ff",
+                        "tertiary": "#536067"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "48px",
+                        "unit": "8px",
+                        "sm": "12px",
+                        "xs": "4px",
+                        "xl": "80px",
+                        "md": "24px",
+                        "margin": "32px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                        "body-md": ["16px", {"lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400"}],
+                        "headline-lg": ["40px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-md": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-md": ["28px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .pebble-shape {
+            border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%;
+        }
+        .pebble-shape-alt {
+            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#FFFBF5] text-on-surface font-body-md min-h-screen pb-32">
+<header class="bg-[#FFFBF5] shadow-[0_4px_20px_-2px_rgba(255,183,77,0.1)] flex justify-between items-center px-6 py-4 w-full sticky top-0 z-40">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A professional portrait of a calm individual with a serene expression, set against a soft-focus background of a sun-drenched minimalist office. The lighting is warm and golden, reflecting the late afternoon sun. The overall aesthetic is clean, peaceful, and high-end, aligning with a restorative focus environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBYrxUIlwObennHMdU6iMleFAl3i-5VNirIBM0-exmdLKZ-MKbI9OgzYwMJbXs4eyu_XrGxLJZgsQvmfw1Z59EVf8ZQyMZkC_ok4WXLh4var2dzck1f6hRzo_S1HKC_eKPRFW2cjy4d65wVZZMRXjEL2WjzYS59FQzAdRW5VR48i4oFK2vL_dqSDTknAh_6UKafSeX8fKpwrH7o88ujZCs4NP0Uzs59ODGBwPiQJkC32-wVrYzZDxZ7OBuFdOT8vAdNqFOEc11NGg"/>
+</div>
+<h1 class="font-['Plus_Jakarta_Sans'] font-extrabold text-2xl text-stone-800 tracking-tighter">Attune</h1>
+</div>
+<button class="text-[#FFB74D] hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-3xl">notifications</span>
+</button>
+</header>
+<main class="px-6 pt-8 max-w-2xl mx-auto">
+<div class="mb-10">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-2">Knowledge Oasis</h2>
+<p class="font-body-md text-on-surface-variant">Curated wisdom for your focused journey.</p>
+</div>
+<div class="relative mb-12 group">
+<div class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-outline">
+<span class="material-symbols-outlined">search</span>
+</div>
+<input class="w-full bg-white/60 border-none rounded-2xl py-5 pl-14 pr-6 font-body-md focus:ring-2 focus:ring-primary-container shadow-sm transition-all group-hover:shadow-md" placeholder="Search resources..." type="text"/>
+</div>
+<section class="mb-14">
+<div class="grid grid-cols-2 gap-6">
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="w-full aspect-square bg-[#FFB74D]/10 pebble-shape flex items-center justify-center mb-3 transition-transform group-hover:scale-105 group-active:scale-95 shadow-sm">
+<span class="material-symbols-outlined text-4xl text-primary">target</span>
+</div>
+<span class="font-label-md text-label-md text-center">Focus &amp; distraction</span>
+</div>
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="w-full aspect-square bg-surface-container pebble-shape-alt flex items-center justify-center mb-3 transition-transform group-hover:scale-105 group-active:scale-95 shadow-sm">
+<span class="material-symbols-outlined text-4xl text-tertiary">psychology</span>
+</div>
+<span class="font-label-md text-label-md text-center">Exam anxiety</span>
+</div>
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="w-full aspect-square bg-error-container/30 pebble-shape-alt flex items-center justify-center mb-3 transition-transform group-hover:scale-105 group-active:scale-95 shadow-sm">
+<span class="material-symbols-outlined text-4xl text-error">mode_heat</span>
+</div>
+<span class="font-label-md text-label-md text-center">Burnout</span>
+</div>
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="w-full aspect-square bg-secondary-container/50 pebble-shape flex items-center justify-center mb-3 transition-transform group-hover:scale-105 group-active:scale-95 shadow-sm">
+<span class="material-symbols-outlined text-4xl text-secondary">bedtime</span>
+</div>
+<span class="font-label-md text-label-md text-center">Sleep</span>
+</div>
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="w-full aspect-square bg-primary-fixed/40 pebble-shape flex items-center justify-center mb-3 transition-transform group-hover:scale-105 group-active:scale-95 shadow-sm">
+<span class="material-symbols-outlined text-4xl text-[#835500]">nutrition</span>
+</div>
+<span class="font-label-md text-label-md text-center">Nutrition</span>
+</div>
+<div class="flex flex-col items-center group cursor-pointer">
+<div class="w-full aspect-square bg-tertiary-fixed pebble-shape-alt flex items-center justify-center mb-3 transition-transform group-hover:scale-105 group-active:scale-95 shadow-sm">
+<span class="material-symbols-outlined text-4xl text-on-tertiary-fixed-variant">self_improvement</span>
+</div>
+<span class="font-label-md text-label-md text-center">Movement</span>
+</div>
+</div>
+</section>
+<section class="mb-10">
+<div class="relative overflow-hidden bg-on-surface text-white rounded-[32px] p-8 shadow-xl">
+<div class="absolute -right-10 -top-10 w-40 h-40 bg-primary-container/20 rounded-full blur-3xl"></div>
+<div class="relative z-10">
+<h3 class="font-headline-md text-xl mb-3">Need immediate support?</h3>
+<p class="font-body-md opacity-80 mb-6 leading-relaxed">If you're feeling overwhelmed right now, our quick-calm toolkit and 24/7 student support lines are here for you.</p>
+<button class="bg-primary-container text-on-primary-container px-6 py-3 rounded-full font-label-md hover:bg-white hover:text-on-surface transition-colors">
+                        Access Crisis Support
+                    </button>
+</div>
+<div class="absolute right-6 bottom-6 opacity-20">
+<span class="material-symbols-outlined text-7xl" data-weight="fill">volunteer_activism</span>
+</div>
+</div>
+</section>
+<section>
+<h4 class="font-label-md text-on-surface-variant mb-6 tracking-widest uppercase">Popular Today</h4>
+<div class="space-y-4">
+<div class="glass-card p-5 rounded-[24px] flex items-center gap-4 hover:bg-white transition-colors cursor-pointer group shadow-sm border border-white/50">
+<div class="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0">
+<img alt="Digital Detox" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="A high-resolution close-up of an open journal on a clean wooden desk, with a soft golden morning light streaming across the pages. Minimalist pens and a small green plant sit nearby, creating a calm, reflective mood. The scene is shot in a warm, low-contrast style with soft shadows, evoking a sense of mental clarity and mindfulness." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCl4J8UpyQvzVBdmEksAgcQiHNdPt3b2ixlZjHh9gRIY4tNAppS0Sr6bKrMAbh5POjry_KOObF-HR4YSxRW1C78IgDwEDN47HOvuJ5653BYvPPYza-PvD3KghmruCoDn-UWZn2h1UWrsNJKfoYz3uC-kEhlfKBjT0FfCB9e2DBkTM_JPzoUHawlKMptTWtCjZs-oMKkYOkvP7oSfLvVVvKnndsI8m_EB51tO1qZwiGHwf64f7b_rrRoqQI8ePuwxSkMX-Qzw21bnQ"/>
+</div>
+<div class="flex-grow">
+<p class="font-label-sm text-primary mb-1">Mindfulness</p>
+<h5 class="font-body-md font-bold leading-snug">The 5-Minute Digital Detox for Deep Focus</h5>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+<div class="glass-card p-5 rounded-[24px] flex items-center gap-4 hover:bg-white transition-colors cursor-pointer group shadow-sm border border-white/50">
+<div class="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0">
+<img alt="Anxiety relief" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="A serene indoor scene featuring a comfortable, minimalist meditation corner with soft textures like linen and wool. A warm, ambient glow from a hidden light source illuminates the space, creating a calm and inviting atmosphere. The color palette consists of soft beiges, warm creams, and subtle amber tones, designed to reduce stress and promote relaxation." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOmPJXYk3vzU2qrZhv9bsZaJL79try7l-DRqimnCjnzxpe1OO4FaVnVJRJplwLhEjtWK8QMxexI25b15cZdROQ8FFyiuasZ_iGd0tkjIC535JHz-bQ5-SSV4a5cysByIILifzUoZqY6dIIYwO-Agw-eqisipByqP3xWwqlshfFWUgC9giseEJZpj2CxjAv8QhvBKWWi1Yu6pzD8LYZ-lbYigg8VHh7HBz7tRHyZ-isxFj7dKGVCvh9bFf-EP_DmUreE3eJX560yQ"/>
+</div>
+<div class="flex-grow">
+<p class="font-label-sm text-primary mb-1">Academic Success</p>
+<h5 class="font-body-md font-bold leading-snug">Managing Pre-Exam Jitters: A Guide</h5>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+</div>
+</section>
+</main>
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-white/80 dark:bg-stone-900/80 backdrop-blur-md shadow-[0_-10px_40px_-10px_rgba(69,90,100,0.08)] rounded-t-[32px]">
+<a class="flex flex-col items-center justify-center text-[#455A64]/60 px-4 py-2 hover:bg-stone-100 transition-colors active:translate-y-0.5 transition-transform" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[11px] font-medium">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#455A64]/60 px-4 py-2 hover:bg-stone-100 transition-colors active:translate-y-0.5 transition-transform" href="#">
+<span class="material-symbols-outlined">timer</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[11px] font-medium">Sessions</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#455A64]/60 px-4 py-2 hover:bg-stone-100 transition-colors active:translate-y-0.5 transition-transform" href="#">
+<span class="material-symbols-outlined">bar_chart</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[11px] font-medium">Progress</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#FFB74D]/10 text-[#FFB74D] rounded-2xl px-4 py-2 active:translate-y-0.5 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">library_books</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[11px] font-medium">Resources</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#455A64]/60 px-4 py-2 hover:bg-stone-100 transition-colors active:translate-y-0.5 transition-transform" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[11px] font-medium">Settings</span>
+</a>
+</nav>
+</body></html>

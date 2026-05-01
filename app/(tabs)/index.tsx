@@ -23,13 +23,23 @@ import TopAppBar from '@/components/TopAppBar';
 import { TimerRing } from '@/components/TimerRing';
 import { useRitualAudio } from '@/hooks/useAudioPlayer';
 import type { RitualSound } from '@/types';
+import { useUser } from '@clerk/clerk-expo';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 
 const DURATIONS: number[] = [15, 18, 25, 45];
 
 export default function HomeScreen() {
   const C = useThemeColors();
   const router = useRouter();
-  const { name, streakDays, sessions } = useUserStore();
+  
+  const { isSignedIn } = useUser();
+  const convexSessions = useQuery(api.sessions.list, isSignedIn ? { limit: 50 } : "skip");
+  const convexStats = useQuery(api.sessions.getStats, isSignedIn ? {} : "skip");
+
+  const { name, streakDays: localStreakDays, sessions: localSessions } = useUserStore();
+  const sessions = isSignedIn ? (convexSessions ?? []) : localSessions;
+  const streakDays = isSignedIn ? (convexStats?.streakDays ?? 0) : localStreakDays;
   const { durationMinutes, setDuration, startSession, ritualSound, setRitualSound } = useSessionStore();
 
   const { previewTimerActive } = useRitualAudio(true); // Enable audio previews on this screen
@@ -64,11 +74,36 @@ export default function HomeScreen() {
       sessionDate.setHours(0, 0, 0, 0);
 
       if (sessionDate.getTime() === today.getTime()) {
-        const minutes = session.durationMinutes || 0;
+        const minutes = ('durationMinutes' in session ? session.durationMinutes : (session as any).plannedDuration) || 0;
         return total + minutes;
       }
       return total;
     }, 0);
+  }, [sessions]);
+
+  // Calculate Weekly Equilibrium Data (Mon-Sun)
+  const weeklyData = React.useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const data = [0, 0, 0, 0, 0, 0, 0];
+    
+    sessions.forEach((session) => {
+      if (!session.startedAt) return;
+      const sDate = new Date(session.startedAt);
+      sDate.setHours(0,0,0,0);
+      
+      const diffTime = today.getTime() - sDate.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays <= 7 && diffDays >= 0) {
+        let idx = sDate.getDay() - 1;
+        if (idx === -1) idx = 6;
+        data[idx] += ('durationMinutes' in session ? session.durationMinutes : (session as any).plannedDuration) || 0;
+      }
+    });
+
+    const max = Math.max(...data, 60); // Base minimum max to prevent empty looking charts
+    return data.map(val => Math.min((val / max) * 100, 100));
   }, [sessions]);
 
   const hour = new Date().getHours();
@@ -338,7 +373,7 @@ export default function HomeScreen() {
 
           {/* Bar Chart */}
           <View style={styles.barChart}>
-            {[40, 60, 45, 85, 30, 50, 20].map((height, idx) => (
+            {weeklyData.map((height, idx) => (
               <Animated.View
                 key={idx}
                 style={[
