@@ -21,17 +21,55 @@ import { useSessionStore } from '@/stores/sessionStore';
 import { useUserStore } from '@/stores/userStore';
 import TopAppBar from '@/components/TopAppBar';
 import { TimerRing } from '@/components/TimerRing';
+import { useRitualAudio } from '@/hooks/useAudioPlayer';
+import type { RitualSound } from '@/types';
 
 const DURATIONS: number[] = [15, 18, 25, 45];
 
 export default function HomeScreen() {
   const C = useThemeColors();
   const router = useRouter();
-  const { name, streakDays } = useUserStore();
-  const { durationMinutes, setDuration, startSession } = useSessionStore();
+  const { name, streakDays, sessions } = useUserStore();
+  const { durationMinutes, setDuration, startSession, ritualSound, setRitualSound } = useSessionStore();
+
+  const { previewTimerActive } = useRitualAudio(true); // Enable audio previews on this screen
+
+  // Animation for audio preview slider
+  const previewProgress = useSharedValue(0);
+  
+  useEffect(() => {
+    if (previewTimerActive) {
+      previewProgress.value = 1;
+      previewProgress.value = withTiming(0, { duration: 15000, easing: Easing.linear });
+    } else {
+      previewProgress.value = 0;
+    }
+  }, [previewTimerActive]);
+
+  const previewBarStyle = useAnimatedStyle(() => ({
+    width: `${previewProgress.value * 100}%`,
+  }));
 
   const [showDurationPicker, setShowDurationPicker] = useState(false);
   const [customDuration, setCustomDuration] = useState('');
+
+  // Calculate today's focused minutes
+  const todayMinutes = React.useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return sessions.reduce((total, session) => {
+      if (!session.startedAt) return total;
+      const sessionDate = new Date(session.startedAt);
+      sessionDate.setHours(0, 0, 0, 0);
+
+      if (sessionDate.getTime() === today.getTime()) {
+        const minutes = session.durationMinutes || 0;
+        return total + minutes;
+      }
+      return total;
+    }, 0);
+  }, [sessions]);
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
@@ -84,17 +122,9 @@ export default function HomeScreen() {
             <TimerRing secondsRemaining={durationMinutes * 60} totalSeconds={durationMinutes * 60} />
           </View>
 
-          {/* Mascot placeholder */}
-          <View
-            style={[
-              styles.mascot,
-              {
-                backgroundColor: `${C.purple}15`,
-                borderColor: C.border,
-              },
-            ]}
-          >
-            <Text style={[styles.mascotEmoji, { color: C.textTertiary }]}>🌱</Text>
+          {/* Mascot */}
+          <View style={styles.mascot}>
+            <Text style={{ fontSize: 60 }}>🌱</Text>
           </View>
 
           {/* Start CTA */}
@@ -102,7 +132,7 @@ export default function HomeScreen() {
             style={[styles.startBtn, { backgroundColor: C.amber }]}
             onPress={handleStart}
           >
-            <Text style={styles.startBtnText}>Start Focus Session</Text>
+            <Text style={[styles.startBtnText, { color: C.textPrimary }]}>Start Focus Session</Text>
           </Pressable>
 
           {/* Duration Pills */}
@@ -113,8 +143,8 @@ export default function HomeScreen() {
                 style={[
                   styles.durationPill,
                   {
-                    backgroundColor: durationMinutes === d ? `${C.purple}15` : C.bgCard,
-                    borderColor: durationMinutes === d ? C.purple : C.border,
+                    backgroundColor: durationMinutes === d ? C.amberDim : '#FFFFFF',
+                    borderColor: durationMinutes === d ? C.amber : C.border,
                   },
                 ]}
                 onPress={() => handleDurationSelect(d)}
@@ -123,8 +153,7 @@ export default function HomeScreen() {
                   style={[
                     styles.durationText,
                     {
-                      color: durationMinutes === d ? C.purple : C.textTertiary,
-                      fontWeight: durationMinutes === d ? '600' : '400',
+                      color: durationMinutes === d ? C.amber : C.textTertiary,
                     },
                   ]}
                 >
@@ -136,14 +165,15 @@ export default function HomeScreen() {
             <Pressable
               style={[
                 styles.durationPill,
+                styles.customPill,
                 {
-                  backgroundColor: C.bgCard,
+                  backgroundColor: '#FFFFFF',
                   borderColor: C.border,
                 },
               ]}
               onPress={() => setShowDurationPicker(!showDurationPicker)}
             >
-              <Text style={[styles.durationText, { color: C.textTertiary }]}>✏ Custom</Text>
+              <Text style={[styles.durationText, { color: C.textSecondary }]}>✎ Custom</Text>
             </Pressable>
           </View>
         </View>
@@ -170,6 +200,56 @@ export default function HomeScreen() {
           </View>
         )}
 
+        {/* ── Sound Selection ── */}
+        <View style={styles.soundSection}>
+          <Text style={[styles.soundSectionTitle, { color: C.textSecondary }]}>Ritual Sound</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.soundScroll}>
+            {(['silence', 'lofi', 'rain', 'forest', 'white-noise'] as RitualSound[]).map((sound) => {
+              const icons: Record<string, string> = {
+                'silence': '🔇',
+                'lofi': '🎧',
+                'rain': '🌧',
+                'forest': '🌲',
+                'white-noise': '📻'
+              };
+              
+              return (
+                <Pressable
+                  key={sound}
+                  style={[
+                    styles.soundPill,
+                    {
+                      backgroundColor: ritualSound === sound ? C.amberDim : '#FFFFFF',
+                      borderColor: ritualSound === sound ? C.amber : C.border,
+                    },
+                  ]}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setRitualSound(sound);
+                  }}
+                >
+                  <Text style={styles.soundIcon}>{icons[sound]}</Text>
+                  <Text
+                    style={[
+                      styles.soundText,
+                      {
+                        color: ritualSound === sound ? C.amber : C.textTertiary,
+                      },
+                    ]}
+                  >
+                    {sound === 'white-noise' ? 'White Noise' : sound.charAt(0).toUpperCase() + sound.slice(1)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+          {previewTimerActive && (
+            <View style={styles.previewBarContainer}>
+              <Animated.View style={[styles.previewBar, { backgroundColor: C.amber }, previewBarStyle]} />
+            </View>
+          )}
+        </View>
+
         {/* ── Stats Grid ── */}
         <View style={styles.statsGrid}>
           <View
@@ -177,15 +257,18 @@ export default function HomeScreen() {
               styles.statsCard,
               {
                 backgroundColor: C.bgCard,
-                borderColor: C.border,
+                borderColor: '#F2EBE5',
               },
             ]}
           >
             <View style={styles.statsCardHeader}>
-              <Text style={[styles.statsLabel, { color: C.textTertiary }]}>TODAY</Text>
+              <Text style={[styles.statsIcon, { color: C.amber }]}>⏱</Text>
+              <Text style={[styles.statsLabel, { color: C.amber }]}>TODAY</Text>
             </View>
-            <Text style={[styles.statsValue, { color: C.textPrimary }]}>45</Text>
-            <Text style={[styles.statsUnit, { color: C.textSecondary }]}>min</Text>
+            <View style={styles.statsValueRow}>
+              <Text style={[styles.statsValue, { color: C.textPrimary }]}>{todayMinutes}</Text>
+              <Text style={[styles.statsUnit, { color: C.textSecondary }]}>min</Text>
+            </View>
             <Text style={[styles.statsCaption, { color: C.textTertiary }]}>Focused time</Text>
           </View>
 
@@ -194,15 +277,18 @@ export default function HomeScreen() {
               styles.statsCard,
               {
                 backgroundColor: C.bgCard,
-                borderColor: C.border,
+                borderColor: '#F2EBE5',
               },
             ]}
           >
             <View style={styles.statsCardHeader}>
-              <Text style={[styles.statsLabel, { color: C.amber }]}>STREAK</Text>
+              <Text style={[styles.statsIcon, { color: '#F97316' }]}>🔥</Text>
+              <Text style={[styles.statsLabel, { color: '#F97316' }]}>STREAK</Text>
             </View>
-            <Text style={[styles.statsValue, { color: C.textPrimary }]}>{streakDays}</Text>
-            <Text style={[styles.statsUnit, { color: C.textSecondary }]}>days</Text>
+            <View style={styles.statsValueRow}>
+              <Text style={[styles.statsValue, { color: C.textPrimary }]}>{streakDays}</Text>
+              <Text style={[styles.statsUnit, { color: C.textSecondary }]}>days</Text>
+            </View>
             <Text style={[styles.statsCaption, { color: C.textTertiary }]}>In flow state</Text>
           </View>
         </View>
@@ -212,12 +298,11 @@ export default function HomeScreen() {
           style={[
             styles.performanceCard,
             {
-              backgroundColor: C.bgGlass,
-              borderColor: `${C.purple}40`,
+              backgroundColor: '#FEF8F2',
             },
           ]}
         >
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={[styles.perfTitle, { color: C.textPrimary }]}>Performance Mode</Text>
             <Text style={[styles.perfSubtitle, { color: C.textSecondary }]}>
               Enhanced focus for critical milestones.
@@ -227,12 +312,12 @@ export default function HomeScreen() {
             style={[
               styles.perfButton,
               {
-                backgroundColor: C.textPrimary,
+                backgroundColor: '#292524',
               },
             ]}
             onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
           >
-            <Text style={{ fontSize: 20 }}>⚡</Text>
+            <Text style={{ fontSize: 18, color: '#fff' }}>⚡</Text>
           </Pressable>
         </View>
 
@@ -266,7 +351,7 @@ export default function HomeScreen() {
                     styles.bar,
                     {
                       height: `${height}%`,
-                      backgroundColor: idx === 3 ? C.purple : C.textHint,
+                      backgroundColor: idx === 3 ? '#FFE0B2' : '#F9F6F4',
                     },
                   ]}
                 />
@@ -282,8 +367,7 @@ export default function HomeScreen() {
                 style={[
                   styles.dayText,
                   {
-                    color: idx === 3 ? C.purple : C.textTertiary,
-                    fontWeight: idx === 3 ? '600' : '400',
+                    color: idx === 3 ? C.amber : C.textTertiary,
                   },
                 ]}
               >
@@ -327,30 +411,36 @@ const styles = StyleSheet.create({
   },
 
   mascot: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 1,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: '#EBE7DD',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Spacing.lg,
-  },
-  mascotEmoji: {
-    fontSize: 48,
+    marginBottom: Spacing.xl,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 5,
   },
 
   startBtn: {
     width: '100%',
-    borderRadius: Radius.xl,
-    paddingVertical: Spacing.lg,
+    borderRadius: 30,
+    paddingVertical: 18,
     alignItems: 'center',
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
+    shadowColor: '#FDBA31',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 4,
   },
   startBtnText: {
     fontFamily: Typography.fontSans,
-    fontSize: Typography.size.base,
-    fontWeight: Typography.weight.semibold,
-    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
   },
 
   durationRow: {
@@ -361,16 +451,20 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   durationPill: {
-    borderRadius: Radius.full,
-    borderWidth: 0.5,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    minWidth: 60,
+    borderRadius: 24,
+    borderWidth: 1,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: 10,
+    minWidth: 54,
     alignItems: 'center',
   },
+  customPill: {
+    paddingHorizontal: Spacing.xl,
+  },
   durationText: {
-    fontFamily: Typography.fontMono,
-    fontSize: Typography.size.sm,
+    fontFamily: Typography.fontSans,
+    fontSize: 15,
+    fontWeight: '500',
   },
 
   customDurationSection: {
@@ -398,48 +492,110 @@ const styles = StyleSheet.create({
     fontWeight: Typography.weight.medium,
   },
 
+  soundSection: {
+    marginBottom: Spacing.xl,
+  },
+  soundSectionTitle: {
+    fontFamily: Typography.fontSans,
+    fontSize: 14,
+    fontWeight: '500',
+    paddingHorizontal: Spacing.xl,
+    marginBottom: Spacing.sm,
+  },
+  soundScroll: {
+    paddingHorizontal: Spacing.xl,
+    gap: Spacing.sm,
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  soundPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 24,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 6,
+  },
+  soundIcon: {
+    fontSize: 14,
+  },
+  soundText: {
+    fontFamily: Typography.fontSans,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  previewBarContainer: {
+    height: 3,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    marginHorizontal: Spacing.xl,
+    marginTop: Spacing.md,
+    borderRadius: Radius.full,
+    overflow: 'hidden',
+  },
+  previewBar: {
+    height: '100%',
+    borderRadius: Radius.full,
+  },
+
   statsGrid: {
     flexDirection: 'row',
-    gap: Spacing.sm,
+    gap: Spacing.md,
     paddingHorizontal: Spacing.xl,
     marginBottom: Spacing.xl,
   },
   statsCard: {
     flex: 1,
-    borderRadius: Radius.lg,
-    borderWidth: 0.5,
-    padding: Spacing.md,
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: Spacing.xl,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
   },
   statsCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: Spacing.sm,
+    gap: 6,
+  },
+  statsIcon: {
+    fontSize: 14,
   },
   statsLabel: {
-    fontFamily: Typography.fontMono,
-    fontSize: Typography.size.xs,
+    fontFamily: Typography.fontSans,
+    fontSize: 12,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
-    fontWeight: Typography.weight.semibold,
+    fontWeight: '600',
+  },
+  statsValueRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
   },
   statsValue: {
-    fontFamily: Typography.fontMono,
-    fontSize: Typography.size.xl,
-    fontWeight: Typography.weight.semibold,
+    fontFamily: Typography.fontSans,
+    fontSize: 28,
+    fontWeight: '600',
   },
   statsUnit: {
-    fontFamily: Typography.fontMono,
-    fontSize: Typography.size.sm,
+    fontFamily: Typography.fontSans,
+    fontSize: 14,
+    fontWeight: '400',
   },
   statsCaption: {
     fontFamily: Typography.fontSans,
-    fontSize: Typography.size.xs,
-    marginTop: Spacing.xs,
+    fontSize: 12,
+    marginTop: 4,
   },
 
   performanceCard: {
     marginHorizontal: Spacing.xl,
-    borderRadius: Radius.lg,
-    borderWidth: 0.5,
-    padding: Spacing.lg,
+    borderRadius: 24,
+    padding: Spacing.xl,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -447,49 +603,63 @@ const styles = StyleSheet.create({
   },
   perfTitle: {
     fontFamily: Typography.fontSans,
-    fontSize: Typography.size.base,
-    fontWeight: Typography.weight.semibold,
-    marginBottom: Spacing.xs,
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 4,
   },
   perfSubtitle: {
     fontFamily: Typography.fontSans,
-    fontSize: Typography.size.sm,
+    fontSize: 14,
+    lineHeight: 20,
+    paddingRight: Spacing.md,
   },
   perfButton: {
-    width: 44,
-    height: 44,
-    borderRadius: Radius.lg,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
 
   chartCard: {
     marginHorizontal: Spacing.xl,
-    borderRadius: Radius.lg,
-    borderWidth: 0.5,
-    padding: Spacing.lg,
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: Spacing.xl,
+    paddingBottom: Spacing.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
   },
   chartHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
   },
   chartTitle: {
     fontFamily: Typography.fontSans,
-    fontSize: Typography.size.base,
-    fontWeight: Typography.weight.semibold,
+    fontSize: 16,
+    fontWeight: '500',
   },
   moreIcon: {
-    fontSize: 20,
+    fontSize: 24,
+    lineHeight: 24,
   },
 
   barChart: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    height: 160,
+    height: 140,
     gap: Spacing.sm,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.lg,
   },
   barContainer: {
     flex: 1,
@@ -498,8 +668,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   bar: {
-    width: '100%',
-    borderRadius: Radius.sm,
+    width: '60%',
+    borderRadius: 16,
   },
 
   daysLabel: {
@@ -508,7 +678,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
   },
   dayText: {
-    fontFamily: Typography.fontMono,
-    fontSize: Typography.size.xs,
+    fontFamily: Typography.fontSans,
+    fontSize: 13,
+    fontWeight: '500',
   },
 });

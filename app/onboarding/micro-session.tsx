@@ -78,8 +78,10 @@ export default function MicroSessionScreen() {
   }, [countdown]);
 
   // On session complete: ring pulse + navigate
+  const doneRef = useRef(false);
   useEffect(() => {
-    if (countdown === 0 && !done) {
+    if (countdown === 0 && !doneRef.current) {
+      doneRef.current = true;
       setDone(true);
       ringPulse.value = withRepeat(
         withSequence(
@@ -96,7 +98,7 @@ export default function MicroSessionScreen() {
 
       return () => clearTimeout(t);
     }
-  }, [countdown, done]);
+  }, [countdown]);
 
   const messageStyle = useAnimatedStyle(() => ({
     opacity: messageOpacity.value,

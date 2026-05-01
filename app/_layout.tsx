@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -7,12 +7,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native';
 
-// Clerk & Convex
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-expo';
 import { ConvexProviderWithClerk } from 'convex/react-clerk';
 import { ConvexReactClient, useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
+import { useOnboardingStore, ONBOARDING_STORAGE_KEY } from '@/stores/onboardingStore';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -88,9 +89,14 @@ function InitialLayout() {
   const segments = useSegments();
   const router = useRouter();
   const isGuest = useAuthStore((s) => s.isGuest);
+  const { hasCompletedOnboarding, checkOnboarding } = useOnboardingStore();
 
   useEffect(() => {
-    if (!isLoaded) return;
+    checkOnboarding();
+  }, [isSignedIn, isGuest]); // re-check on login state changes
+
+  useEffect(() => {
+    if (!isLoaded || hasCompletedOnboarding === null) return;
 
     // 🛠 DEV bypass — skip auth and force-route to tabs
     if (BYPASS_AUTH) {
@@ -101,13 +107,18 @@ function InitialLayout() {
     }
 
     const inAuthGroup = segments[0] === 'sign-in' || segments[0] === 'sign-up';
+    const inOnboardingGroup = segments[0] === 'onboarding';
 
     if (!isSignedIn && !isGuest && !inAuthGroup) {
       router.replace('/sign-in');
-    } else if ((isSignedIn || isGuest) && inAuthGroup) {
-      router.replace('/(tabs)');
+    } else if (isSignedIn || isGuest) {
+      if (!hasCompletedOnboarding && !inOnboardingGroup) {
+        router.replace('/onboarding');
+      } else if (hasCompletedOnboarding && (inAuthGroup || inOnboardingGroup)) {
+        router.replace('/(tabs)');
+      }
     }
-  }, [isSignedIn, isGuest, isLoaded, segments]);
+  }, [isSignedIn, isGuest, isLoaded, segments, hasCompletedOnboarding]);
 
   return (
     <>
@@ -115,6 +126,7 @@ function InitialLayout() {
       <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
         <Stack.Screen name="sign-in" />
         <Stack.Screen name="sign-up" />
+        <Stack.Screen name="onboarding" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
           name="reward"

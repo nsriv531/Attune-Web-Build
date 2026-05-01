@@ -15,6 +15,7 @@ interface OnboardingState {
   distractions: string[];
   goal: GoalType | null;
   sessionDuration: OnboardingDuration;
+  hasCompletedOnboarding: boolean | null;
 
   setSageForm: (f: SageForm) => void;
   setCoachingStyle: (s: CoachingStyle) => void;
@@ -23,7 +24,9 @@ interface OnboardingState {
   setDistractions: (d: string[]) => void;
   setGoal: (g: GoalType) => void;
   setSessionDuration: (d: OnboardingDuration) => void;
+  checkOnboarding: () => Promise<void>;
   completeOnboarding: () => Promise<void>;
+  resetOnboardingFlag: () => void;
 }
 
 export const ONBOARDING_STORAGE_KEY = 'attune_onboarding_v1';
@@ -36,6 +39,7 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
   distractions: [],
   goal: null,
   sessionDuration: 25,
+  hasCompletedOnboarding: null,
 
   setSageForm: (sageForm) => set({ sageForm }),
   setCoachingStyle: (coachingStyle) => set({ coachingStyle }),
@@ -44,7 +48,15 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
   setDistractions: (distractions) => set({ distractions }),
   setGoal: (goal) => set({ goal }),
   setSessionDuration: (sessionDuration) => set({ sessionDuration }),
+  checkOnboarding: async () => {
+    const val = await AsyncStorage.getItem(ONBOARDING_STORAGE_KEY);
+    set({ hasCompletedOnboarding: val === 'true' });
+  },
   completeOnboarding: async () => {
     await AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
+    set({ hasCompletedOnboarding: true });
+  },
+  resetOnboardingFlag: () => {
+    set({ hasCompletedOnboarding: null });
   },
 }));

@@ -156,23 +156,23 @@ export default function SignInScreen() {
           </TouchableOpacity>
           
           <TouchableOpacity onPress={() => router.push("/sign-up")} style={{ marginTop: 20 }}>
-            <Text style={{ color: "#aaa", textAlign: "center" }}>Don't have an account? Sign Up</Text>
+            <Text style={{ color: "#6B5C43", textAlign: "center" }}>Don't have an account? Sign Up</Text>
           </TouchableOpacity>
           
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20 }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: '#333' }} />
+            <View style={{ flex: 1, height: 1, backgroundColor: '#E5D9C5' }} />
             <View>
-              <Text style={{ width: 50, textAlign: 'center', color: '#666' }}>OR</Text>
+              <Text style={{ width: 50, textAlign: 'center', color: '#6B5C43' }}>OR</Text>
             </View>
-            <View style={{ flex: 1, height: 1, backgroundColor: '#333' }} />
+            <View style={{ flex: 1, height: 1, backgroundColor: '#E5D9C5' }} />
           </View>
 
           <TouchableOpacity 
-            style={[styles.button, { backgroundColor: '#333', marginTop: 20 }]} 
+            style={[styles.button, { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#FDBA31', marginTop: 20 }]} 
             onPress={handleGuestLogin}
             disabled={loading}
           >
-            <Text style={styles.buttonText}>Continue as Guest</Text>
+            <Text style={[styles.buttonText, { color: '#FDBA31' }]}>Continue as Guest</Text>
           </TouchableOpacity>
         </>
       ) : (
@@ -209,51 +209,51 @@ export default function SignInScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212",
+    backgroundColor: "#FFF9E6",
     justifyContent: "center",
     padding: 30,
   },
   title: {
-    color: "white",
+    color: "#2D261A",
     fontSize: 28,
     fontWeight: "bold",
     marginBottom: 10,
   },
   infoText: {
-    color: "#ccc",
+    color: "#6B5C43",
     marginBottom: 20,
   },
   errorText: {
-    color: "#ff4444",
+    color: "#EF4444",
     marginBottom: 15,
     fontWeight: "500",
   },
   label: {
-    color: "white",
+    color: "#2D261A",
     marginTop: 15,
     fontSize: 14,
   },
   input: {
-    backgroundColor: "#1e1e1e",
-    color: "white",
+    backgroundColor: "#FFFFFF",
+    color: "#2D261A",
     padding: 15,
     marginTop: 8,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#333",
+    borderColor: "#E5D9C5",
   },
   button: {
-    backgroundColor: "#4F46E5",
+    backgroundColor: "#FDBA31",
     padding: 15,
     borderRadius: 8,
     marginTop: 25,
     alignItems: "center",
   },
   buttonDisabled: {
-    backgroundColor: "#312e81",
+    backgroundColor: "#FCE7AD",
   },
   buttonText: {
-    color: "white",
+    color: "#1A1A1A",
     fontSize: 16,
     fontWeight: "600",
   },

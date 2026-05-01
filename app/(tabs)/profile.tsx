@@ -1,5 +1,6 @@
 // app/(tabs)/profile.tsx
 import React, { useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   Text,
@@ -23,6 +24,7 @@ import { useUserStore } from '@/stores/userStore';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useAvatarCustomizationStore } from '@/stores/avatarCustomizationStore';
+import { useOnboardingStore, ONBOARDING_STORAGE_KEY } from '@/stores/onboardingStore';
 import { SageAvatar } from '@/components/SageAvatar';
 import { AvatarCustomizationShop } from '@/components/AvatarCustomizationShop';
 
@@ -63,7 +65,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { paletteKey, setPalette } = useThemeStore();
   const { name, totalXp, streakDays, totalSessions, sessions, reset: resetUserStore } = useUserStore();
-  const { loadFromStorage, coins } = useAvatarCustomizationStore();
+  const { loadFromStorage, coins, reset: resetCustomization } = useAvatarCustomizationStore();
   const { isGuest, setGuest } = useAuthStore();
   const { signOut, isSignedIn } = useAuth();
   const { user } = useClerk();
@@ -105,8 +107,11 @@ export default function ProfileScreen() {
               useUserStore.persist.clearStorage();
               useSessionStore.persist.clearStorage();
               useAuthStore.persist.clearStorage();
+              await AsyncStorage.removeItem(ONBOARDING_STORAGE_KEY);
               
               resetUserStore();
+              resetCustomization();
+              useOnboardingStore.getState().resetOnboardingFlag();
               setGuest(false);
               
               if (isSignedIn) {

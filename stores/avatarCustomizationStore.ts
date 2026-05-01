@@ -58,6 +58,7 @@ interface AvatarCustomizationState {
   // Persistence
   loadFromStorage: () => Promise<void>;
   saveToStorage: () => Promise<void>;
+  reset: () => void;
 }
 
 export const useAvatarCustomizationStore = create<AvatarCustomizationState>((set, get) => ({
@@ -150,5 +151,14 @@ export const useAvatarCustomizationStore = create<AvatarCustomizationState>((set
     } catch (err) {
       console.error('Failed to save avatar customization:', err);
     }
+  },
+
+  reset: () => {
+    set({
+      coins: 500,
+      ownedItems: [],
+      equippedItems: {},
+    });
+    get().saveToStorage();
   },
 }));
