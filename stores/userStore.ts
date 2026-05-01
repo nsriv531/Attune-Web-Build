@@ -1,5 +1,7 @@
 // stores/userStore.ts
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Session, AIInsight, SmartSuggestion } from '@/types';
 
 const AVATAR_LEVELS = [
@@ -85,44 +87,74 @@ interface UserState {
   getAvatarLevel: () => ReturnType<typeof getAvatarLevel>;
   getXpToNext: () => number | null;
   getHeatmap: () => number[][];
+  reset: () => void;
 }
 
-export const useUserStore = create<UserState>((set, get) => ({
-  userId: null,
-  name: 'Alex',
-  streakDays: 12,
-  totalXp: 340,
-  totalSessions: 47,
-  sessions: [],
-  insights: [],
-  suggestion: null,
-  heatmap: Array.from({ length: 4 }, () => new Array(7).fill(0)),
-  isLoadingInsights: false,
+export const useUserStore = create<UserState>()(
+  persist(
+    (set, get) => ({
+      userId: null,
+      name: 'Guest',
+      streakDays: 0,
+      totalXp: 0,
+      totalSessions: 0,
+      sessions: [],
+      insights: [],
+      suggestion: null,
+      heatmap: Array.from({ length: 4 }, () => new Array(7).fill(0)),
+      isLoadingInsights: false,
 
-  setUser: (userId, name) => set({ userId, name }),
+      setUser: (userId, name) => set({ userId, name }),
 
-  addSession: (session) =>
-    set((s) => {
-      const sessions = [session, ...s.sessions];
-      const heatmap = buildHeatmap(sessions);
-      return {
-        sessions,
-        heatmap,
-        totalSessions: s.totalSessions + 1,
-      };
+      addSession: (session) =>
+        set((s) => {
+          const sessions = [session, ...s.sessions];
+          const heatmap = buildHeatmap(sessions);
+          return {
+            sessions,
+            heatmap,
+            totalSessions: s.totalSessions + 1,
+          };
+        }),
+
+      addXP: (amount) =>
+        set((s) => ({ totalXp: s.totalXp + amount })),
+
+      incrementStreak: () =>
+        set((s) => ({ streakDays: s.streakDays + 1 })),
+
+      setSuggestion: (suggestion) => set({ suggestion }),
+      setInsights: (insights) => set({ insights }),
+      setLoadingInsights: (isLoadingInsights) => set({ isLoadingInsights }),
+
+      getAvatarLevel: () => getAvatarLevel(get().totalXp),
+      getXpToNext: () => xpToNextLevel(get().totalXp),
+      getHeatmap: () => buildHeatmap(get().sessions),
+      
+      reset: () => set({
+        userId: null,
+        name: 'Guest',
+        streakDays: 0,
+        totalXp: 0,
+        totalSessions: 0,
+        sessions: [],
+        insights: [],
+        suggestion: null,
+        heatmap: Array.from({ length: 4 }, () => new Array(7).fill(0)),
+        isLoadingInsights: false,
+      }),
     }),
-
-  addXP: (amount) =>
-    set((s) => ({ totalXp: s.totalXp + amount })),
-
-  incrementStreak: () =>
-    set((s) => ({ streakDays: s.streakDays + 1 })),
-
-  setSuggestion: (suggestion) => set({ suggestion }),
-  setInsights: (insights) => set({ insights }),
-  setLoadingInsights: (isLoadingInsights) => set({ isLoadingInsights }),
-
-  getAvatarLevel: () => getAvatarLevel(get().totalXp),
-  getXpToNext: () => xpToNextLevel(get().totalXp),
-  getHeatmap: () => buildHeatmap(get().sessions),
-}));
+    {
+      name: 'user-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        name: state.name,
+        streakDays: state.streakDays,
+        totalXp: state.totalXp,
+        totalSessions: state.totalSessions,
+        sessions: state.sessions,
+        heatmap: state.heatmap,
+      }), // only save these fields
+    }
+  )
+);

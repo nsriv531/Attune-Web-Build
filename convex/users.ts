@@ -80,3 +80,49 @@ export const updateSpotifyTokens = mutation({
     });
   },
 });
+
+export const deleteAccount = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+
+    if (!user) return; // User already deleted or doesn't exist
+
+    // Delete related sessions
+    const sessions = await ctx.db
+      .query("sessions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    for (const session of sessions) {
+      // Delete distractions related to each session
+      const distractions = await ctx.db
+        .query("distractions")
+        .withIndex("by_session", (q) => q.eq("sessionId", session._id))
+        .collect();
+      for (const d of distractions) {
+        await ctx.db.delete(d._id);
+      }
+      await ctx.db.delete(session._id);
+    }
+
+    // Delete recommendations
+    const recommendations = await ctx.db
+      .query("recommendations")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    
+    for (const rec of recommendations) {
+      await ctx.db.delete(rec._id);
+    }
+
+    // Finally, delete the user
+    await ctx.db.delete(user._id);
+  },
+});

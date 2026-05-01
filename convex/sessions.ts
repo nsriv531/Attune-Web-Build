@@ -99,6 +99,16 @@ export const saveSession = mutation({
   },
 });
 
+export const updateSessionFeeling = mutation({
+  args: {
+    sessionId: v.id("sessions"),
+    feeling: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.sessionId, { feeling: args.feeling });
+  },
+});
+
 export const list = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, args) => {

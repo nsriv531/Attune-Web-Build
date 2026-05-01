@@ -16,13 +16,14 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
+import { Typography, Spacing, Radius, Colors } from '@/constants/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useUserStore } from '@/stores/userStore';
 import { useRitualAudio } from '@/hooks/useAudioPlayer';
 import type { SessionDuration, RitualSound } from '@/types';
 
-const DURATIONS: SessionDuration[] = [25, 45, 60, 90];
+const DURATIONS: SessionDuration[] = [1, 25, 45, 60, 90];
 const SOUNDS: { key: RitualSound; label: string }[] = [
   { key: 'lofi',        label: 'Lo-fi' },
   { key: 'rain',        label: 'Rain' },
@@ -39,6 +40,7 @@ const SUBJECTS = [
 ];
 
 export default function SetupScreen() {
+  const C = useThemeColors();
   const router = useRouter();
   const { name, streakDays, suggestion } = useUserStore();
   const { subject, durationMinutes, ritualSound, setSubject, setDuration, setRitualSound, startSession } =
@@ -78,26 +80,29 @@ export default function SetupScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
+        style={{ flex: 1 }}
+        contentContainerStyle={[styles.content]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
         {/* ── Header ── */}
         <View style={styles.header}>
-          <Text style={styles.greeting}>{greeting}</Text>
-          <Text style={styles.heading}>
-            Ready to{'\n'}study, <Text style={styles.headingAccent}>{name}?</Text>
+          <Text style={[styles.greeting, { color: C.textTertiary }]}>{greeting}</Text>
+          <Text style={[styles.heading, { color: C.textPrimary }]}>
+            Ready to{'\n'}study, <Text style={{ color: C.purple }}>{name}?</Text>
           </Text>
         </View>
 
         {/* ── Sage suggestion pill ── */}
         {suggestion && (
-          <Pressable style={styles.suggestionPill} onPress={() => router.push('/(tabs)/insights')}>
-            <View style={styles.suggestionDot} />
-            <Text style={styles.suggestionText} numberOfLines={1}>
+          <Pressable
+            style={[styles.suggestionPill, { backgroundColor: C.purpleDim, borderColor: C.purpleBorder }]}
+            onPress={() => router.push('/(tabs)/insights')}
+          >
+            <View style={[styles.suggestionDot, { backgroundColor: C.purple }]} />
+            <Text style={[styles.suggestionText, { color: C.purple }]} numberOfLines={1}>
               Sage: {suggestion.message.split('.')[0]}
             </Text>
           </Pressable>
@@ -105,37 +110,39 @@ export default function SetupScreen() {
 
         {/* ── Streak chip ── */}
         <View style={styles.streakRow}>
-          <View style={styles.streakChip}>
-            <Text style={styles.streakNum}>{streakDays}</Text>
-            <Text style={styles.streakLbl}> day streak</Text>
+          <View style={[styles.streakChip, { backgroundColor: C.bgCard, borderColor: C.border }]}>
+            <Text style={[styles.streakNum, { color: C.amber }]}>{streakDays}</Text>
+            <Text style={[styles.streakLbl, { color: C.textTertiary }]}> day streak</Text>
           </View>
         </View>
 
         {/* ── Subject picker ── */}
-        <Text style={styles.sectionLabel}>Subject</Text>
+        <Text style={[styles.sectionLabel, { color: C.textTertiary }]}>Subject</Text>
         <Pressable
-          style={styles.subjectInput}
+          style={[styles.subjectInput, { backgroundColor: C.bgInput, borderColor: C.borderMid }]}
           onPress={() => setShowSubjectPicker((v) => !v)}
         >
-          <Text style={styles.subjectValue}>{subject}</Text>
-          <Text style={styles.chevron}>{showSubjectPicker ? '▲' : '▼'}</Text>
+          <Text style={[styles.subjectValue, { color: C.textPrimary }]}>{subject}</Text>
+          <Text style={[styles.chevron, { color: C.textTertiary }]}>{showSubjectPicker ? '▲' : '▼'}</Text>
         </Pressable>
 
         {showSubjectPicker && (
-          <View style={styles.subjectDropdown}>
+          <View style={[styles.subjectDropdown, { backgroundColor: C.bgCard, borderColor: C.borderMid }]}>
             {SUBJECTS.map((s) => (
               <Pressable
                 key={s.id}
-                style={[styles.subjectOption, s.name === subject && styles.subjectOptionSel]}
+                style={[
+                  styles.subjectOption,
+                  { borderBottomColor: C.border },
+                  s.name === subject && { backgroundColor: C.purpleDim },
+                ]}
                 onPress={() => {
                   setSubject(s.name, s.id);
                   setShowSubjectPicker(false);
                   Haptics.selectionAsync();
                 }}
               >
-                <Text
-                  style={[styles.subjectOptionText, s.name === subject && styles.subjectOptionTextSel]}
-                >
+                <Text style={[styles.subjectOptionText, { color: C.textSecondary }, s.name === subject && { color: C.purple }]}>
                   {s.name}
                 </Text>
               </Pressable>
@@ -144,36 +151,44 @@ export default function SetupScreen() {
         )}
 
         {/* ── Duration ── */}
-        <Text style={styles.sectionLabel}>Session length</Text>
+        <Text style={[styles.sectionLabel, { color: C.textTertiary }]}>Session length</Text>
         <View style={styles.durationRow}>
           {DURATIONS.map((d) => (
             <Pressable
               key={d}
-              style={[styles.durBtn, durationMinutes === d && styles.durBtnSel]}
+              style={[
+                styles.durBtn,
+                { backgroundColor: C.bgInput, borderColor: C.border },
+                durationMinutes === d && { backgroundColor: C.purpleDim, borderColor: C.purpleBorder },
+              ]}
               onPress={() => {
                 setDuration(d);
                 Haptics.selectionAsync();
               }}
             >
-              <Text style={[styles.durNum, durationMinutes === d && styles.durNumSel]}>{d}</Text>
-              <Text style={[styles.durLbl, durationMinutes === d && styles.durLblSel]}>min</Text>
+              <Text style={[styles.durNum, { color: C.textSecondary }, durationMinutes === d && { color: C.purple }]}>{d}</Text>
+              <Text style={[styles.durLbl, { color: C.textHint }, durationMinutes === d && { color: C.purpleDim }]}>min</Text>
             </Pressable>
           ))}
         </View>
 
         {/* ── Ritual sound ── */}
-        <Text style={styles.sectionLabel}>Ritual sound</Text>
+        <Text style={[styles.sectionLabel, { color: C.textTertiary }]}>Ritual sound</Text>
         <View style={styles.soundRow}>
           {SOUNDS.map((s) => (
             <Pressable
               key={s.key}
-              style={[styles.soundBtn, ritualSound === s.key && styles.soundBtnSel]}
+              style={[
+                styles.soundBtn,
+                { backgroundColor: C.bgInput, borderColor: C.border },
+                ritualSound === s.key && { borderColor: C.borderMid },
+              ]}
               onPress={() => {
                 setRitualSound(s.key);
                 Haptics.selectionAsync();
               }}
             >
-              <Text style={[styles.soundText, ritualSound === s.key && styles.soundTextSel]}>
+              <Text style={[styles.soundText, { color: C.textTertiary }, ritualSound === s.key && { color: C.textPrimary }]}>
                 {s.label}
               </Text>
             </Pressable>
@@ -194,7 +209,7 @@ export default function SetupScreen() {
         <View style={styles.spacer} />
 
         {/* ── CTA ── */}
-        <Pressable style={styles.startBtn} onPress={handleStart}>
+        <Pressable style={[styles.startBtn, { backgroundColor: C.purple }]} onPress={handleStart}>
           <Text style={styles.startBtnText}>Start session</Text>
         </Pressable>
       </ScrollView>
@@ -203,15 +218,12 @@ export default function SetupScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
-  scroll: { flex: 1 },
   content: { padding: Spacing.xl, paddingBottom: 40 },
 
   header: { marginBottom: Spacing.lg },
   greeting: {
     fontFamily: Typography.fontMono,
     fontSize: Typography.size.sm,
-    color: Colors.textTertiary,
     letterSpacing: 1,
     textTransform: 'uppercase',
     marginBottom: 4,
@@ -220,18 +232,14 @@ const styles = StyleSheet.create({
     fontFamily: Typography.fontSans,
     fontSize: Typography.size['2xl'],
     fontWeight: Typography.weight.semibold,
-    color: Colors.textPrimary,
     lineHeight: 36,
   },
-  headingAccent: { color: Colors.purple },
 
   suggestionPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: Colors.purpleDim,
     borderWidth: 0.5,
-    borderColor: Colors.purpleBorder,
     borderRadius: Radius.full,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
@@ -242,12 +250,10 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: Colors.purple,
   },
   suggestionText: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.sm,
-    color: Colors.purple,
     fontWeight: Typography.weight.medium,
   },
 
@@ -255,9 +261,7 @@ const styles = StyleSheet.create({
   streakChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.bgCard,
     borderWidth: 0.5,
-    borderColor: Colors.border,
     borderRadius: Radius.full,
     paddingHorizontal: Spacing.md,
     paddingVertical: 6,
@@ -266,19 +270,16 @@ const styles = StyleSheet.create({
   streakNum: {
     fontFamily: Typography.fontMono,
     fontSize: Typography.size.base,
-    color: Colors.amber,
     fontWeight: Typography.weight.medium,
   },
   streakLbl: {
     fontFamily: Typography.fontMono,
     fontSize: Typography.size.sm,
-    color: Colors.textTertiary,
   },
 
   sectionLabel: {
     fontFamily: Typography.fontMono,
     fontSize: Typography.size.xs,
-    color: Colors.textTertiary,
     letterSpacing: 1,
     textTransform: 'uppercase',
     marginBottom: Spacing.sm,
@@ -288,9 +289,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.bgInput,
     borderWidth: 0.5,
-    borderColor: Colors.borderMid,
     borderRadius: Radius.lg,
     paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.md,
@@ -299,16 +298,12 @@ const styles = StyleSheet.create({
   subjectValue: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.md,
-    color: Colors.textPrimary,
   },
   chevron: {
     fontSize: 10,
-    color: Colors.textTertiary,
   },
   subjectDropdown: {
-    backgroundColor: Colors.bgCard,
     borderWidth: 0.5,
-    borderColor: Colors.borderMid,
     borderRadius: Radius.lg,
     marginTop: -Spacing.md,
     marginBottom: Spacing.lg,
@@ -318,15 +313,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.md,
     borderBottomWidth: 0.5,
-    borderBottomColor: Colors.border,
   },
-  subjectOptionSel: { backgroundColor: Colors.purpleDim },
   subjectOptionText: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.base,
-    color: Colors.textSecondary,
   },
-  subjectOptionTextSel: { color: Colors.purple },
 
   durationRow: {
     flexDirection: 'row',
@@ -335,32 +326,22 @@ const styles = StyleSheet.create({
   },
   durBtn: {
     flex: 1,
-    backgroundColor: Colors.bgInput,
     borderWidth: 0.5,
-    borderColor: Colors.border,
     borderRadius: Radius.md,
     paddingVertical: Spacing.md,
     alignItems: 'center',
-  },
-  durBtnSel: {
-    backgroundColor: Colors.purpleDim,
-    borderColor: Colors.purpleBorder,
   },
   durNum: {
     fontFamily: Typography.fontMono,
     fontSize: Typography.size.xl,
     fontWeight: Typography.weight.semibold,
-    color: Colors.textSecondary,
   },
-  durNumSel: { color: Colors.purple },
   durLbl: {
     fontFamily: Typography.fontMono,
     fontSize: Typography.size.xs,
-    color: Colors.textHint,
     textTransform: 'uppercase',
     marginTop: 2,
   },
-  durLblSel: { color: 'rgba(167,139,250,0.6)' },
 
   soundRow: {
     flexDirection: 'row',
@@ -369,21 +350,14 @@ const styles = StyleSheet.create({
     marginBottom: Spacing['2xl'],
   },
   soundBtn: {
-    backgroundColor: Colors.bgInput,
     borderWidth: 0.5,
-    borderColor: Colors.border,
     borderRadius: Radius.md,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
   },
-  soundBtnSel: {
-    backgroundColor: Colors.bgInput,
-    borderColor: Colors.borderMid,
-  },
   soundText: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.sm,
-    color: Colors.textTertiary,
   },
   soundTextSel: { color: Colors.purple },
 
@@ -423,7 +397,6 @@ const styles = StyleSheet.create({
 
 
   startBtn: {
-    backgroundColor: Colors.purple,
     borderRadius: Radius.xl,
     paddingVertical: Spacing.lg,
     alignItems: 'center',

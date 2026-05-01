@@ -2,11 +2,11 @@
 // Single source of truth for all design tokens
 
 export const Colors = {
-  // Backgrounds
-  bg: '#0e0e12',
-  bgCard: '#13131f',
-  bgSession: '#0b0b10',
-  bgInput: 'rgba(255,255,255,0.06)',
+  // Backgrounds — warm plum palette
+  bg: '#140f1a',
+  bgCard: '#1c1525',
+  bgSession: '#100c14',
+  bgInput: 'rgba(255,240,255,0.055)',
 
   // Accent
   purple: '#a78bfa',
@@ -20,6 +20,7 @@ export const Colors = {
   amber: '#fbbf24',
   amberDim: 'rgba(251,191,36,0.14)',
   teal: '#5eead4',
+  red: '#f87171',
 
   // Text
   textPrimary: '#ffffff',
