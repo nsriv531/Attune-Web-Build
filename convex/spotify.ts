@@ -52,7 +52,7 @@ export const exchangeCode = action({
 
 export const getValidToken = action({
   args: {},
-  handler: async (ctx) => {
+  handler: async (ctx): Promise<string | null> => {
     const user = await ctx.runQuery(api.users.currentUser);
     if (!user || !user.spotifyAccessToken || !user.spotifyRefreshToken) {
       return null;

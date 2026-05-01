@@ -77,7 +77,7 @@ export function TimerRing({ secondsRemaining, totalSeconds }: TimerRingProps) {
           strokeDasharray={RING_CIRCUMFERENCE}
           animatedProps={animatedProps}
           rotation={-90}
-          transformOrigin={`${RING_SIZE / 2}px ${RING_SIZE / 2}px`}
+          origin={`${RING_SIZE / 2}, ${RING_SIZE / 2}`}
         />
         <Circle
           cx={RING_SIZE / 2}

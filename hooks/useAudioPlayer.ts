@@ -20,7 +20,7 @@ export function useRitualAudio(isPreview = false) {
   
   // Track if preview should be playing (15s limit)
   const [previewTimerActive, setPreviewActive] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Use a ref to track the last sound to avoid auto-triggering on mount
   const lastSoundRef = useRef<string>(ritualSound);

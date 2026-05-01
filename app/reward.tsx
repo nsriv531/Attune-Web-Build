@@ -22,7 +22,6 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useUserStore } from '@/stores/userStore';
 import { SageAvatar } from '@/components/SageAvatar';
-import { generateSageSuggestion } from '@/lib/claude';
 import type { FocusFeeling, Session } from '@/types';
 import { useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
@@ -95,6 +94,7 @@ export default function RewardScreen() {
   const { isSignedIn } = useAuth();
   const saveSessionMutation = useMutation(api.sessions.saveSession);
   const updateSessionFeelingMutation = useMutation(api.sessions.updateSessionFeeling);
+  const generateForSession = useMutation(api.recommendations.generateForSession);
   const [savedSessionId, setSavedSessionId] = useState<string | null>(null);
 
   const sageBounce = useSharedValue(0.5);
@@ -151,6 +151,7 @@ export default function RewardScreen() {
       });
       if (response && response.sessionId) {
         setSavedSessionId(response.sessionId);
+        await generateForSession({ sessionId: response.sessionId as any });
       }
     } catch (error) {
       console.error('Failed to save session to Convex', error);
@@ -158,10 +159,24 @@ export default function RewardScreen() {
   }
 
   async function fetchSuggestion(allSessions: Session[]) {
+    if (isSignedIn) return;
     try {
       setLoadingInsights(true);
-      const suggestion = await generateSageSuggestion(allSessions.slice(0, 30), name);
-      setSuggestion(suggestion);
+      const session = allSessions[0];
+      if (!session) return;
+      
+      let message = "Keep up the great work!";
+      let pills: { label: string }[] = [];
+
+      if (session.focusScore < 70) {
+        message = "Tough session. Try defining a very small first step next time to build momentum.";
+        pills = [{ label: "Try · Smaller steps" }];
+      } else if (session.focusScore > 90) {
+        message = "Peak flow! This subject and duration are a great match for you.";
+        pills = [{ label: `Peak · ${session.durationMinutes}min` }];
+      }
+
+      setSuggestion({ message, pills });
     } catch (e) {
       // Fail silently
     } finally {
@@ -187,7 +202,7 @@ export default function RewardScreen() {
   const newStreak = streakDays + 1;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
       {/* Glow bg element */}
       <View style={[styles.glow, { pointerEvents: 'none' }]} />
 

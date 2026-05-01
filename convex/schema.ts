@@ -47,5 +47,6 @@ export default defineSchema({
     message: v.string(),
     type: v.string(), // "habit", "encouragement", "streak-alert"
     isRead: v.boolean(),
+    pills: v.optional(v.array(v.object({ label: v.string() }))),
   }).index("by_user", ["userId"]),
 });

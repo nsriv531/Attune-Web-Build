@@ -35,21 +35,26 @@ export const generateForSession = mutation({
 
     let message = "Keep up the great work!";
     let type = "encouragement";
+    let pills: { label: string }[] = [];
 
     if (session.focusScore < 70) {
       if (session.tags.includes("noise")) {
         message = "It looks like noise is a challenge. Try a different floor or noise-cancelling headphones next time.";
         type = "habit";
+        pills = [{ label: "Try · Noise cancelling" }];
       } else if (session.tags.includes("tired")) {
         message = "You seem tired. Consider a shorter 25-minute session to keep your focus sharp.";
         type = "habit";
+        pills = [{ label: "Try · 25min session" }];
       } else {
         message = "Tough session. Try defining a very small first step next time to build momentum.";
         type = "habit";
+        pills = [{ label: "Try · Smaller steps" }];
       }
     } else if (session.focusScore > 90) {
       message = "Peak flow! This subject and duration are a great match for you.";
       type = "encouragement";
+      pills = [{ label: `Peak · ${session.plannedDuration}min` }];
     }
 
     await ctx.db.insert("recommendations", {
@@ -57,6 +62,7 @@ export const generateForSession = mutation({
       message,
       type,
       isRead: false,
+      pills,
     });
 
     return message;
