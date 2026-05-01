@@ -163,7 +163,7 @@ export function useRitualAudio(isPreview = false) {
 
   return {
     player,
-    currentTrack: ritualSound === 'lofi' ? currentTrack : { title: ritualSound, artist: 'Ritual Sound' },
+    currentTrack: ritualSound === 'lofi' ? currentTrack : { id: 'local', url: '', title: ritualSound, artist: 'Ritual Sound' },
     nextTrack,
     prevTrack,
     loading,

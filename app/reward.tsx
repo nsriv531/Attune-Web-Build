@@ -85,6 +85,13 @@ export default function RewardScreen() {
   const { streakDays, sessions, name, addSession, addXP, incrementStreak, setSuggestion, setLoadingInsights } =
     useUserStore();
 
+  const distractionEvents = useSessionStore.getState().distractionEvents;
+  const distractionCount = distractionEvents.length;
+  const distractionDuration = distractionEvents.reduce((acc, curr) => acc + curr.durationSeconds, 0);
+  const distMin = Math.floor(distractionDuration / 60);
+  const distSec = distractionDuration % 60;
+  const distString = distMin > 0 ? `${distMin}m ${distSec}s` : `${distSec}s`;
+
   const { isSignedIn } = useAuth();
   const saveSessionMutation = useMutation(api.sessions.saveSession);
   const updateSessionFeelingMutation = useMutation(api.sessions.updateSessionFeeling);
@@ -197,6 +204,14 @@ export default function RewardScreen() {
           {durationMinutes} min · {subject}
         </Text>
 
+        {distractionCount > 0 && (
+          <View style={[styles.distractionBadge, { backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: C.red }]}>
+            <Text style={[styles.distractionText, { color: C.red }]}>
+              Distracted {distractionCount} {distractionCount === 1 ? 'time' : 'times'} for {distString}
+            </Text>
+          </View>
+        )}
+
         <View style={styles.xpRow}>
           <XPCard value={focusScore} label="Focus" color={C.green} delay={100} bgCard={C.bgCard} border={C.border} />
           <XPCard value={`+${xpEarned}`} label="XP" color={C.purple} delay={220} bgCard={C.bgCard} border={C.border} />
@@ -283,6 +298,20 @@ const styles = StyleSheet.create({
     fontFamily: Typography.fontMono,
     fontSize: Typography.size.sm,
     marginBottom: Spacing.sm,
+  },
+  
+  distractionBadge: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.full,
+    borderWidth: 0.5,
+    marginBottom: Spacing.sm,
+  },
+  distractionText: {
+    fontFamily: Typography.fontMono,
+    fontSize: Typography.size.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 
   xpRow: {

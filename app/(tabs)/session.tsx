@@ -14,7 +14,6 @@ import { Typography, Spacing, Radius, Colors } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useUserStore } from '@/stores/userStore';
-import { useTimer } from '@/hooks/useTimer';
 import { useRitualAudio } from '@/hooks/useAudioPlayer';
 import { TimerRing } from '@/components/TimerRing';
 import { SageOverlay } from '@/components/SageOverlay';
@@ -38,19 +37,9 @@ export default function SessionScreen() {
   } = useSessionStore();
 
   const { streakDays, totalXp, totalSessions } = useUserStore();
-
-  useTimer();
   
   // Handle Ritual Audio
   const { player, currentTrack, nextTrack, prevTrack, loading } = useRitualAudio();
-
-  // If user lands here without an active session (e.g. deep link), redirect to setup
-  useEffect(() => {
-    if (!isActive) {
-      const t = setTimeout(() => router.replace('/(tabs)'), 100);
-      return () => clearTimeout(t);
-    }
-  }, [isActive]);
 
   function handleEndEarly() {
     Alert.alert(

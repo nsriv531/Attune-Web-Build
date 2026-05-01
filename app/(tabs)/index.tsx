@@ -76,7 +76,7 @@ export default function SetupScreen() {
   function handleStart() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     startSession();
-    router.push('/(tabs)/session');
+    router.navigate('/(tabs)/session');
   }
 
   return (

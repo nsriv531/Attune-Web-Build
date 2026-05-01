@@ -62,6 +62,7 @@ interface SessionState {
   setRitualSound: (sound: RitualSound) => void;
   startSession: () => void;
   tick: () => void;
+  fastForward: (seconds: number) => void;
   pause: () => void;
   resume: () => void;
   recordDistraction: (event: DistractionEvent) => void;
@@ -150,6 +151,21 @@ export const useSessionStore = create<SessionState>()(
 
           return {
             secondsRemaining: Math.max(0, secondsRemaining),
+            secondsElapsed,
+            sageMessage: shouldRefreshMsg ? pickMessage('watching') : s.sageMessage,
+          };
+        }),
+
+      fastForward: (seconds: number) =>
+        set((s) => {
+          if (!s.isActive || s.isPaused) return s;
+          const secondsRemaining = Math.max(0, s.secondsRemaining - seconds);
+          const secondsElapsed = s.secondsElapsed + seconds;
+
+          const shouldRefreshMsg = Math.floor(secondsElapsed / 300) > Math.floor(s.secondsElapsed / 300);
+
+          return {
+            secondsRemaining,
             secondsElapsed,
             sageMessage: shouldRefreshMsg ? pickMessage('watching') : s.sageMessage,
           };
