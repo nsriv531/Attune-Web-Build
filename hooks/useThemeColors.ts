@@ -10,13 +10,5 @@ export function useThemeColors(): ThemeColors {
   const override = PALETTES[paletteKey];
   return {
     ...Colors,
-    bg: override.bg,
-    bgCard: override.bgCard,
-    bgSession: override.bgSession,
-    bgInput: override.bgInput,
-    purple: override.purple,
-    purpleDim: override.purpleDim,
-    purpleBorder: override.purpleBorder,
-    purpleMid: override.purpleMid,
   } as ThemeColors;
 }

@@ -103,6 +103,7 @@ export const useSessionStore = create<SessionState>()(
       subjectId: 'bio-1',
       durationMinutes: 45,
       ritualSound: 'silence',
+      setupComplete: false,
 
       isActive: false,
       isPaused: false,

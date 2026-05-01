@@ -8,11 +8,11 @@ import Animated, {
   Easing,
   interpolateColor,
 } from 'react-native-reanimated';
-import Svg, { Circle } from 'react-native-svg';
-import { Typography, RING_RADIUS, RING_CIRCUMFERENCE, RING_SIZE } from '@/constants/theme';
+import Svg, { Path } from 'react-native-svg';
+import { Typography, RING_RADIUS, RING_SIZE } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 interface TimerRingProps {
   secondsRemaining: number;
@@ -28,28 +28,43 @@ function formatTime(seconds: number): string {
 export function TimerRing({ secondsRemaining, totalSeconds }: TimerRingProps) {
   const C = useThemeColors();
   const progress = useSharedValue(1);
-  const accentColor = useSharedValue(C.purple);
 
-  useEffect(() => {
-    accentColor.value = C.purple;
-  }, [C.purple]);
+  // Calculate Arc Path (135 degrees to 45 degrees, clockwise)
+  const cx = RING_SIZE / 2;
+  const cy = RING_SIZE / 2;
+  const r = RING_RADIUS;
+  
+  // Starting at -225 degrees (which is 135) to 45 degrees
+  const startAngle = 135;
+  const endAngle = 45;
+  const startRad = (startAngle * Math.PI) / 180;
+  const endRad = (endAngle * Math.PI) / 180;
+  
+  const startX = cx + r * Math.cos(startRad);
+  const startY = cy + r * Math.sin(startRad);
+  const endX = cx + r * Math.cos(endRad);
+  const endY = cy + r * Math.sin(endRad);
+
+  const d = `M ${startX} ${startY} A ${r} ${r} 0 1 1 ${endX} ${endY}`;
+  const arcLength = (270 / 360) * 2 * Math.PI * r;
 
   useEffect(() => {
     const pct = totalSeconds > 0 ? secondsRemaining / totalSeconds : 1;
     progress.value = withTiming(pct, {
       duration: 900,
-      easing: Easing.linear,
+      easing: Easing.out(Easing.cubic),
     });
   }, [secondsRemaining, totalSeconds]);
 
   const animatedProps = useAnimatedProps(() => {
-    const offset = RING_CIRCUMFERENCE * (1 - progress.value);
+    // Offset from arcLength (empty) to 0 (full)
+    const offset = arcLength * (1 - progress.value);
     return {
       strokeDashoffset: offset,
       stroke: interpolateColor(
         progress.value,
         [0, 0.5, 1],
-        ['#5eead4', accentColor.value, accentColor.value]
+        [C.amber, C.amber, C.amber]
       ),
     };
   });
@@ -59,38 +74,26 @@ export function TimerRing({ secondsRemaining, totalSeconds }: TimerRingProps) {
   return (
     <View style={styles.wrap}>
       <Svg width={RING_SIZE} height={RING_SIZE} viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}>
-        <Circle
-          cx={RING_SIZE / 2}
-          cy={RING_SIZE / 2}
-          r={RING_RADIUS}
+        <Path
+          d={d}
           fill="none"
-          stroke={`${C.textHint}`}
+          stroke="#F5EFE9" // Soft background track
           strokeWidth={8}
+          strokeLinecap="round"
         />
-        <AnimatedCircle
-          cx={RING_SIZE / 2}
-          cy={RING_SIZE / 2}
-          r={RING_RADIUS}
+        <AnimatedPath
+          d={d}
           fill="none"
           strokeWidth={8}
           strokeLinecap="round"
-          strokeDasharray={RING_CIRCUMFERENCE}
+          strokeDasharray={arcLength}
           animatedProps={animatedProps}
-          rotation={-90}
-          transformOrigin={`${RING_SIZE / 2}px ${RING_SIZE / 2}px`}
-        />
-        <Circle
-          cx={RING_SIZE / 2}
-          cy={RING_SIZE / 2}
-          r={RING_RADIUS - 10}
-          fill={C.bgSession}
         />
       </Svg>
 
-      {/* Time display — floats over the SVG */}
       <View style={[styles.timeOverlay, { pointerEvents: 'none' }]}>
-        <Text style={styles.timeNum}>{timeString}</Text>
-        <Text style={styles.timeLbl}>remaining</Text>
+        <Text style={[styles.timeNum, { color: C.textPrimary }]}>{timeString}</Text>
+        <Text style={[styles.timeLbl, { color: C.textTertiary }]}>MINUTES LEFT</Text>
       </View>
     </View>
   );
@@ -101,26 +104,27 @@ const styles = StyleSheet.create({
     width: RING_SIZE,
     height: RING_SIZE,
     position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   timeOverlay: {
     position: 'absolute',
-    inset: 0,
     alignItems: 'center',
     justifyContent: 'center',
+    top: '35%',
   },
   timeNum: {
-    fontFamily: Typography.fontMono,
-    fontSize: Typography.size['4xl'],
-    fontWeight: Typography.weight.light,
-    color: '#ffffff',
+    fontFamily: Typography.fontSans,
+    fontSize: 48,
+    fontWeight: Typography.weight.semibold,
     letterSpacing: -1,
+    marginBottom: 4,
   },
   timeLbl: {
-    fontFamily: Typography.fontMono,
-    fontSize: Typography.size.xs,
-    color: 'rgba(255,255,255,0.28)',
+    fontFamily: Typography.fontSans,
+    fontSize: 10,
+    fontWeight: Typography.weight.medium,
     letterSpacing: 1,
     textTransform: 'uppercase',
-    marginTop: 4,
   },
 });

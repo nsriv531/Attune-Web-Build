@@ -3,37 +3,37 @@
 
 export const Colors = {
   // Backgrounds — Golden Hour light theme
-  bg: '#FFF9F0',
+  bg: '#FFF9E6',
   bgCard: '#FFFFFF',
-  bgSession: '#FFF9F0',
+  bgSession: '#FFF9E6',
   bgInput: 'rgba(131,85,0,0.06)',
 
   // Accent (golden amber — replacing "purple")
-  purple: '#E69B2E',
-  purpleDim: 'rgba(255,183,77,0.18)',
-  purpleBorder: 'rgba(255,183,77,0.4)',
-  purpleMid: '#C4870A',
+  purple: '#FDBA31',
+  purpleDim: 'rgba(253,186,49,0.15)',
+  purpleBorder: 'rgba(253,186,49,0.4)',
+  purpleMid: '#E0A122',
 
   // Semantic
   green: '#4ade80',
   greenDim: 'rgba(74,222,128,0.14)',
-  amber: '#FFB74D',
-  amberDim: 'rgba(251,191,36,0.14)',
+  amber: '#FDBA31',
+  amberDim: 'rgba(253,186,49,0.15)',
   teal: '#5eead4',
   red: '#f87171',
 
   // Text — warm charcoal for light theme
   textPrimary: '#1C1917',
-  textSecondary: 'rgba(28,25,23,0.6)',
-  textTertiary: 'rgba(28,25,23,0.38)',
-  textHint: 'rgba(28,25,23,0.2)',
+  textSecondary: '#6B6865',
+  textTertiary: '#A3A09D',
+  textHint: '#D1CDCB',
 
   // Borders
-  border: 'rgba(0,0,0,0.07)',
-  borderMid: 'rgba(0,0,0,0.12)',
+  border: '#F2EBE5',
+  borderMid: '#E6DDD5',
 
   // Glass effect
-  bgGlass: 'rgba(255,255,255,0.4)',
+  bgGlass: 'rgba(255,255,255,0.6)',
 } as const;
 
 export const Typography = {

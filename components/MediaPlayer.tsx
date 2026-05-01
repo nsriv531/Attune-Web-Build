@@ -21,7 +21,7 @@ function MediaPlayerContent({ player, track, onNext, onPrev }: { player: any, tr
   const C = useThemeColors();
   const status = useAudioPlayerStatus(player);
 
-  if (!player || typeof player.pause !== 'function') return null;
+  if (!player) return null;
 
   const togglePlay = () => {
     if (status.playing) {
@@ -31,10 +31,12 @@ function MediaPlayerContent({ player, track, onNext, onPrev }: { player: any, tr
     }
   };
 
+  const trackTitle = track.title === 'white-noise' ? 'White Noise' : track.title.charAt(0).toUpperCase() + track.title.slice(1);
+
   return (
-    <View style={[styles.container, { backgroundColor: `${C.textHint}` }]}>
+    <View style={[styles.container, { backgroundColor: '#FFFFFF', borderColor: '#F2EBE5', borderWidth: 1 }]}>
       <View style={styles.info}>
-        <Text style={[styles.title, { color: C.textPrimary }]} numberOfLines={1}>{track.title}</Text>
+        <Text style={[styles.title, { color: C.textPrimary }]} numberOfLines={1}>{trackTitle}</Text>
         <Text style={[styles.artist, { color: C.textSecondary }]} numberOfLines={1}>{track.artist}</Text>
       </View>
 
@@ -45,13 +47,13 @@ function MediaPlayerContent({ player, track, onNext, onPrev }: { player: any, tr
           </Svg>
         </Pressable>
 
-        <Pressable onPress={togglePlay} style={styles.playBtn}>
+        <Pressable onPress={togglePlay} style={[styles.playBtn, { backgroundColor: C.amberDim }]}>
           {status.playing ? (
-            <Svg width={32} height={32} viewBox="0 0 24 24" fill={C.purple}>
+            <Svg width={32} height={32} viewBox="0 0 24 24" fill={C.amber}>
               <Path d="M6 4h4v16H6zm8 0h4v16h-4z" />
             </Svg>
           ) : (
-            <Svg width={32} height={32} viewBox="0 0 24 24" fill={C.purple}>
+            <Svg width={32} height={32} viewBox="0 0 24 24" fill={C.amber}>
               <Path d="M8 5v14l11-7z" />
             </Svg>
           )}
