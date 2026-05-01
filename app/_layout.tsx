@@ -62,6 +62,8 @@ const tokenCache = {
   },
 };
 
+import { useAuthStore } from '@/stores/authStore';
+
 /* =========================
    3. INITIAL LAYOUT (AUTH LOGIC)
 ========================= */
@@ -85,6 +87,7 @@ function InitialLayout() {
   const { isLoaded, isSignedIn } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const isGuest = useAuthStore((s) => s.isGuest);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -99,12 +102,12 @@ function InitialLayout() {
 
     const inAuthGroup = segments[0] === 'sign-in' || segments[0] === 'sign-up';
 
-    if (!isSignedIn && !inAuthGroup) {
+    if (!isSignedIn && !isGuest && !inAuthGroup) {
       router.replace('/sign-in');
-    } else if (isSignedIn && inAuthGroup) {
+    } else if ((isSignedIn || isGuest) && inAuthGroup) {
       router.replace('/(tabs)');
     }
-  }, [isSignedIn, isLoaded, segments]);
+  }, [isSignedIn, isGuest, isLoaded, segments]);
 
   return (
     <>

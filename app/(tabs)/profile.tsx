@@ -8,13 +8,20 @@ import {
   SafeAreaView,
   Pressable,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import { useAuth, useClerk } from '@clerk/clerk-expo';
+import { useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 import { Typography, Spacing, Radius } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useThemeStore } from '@/stores/themeStore';
 import { PALETTES, PALETTE_ORDER, type PaletteKey } from '@/constants/palettes';
 import { useUserStore } from '@/stores/userStore';
+import { useSessionStore } from '@/stores/sessionStore';
+import { useAuthStore } from '@/stores/authStore';
 import { useAvatarCustomizationStore } from '@/stores/avatarCustomizationStore';
 import { SageAvatar } from '@/components/SageAvatar';
 import { AvatarCustomizationShop } from '@/components/AvatarCustomizationShop';
@@ -53,16 +60,67 @@ function xpToNext(xp: number) {
 
 export default function ProfileScreen() {
   const C = useThemeColors();
+  const router = useRouter();
   const { paletteKey, setPalette } = useThemeStore();
-  const { name, totalXp, streakDays, totalSessions, sessions } = useUserStore();
+  const { name, totalXp, streakDays, totalSessions, sessions, reset: resetUserStore } = useUserStore();
   const { loadFromStorage, coins } = useAvatarCustomizationStore();
+  const { isGuest, setGuest } = useAuthStore();
+  const { signOut, isSignedIn } = useAuth();
+  const { user } = useClerk();
+  const deleteAccountMutation = useMutation(api.users.deleteAccount);
   
   const [shopVisible, setShopVisible] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Load customization data on mount
   useEffect(() => {
     loadFromStorage();
   }, []);
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete Account & Data",
+      isGuest 
+        ? "Are you sure? This will permanently delete all your locally saved progress and data."
+        : "Are you sure? This will permanently delete your account, progress, and all cloud data. This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete Everything", 
+          style: "destructive",
+          onPress: async () => {
+            setIsDeleting(true);
+            try {
+              if (isSignedIn) {
+                // Delete data from Convex
+                await deleteAccountMutation();
+                // Attempt to delete Clerk user (requires proper clerk permissions or backend flow, but client-side delete is supported for the current user)
+                await user?.delete();
+              }
+            } catch (e) {
+              console.error("Error deleting remote account:", e);
+              // Even if remote delete fails (e.g. clerk restricted), we should still log them out locally
+            } finally {
+              // Clear local state completely
+              useUserStore.persist.clearStorage();
+              useSessionStore.persist.clearStorage();
+              useAuthStore.persist.clearStorage();
+              
+              resetUserStore();
+              setGuest(false);
+              
+              if (isSignedIn) {
+                await signOut();
+              }
+              
+              setIsDeleting(false);
+              router.replace('/sign-in');
+            }
+          }
+        }
+      ]
+    );
+  };
 
   const level = getLevel(totalXp);
   const levelName = LEVEL_NAMES[level - 1];
@@ -216,7 +274,21 @@ export default function ProfileScreen() {
           </>
         )}
 
+        {/* ── Delete Account ── */}
+        <View style={styles.dangerZone}>
+          <TouchableOpacity
+            style={[styles.deleteButton, { borderColor: C.red }]}
+            onPress={handleDeleteAccount}
+            disabled={isDeleting}
+          >
+            <Text style={[styles.deleteButtonText, { color: C.red }]}>
+              {isDeleting ? 'Deleting...' : isGuest ? 'Delete Local Data' : 'Delete Account & Data'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={{ height: 32 }} />
+
       </ScrollView>
       
       {/* Avatar Customization Shop Modal */}
@@ -442,5 +514,24 @@ const styles = StyleSheet.create({
     fontSize: Typography.size.xs,
     fontWeight: Typography.weight.semibold,
     color: '#1a1a1a',
+  },
+
+  // ── Danger Zone ──
+  dangerZone: {
+    marginTop: Spacing.xl,
+    paddingTop: Spacing.md,
+  },
+  deleteButton: {
+    borderWidth: 1,
+    borderRadius: Radius.lg,
+    paddingVertical: Spacing.md,
+    alignItems: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.05)',
+  },
+  deleteButtonText: {
+    fontFamily: Typography.fontSans,
+    fontSize: Typography.size.sm,
+    fontWeight: Typography.weight.semibold,
+    letterSpacing: 0.5,
   },
 });

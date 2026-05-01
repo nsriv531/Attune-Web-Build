@@ -3,9 +3,12 @@ import { View, TextInput, Button, Text, StyleSheet, ActivityIndicator, Touchable
 import { useSignIn } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 
+import { useAuthStore } from '@/stores/authStore';
+
 export default function SignInScreen() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
+  const setGuest = useAuthStore((s) => s.setGuest);
 
   // Form State
   const [email, setEmail] = useState("");
@@ -18,6 +21,11 @@ export default function SignInScreen() {
   const [error, setError] = useState("");
 
   if (!isLoaded) return null;
+
+  const handleGuestLogin = () => {
+    setGuest(true);
+    router.replace('/(tabs)');
+  };
 
   // Step 1: Initial Sign In
   const handleSignIn = async () => {
@@ -149,6 +157,22 @@ export default function SignInScreen() {
           
           <TouchableOpacity onPress={() => router.push("/sign-up")} style={{ marginTop: 20 }}>
             <Text style={{ color: "#aaa", textAlign: "center" }}>Don't have an account? Sign Up</Text>
+          </TouchableOpacity>
+          
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20 }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: '#333' }} />
+            <View>
+              <Text style={{ width: 50, textAlign: 'center', color: '#666' }}>OR</Text>
+            </View>
+            <View style={{ flex: 1, height: 1, backgroundColor: '#333' }} />
+          </View>
+
+          <TouchableOpacity 
+            style={[styles.button, { backgroundColor: '#333', marginTop: 20 }]} 
+            onPress={handleGuestLogin}
+            disabled={loading}
+          >
+            <Text style={styles.buttonText}>Continue as Guest</Text>
           </TouchableOpacity>
         </>
       ) : (
