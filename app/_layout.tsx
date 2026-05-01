@@ -63,6 +63,7 @@ const tokenCache = {
 };
 
 import { useAuthStore } from '@/stores/authStore';
+import { useTimer } from '@/hooks/useTimer';
 
 /* =========================
    3. INITIAL LAYOUT (AUTH LOGIC)
@@ -80,6 +81,11 @@ function AuthSync() {
     }
   }, [isSignedIn, user, storeUser]);
 
+  return null;
+}
+
+function GlobalTimer() {
+  useTimer();
   return null;
 }
 
@@ -112,6 +118,7 @@ function InitialLayout() {
   return (
     <>
       <AuthSync />
+      <GlobalTimer />
       <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
         <Stack.Screen name="sign-in" />
         <Stack.Screen name="sign-up" />

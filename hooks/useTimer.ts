@@ -56,30 +56,13 @@ export function useTimer() {
       const prev = appStateRef.current;
       appStateRef.current = nextState;
 
-      if (prev === 'active' && nextState === 'background') {
-        // User left the app
+      // User left the app (active -> inactive/background)
+      if (prev === 'active' && nextState !== 'active') {
         backgroundTimeRef.current = Date.now();
-
-        // Start a distraction timer that escalates every 10s
-        distractionTimerRef.current = setInterval(() => {
-          const elapsed = Math.floor((Date.now() - (backgroundTimeRef.current ?? Date.now())) / 1000);
-          if (elapsed >= 10) {
-            recordDistraction({
-              timestamp: Date.now(),
-              type: 'app-switch',
-              durationSeconds: elapsed,
-            });
-          }
-        }, 10_000);
       }
 
-      if (nextState === 'active' && prev === 'background') {
-        // User came back
-        if (distractionTimerRef.current) {
-          clearInterval(distractionTimerRef.current);
-          distractionTimerRef.current = null;
-        }
-
+      // User came back (inactive/background -> active)
+      if (prev !== 'active' && nextState === 'active') {
         const elapsed = backgroundTimeRef.current
           ? Math.floor((Date.now() - backgroundTimeRef.current) / 1000)
           : 0;
@@ -87,21 +70,20 @@ export function useTimer() {
         backgroundTimeRef.current = null;
 
         if (elapsed >= 5) {
-          recordDistraction({
+          useSessionStore.getState().recordDistraction({
             timestamp: Date.now(),
             type: 'app-switch',
             durationSeconds: elapsed,
           });
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         } else {
-          clearDistraction();
+          useSessionStore.getState().clearDistraction();
         }
       }
     });
 
     return () => {
       subscription.remove();
-      if (distractionTimerRef.current) clearInterval(distractionTimerRef.current);
     };
   }, [isActive]);
 
