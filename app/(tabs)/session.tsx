@@ -26,6 +26,7 @@ export default function SessionScreen() {
   const router = useRouter();
   const {
     isActive,
+    setupComplete,
     subject,
     durationMinutes,
     secondsRemaining,
@@ -40,17 +41,17 @@ export default function SessionScreen() {
   const { streakDays, totalXp, totalSessions } = useUserStore();
 
   useTimer();
-  
+
   // Handle Ritual Audio
   const { player, currentTrack, nextTrack, prevTrack, loading } = useRitualAudio();
 
-  // If user lands here without an active session (e.g. deep link), redirect to setup
+  // If user lands here without an active session or without completing setup, redirect to focus page
   useEffect(() => {
-    if (!isActive) {
+    if (!isActive || !setupComplete) {
       const t = setTimeout(() => router.replace('/(tabs)'), 100);
       return () => clearTimeout(t);
     }
-  }, [isActive]);
+  }, [isActive, setupComplete]);
 
   function handleEndEarly() {
     Alert.alert(

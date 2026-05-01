@@ -59,43 +59,50 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: C.bgCard,
+          backgroundColor: `${C.bgCard}99`,
           borderTopColor: C.border,
           borderTopWidth: 0.5,
-          height: 72,
-          paddingBottom: 8,
-          paddingTop: 6,
+          height: 80,
+          paddingBottom: 12,
+          paddingTop: 8,
         },
         tabBarActiveTintColor: C.purple,
-        tabBarInactiveTintColor: C.textHint,
+        tabBarInactiveTintColor: C.textTertiary,
         tabBarLabelStyle: styles.tabLabel,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Setup',
+          title: 'Home',
           tabBarIcon: ({ color }) => <IconSetup color={color} />,
         }}
       />
       <Tabs.Screen
         name="session"
         options={{
-          title: 'Session',
+          title: 'Sessions',
           tabBarIcon: ({ color }) => <IconSession color={color} />,
         }}
       />
       <Tabs.Screen
         name="insights"
         options={{
-          title: 'Insights',
+          title: 'Progress',
           tabBarIcon: ({ color }) => <IconInsights color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="resources"
+        options={{
+          title: 'Resources',
+          tabBarIcon: ({ color }) => <IconProfile color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: 'Settings',
           tabBarIcon: ({ color }) => <IconProfile color={color} />,
         }}
       />

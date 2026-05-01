@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
+import { useFonts, PlusJakartaSans_400Regular, PlusJakartaSans_500Medium, PlusJakartaSans_600SemiBold, PlusJakartaSans_700Bold } from '@expo-google-fonts/plus-jakarta-sans';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native';
@@ -130,11 +130,10 @@ function InitialLayout() {
 ========================= */
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    DMSans: require('../assets/fonts/DMSans-Regular.ttf'),
-    'DMSans-Medium': require('../assets/fonts/DMSans-Medium.ttf'),
-    'DMSans-SemiBold': require('../assets/fonts/DMSans-SemiBold.ttf'),
-    DMMono: require('../assets/fonts/DMMono-Regular.ttf'),
-    'DMMono-Medium': require('../assets/fonts/DMMono-Medium.ttf'),
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
   });
 
   useEffect(() => {

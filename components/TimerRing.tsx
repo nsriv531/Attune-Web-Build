@@ -64,7 +64,7 @@ export function TimerRing({ secondsRemaining, totalSeconds }: TimerRingProps) {
           cy={RING_SIZE / 2}
           r={RING_RADIUS}
           fill="none"
-          stroke="rgba(255,255,255,0.05)"
+          stroke={`${C.textHint}`}
           strokeWidth={8}
         />
         <AnimatedCircle

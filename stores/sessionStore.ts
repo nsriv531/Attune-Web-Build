@@ -35,6 +35,7 @@ interface SessionState {
   subjectId: string;
   durationMinutes: SessionDuration;
   ritualSound: RitualSound;
+  setupComplete: boolean;
 
   // Runtime
   isActive: boolean;
@@ -97,6 +98,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   subjectId: 'bio-1',
   durationMinutes: 45,
   ritualSound: 'silence',
+  setupComplete: false,
 
   isActive: false,
   isPaused: false,
@@ -121,6 +123,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   // ─ Session lifecycle ───────────────────────────────────────────────────────
   startSession: () =>
     set((s) => ({
+      setupComplete: true,
       isActive: true,
       isPaused: false,
       secondsRemaining: s.durationMinutes * 60,
@@ -197,6 +200,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 
   reset: () =>
     set((s) => ({
+      setupComplete: false,
       isActive: false,
       isPaused: false,
       secondsRemaining: s.durationMinutes * 60,
