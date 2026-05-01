@@ -11,7 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { OnboardingLayout } from '@/components/OnboardingLayout';
-import { SageAvatar } from '@/components/SageAvatar';
+import { SoliAvatar } from '@/components/SoliAvatar';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { Colors, Typography, Spacing } from '@/constants/theme';
 
@@ -37,7 +37,7 @@ function FadeLine({ text, delay }: { text: string; delay: number }) {
 
 export default function SageLearningScreen() {
   const router = useRouter();
-  const { sageForm } = useOnboardingStore();
+  const { soliForm } = useOnboardingStore();
 
   const breathScale = useSharedValue(1);
 
@@ -68,7 +68,7 @@ export default function SageLearningScreen() {
         <View style={styles.glow} pointerEvents="none" />
 
         <Animated.View style={sageStyle}>
-          <SageAvatar size={88} state="watching" form={sageForm} />
+          <SoliAvatar size={88} state="watching" />
         </Animated.View>
 
         <View style={styles.lines}>

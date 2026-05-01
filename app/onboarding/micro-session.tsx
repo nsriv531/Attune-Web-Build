@@ -11,21 +11,21 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { TimerRing } from '@/components/TimerRing';
-import { SageAvatar } from '@/components/SageAvatar';
+import { SoliAvatar, SoliState } from '@/components/SoliAvatar';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { Colors, Typography, Spacing } from '@/constants/theme';
 
 const SESSION_SECONDS = 60;
 
-type MicroSageState = 'watching' | 'nudge' | 'celebrate';
+type MicroSoliState = 'watching' | 'nudge' | 'celebrate';
 
 export default function MicroSessionScreen() {
   const router = useRouter();
-  const { sageForm, subjects, completeOnboarding } = useOnboardingStore();
+  const { soliForm, subjects, completeOnboarding } = useOnboardingStore();
 
   const [countdown, setCountdown] = useState(SESSION_SECONDS);
-  const [sageState, setSageState] = useState<MicroSageState>('watching');
-  const [sageMessage, setSageMessage] = useState('');
+  const [soliState, setSoliState] = useState<MicroSoliState>('watching');
+  const [soliMessage, setSoliMessage] = useState('');
   const [showMessage, setShowMessage] = useState(false);
   const [done, setDone] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -46,7 +46,7 @@ export default function MicroSessionScreen() {
         const next = c - 1;
         if (next <= 0) {
           if (intervalRef.current) clearInterval(intervalRef.current);
-          setSageState('celebrate');
+          setSoliState('celebrate');
           return 0;
         }
         return next;
@@ -60,15 +60,15 @@ export default function MicroSessionScreen() {
 
   // Scripted moment at 30s remaining: Sage transitions to nudge with "I'm here."
   useEffect(() => {
-    if (countdown === 30 && sageState === 'watching') {
-      setSageState('nudge');
-      setSageMessage("I'm here.");
+    if (countdown === 30 && soliState === 'watching') {
+      setSoliState('nudge');
+      setSoliMessage("I'm here.");
       setShowMessage(true);
       messageOpacity.value = withTiming(1, { duration: 400 });
       messageY.value = withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) });
 
       const t = setTimeout(() => {
-        setSageState('watching');
+        setSoliState('watching');
         setShowMessage(false);
         messageOpacity.value = withTiming(0, { duration: 300 });
       }, 3000);
@@ -126,10 +126,10 @@ export default function MicroSessionScreen() {
 
         {/* Sage avatar */}
         <View style={styles.sageWrap}>
-          <SageAvatar size={56} state={sageState} form={sageForm} />
+          <SoliAvatar size={56} state={soliState as any} />
           {showMessage && (
             <Animated.View style={[styles.messageBubble, messageStyle]}>
-              <Text style={styles.messageText}>{sageMessage}</Text>
+              <Text style={styles.messageText}>{soliMessage}</Text>
             </Animated.View>
           )}
         </View>
@@ -141,9 +141,9 @@ export default function MicroSessionScreen() {
               styles.statusDot,
               {
                 backgroundColor:
-                  sageState === 'nudge'
+                  soliState === 'nudge'
                     ? Colors.amber
-                    : sageState === 'celebrate'
+                    : soliState === 'celebrate'
                     ? Colors.green
                     : Colors.green,
               },
@@ -154,21 +154,21 @@ export default function MicroSessionScreen() {
               styles.statusText,
               {
                 color:
-                  sageState === 'nudge'
+                  soliState === 'nudge'
                     ? Colors.amber
-                    : sageState === 'celebrate'
+                    : soliState === 'celebrate'
                     ? Colors.green
                     : Colors.green,
               },
             ]}
           >
-            {sageState === 'celebrate' ? 'Complete' : sageState === 'nudge' ? 'Drifting...' : 'In flow'}
+            {soliState === 'celebrate' ? 'Complete' : soliState === 'nudge' ? 'Drifting...' : 'In flow'}
           </Text>
         </View>
 
         {/* Micro-session note */}
         <Text style={styles.note}>
-          {countdown === 0 ? 'Session complete.' : 'Stay with it. Sage is watching.'}
+          {countdown === 0 ? 'Session complete.' : 'Stay with it. Soli is watching.'}
         </Text>
 
         {/* Exit button */}

@@ -25,7 +25,7 @@ import { useSessionStore } from '@/stores/sessionStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useAvatarCustomizationStore } from '@/stores/avatarCustomizationStore';
 import { useOnboardingStore, ONBOARDING_STORAGE_KEY } from '@/stores/onboardingStore';
-import { SageAvatar } from '@/components/SageAvatar';
+import { SoliAvatar } from '@/components/SoliAvatar';
 import { AvatarCustomizationShop } from '@/components/AvatarCustomizationShop';
 
 const LEVEL_NAMES = ['Seedling', 'Sprout', 'Scholar', 'Focus Pro', 'Sage'];
@@ -150,7 +150,7 @@ export default function ProfileScreen() {
 
         {/* ── Avatar + identity ── */}
         <View style={styles.avatarSection}>
-          <SageAvatar size={88} state="watching" />
+          <SoliAvatar size={88} state="watching" />
           <Text style={[styles.nameText, { color: C.textPrimary }]}>{name}</Text>
           <View style={[styles.levelBadge, { backgroundColor: C.purpleDim, borderColor: C.purpleBorder }]}>
             <Text style={[styles.levelBadgeText, { color: C.purple }]}>Level {level} · {levelName}</Text>

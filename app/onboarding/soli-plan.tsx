@@ -10,7 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { OnboardingLayout, CTAButton } from '@/components/OnboardingLayout';
-import { SageAvatar } from '@/components/SageAvatar';
+import { SoliAvatar } from '@/components/SoliAvatar';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 
@@ -48,7 +48,7 @@ function PlanRow({ icon, label, value, delay }: { icon: string; label: string; v
 
 export default function SagePlanScreen() {
   const router = useRouter();
-  const { subjects, timeOfDay, distractions, sessionDuration, sageForm, coachingStyle } =
+  const { subjects, timeOfDay, distractions, sessionDuration, soliForm, coachingStyle } =
     useOnboardingStore();
 
   const cardOpacity = useSharedValue(0);
@@ -73,7 +73,7 @@ export default function SagePlanScreen() {
     <OnboardingLayout step={11}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <SageAvatar size={44} state="watching" form={sageForm} />
+          <SoliAvatar size={44} state="watching" />
           <View style={styles.headerText}>
             <Text style={styles.sageName}>Sage</Text>
             <Text style={styles.headline}>Sage has a plan for you.</Text>

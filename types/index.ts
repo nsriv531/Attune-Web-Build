@@ -12,6 +12,7 @@ export type RitualSound = 'lofi' | 'rain' | 'forest' | 'white-noise' | 'silence'
 export type SessionDuration = number;
 
 export type FocusFeeling = 'solid' | 'good' | 'rough';
+export type ReflectionReason = 'distraction' | 'tired' | 'busy' | 'other';
 
 export type DistractionEvent = {
   timestamp: number;
@@ -34,7 +35,7 @@ export type Session = {
   completed: boolean;
 };
 
-export type SageState = 'idle' | 'watching' | 'nudge' | 'alert' | 'celebrate';
+export type SoliState = 'idle' | 'watching' | 'nudge' | 'alert' | 'celebrate';
 
 export type AvatarLevel = {
   level: number;

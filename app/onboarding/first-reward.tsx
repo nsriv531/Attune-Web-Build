@@ -11,12 +11,12 @@ import Animated, {
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { CTAButton } from '@/components/OnboardingLayout';
-import { SageAvatar } from '@/components/SageAvatar';
+import { SoliAvatar } from '@/components/SoliAvatar';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { useUserStore } from '@/stores/userStore';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 
-const SAGE_MESSAGES: Record<string, string> = {
+const SOLI_MESSAGES: Record<string, string> = {
   gentle: 'That was a good start. I noticed you stayed with it.',
   steady: 'Solid first session. Tomorrow, we go deeper.',
   direct: 'One down. Same time tomorrow.',
@@ -56,19 +56,19 @@ function RewardCard({
 
 export default function FirstRewardScreen() {
   const router = useRouter();
-  const { sageForm, coachingStyle } = useOnboardingStore();
+  const { soliForm, coachingStyle } = useOnboardingStore();
   const { addXP, incrementStreak } = useUserStore();
 
-  const sageScale = useSharedValue(0.5);
-  const sageOpacity = useSharedValue(0);
+  const soliScale = useSharedValue(0.5);
+  const soliOpacity = useSharedValue(0);
   const titleOpacity = useSharedValue(0);
   const titleY = useSharedValue(12);
 
   useEffect(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    sageScale.value = withSpring(1, { damping: 12, stiffness: 160 });
-    sageOpacity.value = withTiming(1, { duration: 400 });
+    soliScale.value = withSpring(1, { damping: 12, stiffness: 160 });
+    soliOpacity.value = withTiming(1, { duration: 400 });
     titleOpacity.value = withDelay(200, withTiming(1, { duration: 400 }));
     titleY.value = withDelay(200, withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) }));
 
@@ -76,9 +76,9 @@ export default function FirstRewardScreen() {
     incrementStreak();
   }, []);
 
-  const sageStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: sageScale.value }],
-    opacity: sageOpacity.value,
+  const soliStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: soliScale.value }],
+    opacity: soliOpacity.value,
   }));
 
   const titleStyle = useAnimatedStyle(() => ({
@@ -86,15 +86,15 @@ export default function FirstRewardScreen() {
     transform: [{ translateY: titleY.value }],
   }));
 
-  const message = SAGE_MESSAGES[coachingStyle] ?? SAGE_MESSAGES.steady;
+  const message = SOLI_MESSAGES[coachingStyle] ?? SOLI_MESSAGES.steady;
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.glow} pointerEvents="none" />
 
       <View style={styles.container}>
-        <Animated.View style={sageStyle}>
-          <SageAvatar size={80} state="celebrate" form={sageForm} />
+        <Animated.View style={soliStyle}>
+          <SoliAvatar size={80} state="celebrate" />
         </Animated.View>
 
         <Animated.View style={[styles.titleWrap, titleStyle]}>
@@ -110,8 +110,8 @@ export default function FirstRewardScreen() {
 
         <View style={styles.sageCard}>
           <View style={styles.sageCardTop}>
-            <SageAvatar size={28} state="watching" form={sageForm} />
-            <Text style={styles.sageName}>Sage</Text>
+            <SoliAvatar size={28} state="watching" />
+            <Text style={styles.sageName}>Soli</Text>
           </View>
           <Text style={styles.sageMsg}>{message}</Text>
         </View>

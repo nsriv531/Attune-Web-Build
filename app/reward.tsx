@@ -4,10 +4,10 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   Pressable,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -21,7 +21,7 @@ import { Typography, Spacing, Radius } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useUserStore } from '@/stores/userStore';
-import { SageAvatar } from '@/components/SageAvatar';
+import { SoliAvatar } from '@/components/SoliAvatar';
 import { generateSageSuggestion } from '@/lib/claude';
 import type { FocusFeeling, Session } from '@/types';
 import { useMutation } from 'convex/react';
@@ -32,6 +32,14 @@ const FEELINGS: { key: FocusFeeling; label: string }[] = [
   { key: 'solid', label: 'Solid' },
   { key: 'good',  label: 'Good' },
   { key: 'rough', label: 'Rough' },
+];
+
+const REFLECTION_PROMPTS = [
+  "What was the most challenging part?",
+  "What helped you stay focused?",
+  "Is there anything you'd change for next time?",
+  "How do you feel about your progress?",
+  "What's one thing you learned today?",
 ];
 
 function XPCard({
@@ -138,10 +146,10 @@ export default function RewardScreen() {
         actualDuration: state.secondsElapsed,
         focusScore: state.focusScore,
         xpEarned: state.xpEarned,
-        status: 'completed',
+        status: state.wasEndedEarly ? 'abandoned' : 'completed',
         feeling: state.feeling || undefined,
-        tags: [],
-        note: undefined,
+        tags: state.reflectionReason ? [state.reflectionReason] : [],
+        note: state.reflectionNote || undefined,
         startedAt: Date.now() - state.secondsElapsed * 1000,
         distractions: state.distractionEvents.map((d) => ({
           type: d.type,
@@ -185,6 +193,7 @@ export default function RewardScreen() {
   }
 
   const newStreak = streakDays + 1;
+  const prompt = React.useMemo(() => REFLECTION_PROMPTS[Math.floor(Math.random() * REFLECTION_PROMPTS.length)], []);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -196,12 +205,14 @@ export default function RewardScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View style={sageStyle}>
-          <SageAvatar size={80} state="celebrate" />
+          <SoliAvatar size={80} state="celebrate" />
         </Animated.View>
 
-        <Text style={[styles.title, { color: C.textPrimary }]}>Session complete!</Text>
+        <Text style={[styles.title, { color: C.textPrimary }]}>
+          {useSessionStore.getState().wasEndedEarly ? 'Session saved' : 'Focus Star Earned!'}
+        </Text>
         <Text style={[styles.subtitle, { color: C.textTertiary }]}>
-          {durationMinutes} min · {subject}
+          {useSessionStore.getState().wasEndedEarly ? `${durationMinutes} min · ${subject}` : `Great work, ${name}!`}
         </Text>
 
         {distractionCount > 0 && (
@@ -218,7 +229,7 @@ export default function RewardScreen() {
           <XPCard value={newStreak} label="Streak" color={C.amber} delay={340} bgCard={C.bgCard} border={C.border} />
         </View>
 
-        <Text style={[styles.sectionLabel, { color: C.textTertiary }]}>How did it feel?</Text>
+        <Text style={[styles.sectionLabel, { color: C.textTertiary }]}>{prompt}</Text>
         <View style={styles.feelRow}>
           {FEELINGS.map((f) => (
             <Pressable
@@ -247,8 +258,8 @@ export default function RewardScreen() {
 
         <View style={[styles.sageCard, { backgroundColor: C.bgCard, borderColor: C.border }]}>
           <View style={styles.sageCardTop}>
-            <SageAvatar size={30} state="watching" />
-            <Text style={[styles.sageName, { color: C.purple }]}>Sage says</Text>
+            <SoliAvatar size={30} state="watching" />
+            <Text style={[styles.sageName, { color: C.purple }]}>Soli says</Text>
           </View>
           <Text style={[styles.sageMsg, { color: C.textSecondary }]}>
             {focusScore >= 85
@@ -272,6 +283,9 @@ export default function RewardScreen() {
 }
 
 const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+  },
   glow: {
     position: 'absolute',
     width: 300,

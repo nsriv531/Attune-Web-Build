@@ -10,7 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { SageAvatar } from '@/components/SageAvatar';
+import { SoliAvatar } from '@/components/SoliAvatar';
 import { CTAButton } from '@/components/OnboardingLayout';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { useSessionStore } from '@/stores/sessionStore';
@@ -83,7 +83,7 @@ function SuggestionRow({ icon, label, value, delay }: {
 
 export default function TomorrowScreen() {
   const router = useRouter();
-  const { sageForm, coachingStyle, timeOfDay, sessionDuration, subjects, completeOnboarding } =
+  const { soliForm, coachingStyle, timeOfDay, sessionDuration, subjects, completeOnboarding } =
     useOnboardingStore();
   const { setSubject, setDuration } = useSessionStore();
 
@@ -134,7 +134,7 @@ export default function TomorrowScreen() {
       <View style={styles.container}>
         <Animated.View style={[styles.header, contentStyle]}>
           <Animated.View style={sageStyle}>
-            <SageAvatar size={52} state="watching" form={sageForm} />
+            <SoliAvatar size={52} state="watching" />
           </Animated.View>
           <View style={styles.headerText}>
             <Text style={styles.tagline}>Sage learns from this.</Text>
@@ -152,7 +152,7 @@ export default function TomorrowScreen() {
 
         <Animated.View style={[styles.rationaleCard, contentStyle]}>
           <View style={styles.rationaleHeader}>
-            <SageAvatar size={24} state="watching" form={sageForm} />
+            <SoliAvatar size={24} state="watching" />
             <Text style={styles.sageName}>Sage</Text>
           </View>
           <Text style={styles.rationaleText}>{rationale}</Text>

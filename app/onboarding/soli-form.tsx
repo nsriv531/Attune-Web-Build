@@ -10,15 +10,15 @@ import Animated, {
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { OnboardingLayout, CTAButton } from '@/components/OnboardingLayout';
-import { SageAvatar } from '@/components/SageAvatar';
-import { useOnboardingStore, type SageForm } from '@/stores/onboardingStore';
+import { SoliAvatar } from '@/components/SoliAvatar';
+import { useOnboardingStore } from '@/stores/onboardingStore';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 
-const FORMS: { key: SageForm; label: string; hint: string }[] = [
-  { key: 'orb',           label: 'Orb',           hint: 'Grounded' },
-  { key: 'crystal',       label: 'Crystal',        hint: 'Precise' },
-  { key: 'flame',         label: 'Flame',          hint: 'Dynamic' },
-  { key: 'constellation', label: 'Constellation',  hint: 'Expansive' },
+const VIBES: { key: string; label: string; hint: string }[] = [
+  { key: 'focus',   label: 'Deep Focus',   hint: 'Warmth' },
+  { key: 'calm',    label: 'Calm Study',   hint: 'Serene' },
+  { key: 'energy',  label: 'High Energy',  hint: 'Radiant' },
+  { key: 'steady',  label: 'Steady Flow',  hint: 'Constant' },
 ];
 
 function FormCard({
@@ -26,7 +26,7 @@ function FormCard({
   selected,
   onSelect,
 }: {
-  item: typeof FORMS[0];
+  item: typeof VIBES[0];
   selected: boolean;
   onSelect: () => void;
 }) {
@@ -53,7 +53,7 @@ function FormCard({
           cardStyle,
         ]}
       >
-        <SageAvatar size={52} state="watching" form={item.key} />
+        <SoliAvatar size={52} state="watching" />
         <View style={styles.cardText}>
           <Text style={[styles.cardLabel, selected && styles.cardLabelSelected]}>
             {item.label}
@@ -67,8 +67,8 @@ function FormCard({
 
 export default function SageFormScreen() {
   const router = useRouter();
-  const { sageForm, setSageForm } = useOnboardingStore();
-  const [selected, setSelected] = useState<SageForm>(sageForm);
+  const { soliForm, setSoliForm } = useOnboardingStore();
+  const [selected, setSelected] = useState<string>(soliForm);
 
   const contentOpacity = useSharedValue(0);
   const contentY = useSharedValue(12);
@@ -84,22 +84,22 @@ export default function SageFormScreen() {
   }));
 
   function handleNext() {
-    setSageForm(selected);
-    router.push('/onboarding/sage-style' as never);
+    setSoliForm(selected);
+    router.push('/onboarding/soli-style' as never);
   }
 
   return (
     <OnboardingLayout step={3}>
       <Animated.View style={[styles.container, contentStyle]}>
-        <Text style={styles.headline}>Shape Sage.</Text>
+        <Text style={styles.headline}>Meet Soli.</Text>
 
         <View style={styles.grid}>
-          {FORMS.map((f) => (
+          {VIBES.map((v) => (
             <FormCard
-              key={f.key}
-              item={f}
-              selected={selected === f.key}
-              onSelect={() => setSelected(f.key)}
+              key={v.key}
+              item={v}
+              selected={selected === v.key}
+              onSelect={() => setSelected(v.key as any)}
             />
           ))}
         </View>

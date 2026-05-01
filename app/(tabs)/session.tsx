@@ -16,7 +16,7 @@ import { useSessionStore } from '@/stores/sessionStore';
 import { useUserStore } from '@/stores/userStore';
 import { useRitualAudio } from '@/hooks/useAudioPlayer';
 import { TimerRing } from '@/components/TimerRing';
-import { SageOverlay } from '@/components/SageOverlay';
+import { SoliOverlay } from '@/components/SoliOverlay';
 import { StatCard } from '@/components/StatCard';
 import { MediaPlayer } from '@/components/MediaPlayer';
 
@@ -29,8 +29,8 @@ export default function SessionScreen() {
     subject,
     durationMinutes,
     secondsRemaining,
-    sageState,
-    sageMessage,
+    soliState,
+    soliMessage,
     ritualSound,
     endSession,
     clearDistraction,
@@ -54,7 +54,7 @@ export default function SessionScreen() {
           onPress: () => {
             endSession();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            router.push('/reward');
+            router.push('/reflection');
           },
         },
       ]
@@ -64,9 +64,9 @@ export default function SessionScreen() {
   const totalSeconds = durationMinutes * 60;
 
   const focusBadgeColor =
-    sageState === 'alert'
+    soliState === 'alert'
       ? C.red
-      : sageState === 'nudge'
+      : soliState === 'nudge'
       ? C.amber
       : C.green;
 
@@ -81,9 +81,9 @@ export default function SessionScreen() {
         <View style={[styles.focusBadge, { borderColor: `${focusBadgeColor}44`, backgroundColor: `${focusBadgeColor}12` }]}>
           <View style={[styles.focusDot, { backgroundColor: focusBadgeColor }]} />
           <Text style={[styles.focusText, { color: focusBadgeColor }]}>
-            {sageState === 'alert'
+            {soliState === 'alert'
               ? 'Come back'
-              : sageState === 'nudge'
+              : soliState === 'nudge'
               ? 'Drifting...'
               : 'In flow'}
           </Text>
@@ -98,11 +98,11 @@ export default function SessionScreen() {
           loading={loading}
         />
 
-        {/* ── Sage overlay ── */}
-        <SageOverlay
-          sageState={sageState}
-          message={sageMessage}
-          onDismiss={sageState === 'nudge' || sageState === 'alert' ? clearDistraction : undefined}
+        {/* ── Soli overlay ── */}
+        <SoliOverlay
+          soliState={soliState}
+          message={soliMessage}
+          onDismiss={soliState === 'nudge' || soliState === 'alert' ? clearDistraction : undefined}
         />
 
         <View style={styles.statsRow}>

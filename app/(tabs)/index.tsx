@@ -22,6 +22,7 @@ import { useUserStore } from '@/stores/userStore';
 import TopAppBar from '@/components/TopAppBar';
 import { TimerRing } from '@/components/TimerRing';
 import { useRitualAudio } from '@/hooks/useAudioPlayer';
+import { SoliAvatar } from '@/components/SoliAvatar';
 import type { RitualSound } from '@/types';
 
 const DURATIONS: number[] = [15, 18, 25, 45];
@@ -122,9 +123,17 @@ export default function HomeScreen() {
             <TimerRing secondsRemaining={durationMinutes * 60} totalSeconds={durationMinutes * 60} />
           </View>
 
+          {/* ── Personalized Suggestion (Step 2) ── */}
+          <View style={[styles.suggestionPill, { backgroundColor: C.purpleDim, borderColor: C.purpleBorder }]}>
+            <Text style={{ fontSize: 14 }}>💡</Text>
+            <Text style={[styles.suggestionPillText, { color: C.purple }]}>
+              Recommended: Deep Focus (25 min)
+            </Text>
+          </View>
+
           {/* Mascot */}
           <View style={styles.mascot}>
-            <Text style={{ fontSize: 60 }}>🌱</Text>
+            <SoliAvatar size={100} state="idle" />
           </View>
 
           {/* Start CTA */}
@@ -321,6 +330,25 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
+        {/* ── Low Motivation Nudge (Step 7) ── */}
+        <View style={[styles.nudgeCard, { backgroundColor: C.bgCard, borderColor: C.border }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.nudgeTitle, { color: C.textPrimary }]}>Feeling low on motivation?</Text>
+            <Text style={[styles.nudgeSubtitle, { color: C.textSecondary }]}>
+              Try a 5-min micro-session. It's the easiest way to start.
+            </Text>
+          </View>
+          <Pressable
+            style={[styles.nudgeAction, { backgroundColor: C.purple }]}
+            onPress={() => {
+              handleDurationSelect(5);
+              handleStart();
+            }}
+          >
+            <Text style={styles.nudgeActionText}>Start</Text>
+          </Pressable>
+        </View>
+
         {/* ── Weekly Equilibrium Chart ── */}
         <View
           style={[
@@ -413,8 +441,6 @@ const styles = StyleSheet.create({
   mascot: {
     width: 110,
     height: 110,
-    borderRadius: 55,
-    backgroundColor: '#EBE7DD',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: Spacing.xl,
@@ -613,6 +639,56 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     paddingRight: Spacing.md,
   },
+
+  suggestionPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: Radius.full,
+    borderWidth: 1,
+    marginBottom: Spacing.xl,
+  },
+  suggestionPillText: {
+    fontFamily: Typography.fontSans,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+
+  nudgeCard: {
+    marginHorizontal: Spacing.xl,
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: Spacing.xl,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.xl,
+    gap: Spacing.md,
+  },
+  nudgeTitle: {
+    fontFamily: Typography.fontSans,
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  nudgeSubtitle: {
+    fontFamily: Typography.fontSans,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  nudgeAction: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: Radius.lg,
+  },
+  nudgeActionText: {
+    color: '#FFF',
+    fontFamily: Typography.fontSans,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
   perfButton: {
     width: 48,
     height: 48,

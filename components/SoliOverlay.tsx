@@ -1,4 +1,3 @@
-// components/SageOverlay.tsx
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, {
@@ -7,24 +6,22 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { SageAvatar } from './SageAvatar';
+import { SoliAvatar, SoliState } from './SoliAvatar';
 import { Typography, Radius, Spacing } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
-type SageState = 'idle' | 'watching' | 'nudge' | 'alert' | 'celebrate';
-
-interface SageOverlayProps {
-  sageState: SageState;
+interface SoliOverlayProps {
+  soliState: SoliState;
   message: string;
   onDismiss?: () => void;
 }
 
-export function SageOverlay({ sageState, message, onDismiss }: SageOverlayProps) {
+export function SoliOverlay({ soliState, message, onDismiss }: SoliOverlayProps) {
   const C = useThemeColors();
   const translateY = useSharedValue(20);
   const opacity = useSharedValue(0);
 
-  const stateBg: Record<SageState, string> = {
+  const stateBg: Record<SoliState, string> = {
     idle:      C.bgCard,
     watching:  C.bgCard,
     nudge:     'rgba(251,191,36,0.08)',
@@ -32,7 +29,7 @@ export function SageOverlay({ sageState, message, onDismiss }: SageOverlayProps)
     celebrate: 'rgba(74,222,128,0.08)',
   };
 
-  const stateBorder: Record<SageState, string> = {
+  const stateBorder: Record<SoliState, string> = {
     idle:      C.border,
     watching:  C.border,
     nudge:     'rgba(251,191,36,0.25)',
@@ -40,7 +37,7 @@ export function SageOverlay({ sageState, message, onDismiss }: SageOverlayProps)
     celebrate: 'rgba(74,222,128,0.3)',
   };
 
-  const stateNameColor: Record<SageState, string> = {
+  const stateNameColor: Record<SoliState, string> = {
     idle:      C.purple,
     watching:  C.purple,
     nudge:     C.amber,
@@ -49,36 +46,36 @@ export function SageOverlay({ sageState, message, onDismiss }: SageOverlayProps)
   };
 
   useEffect(() => {
-    if (sageState !== 'idle') {
+    if (soliState !== 'idle') {
       translateY.value = withSpring(0, { damping: 18, stiffness: 200 });
       opacity.value = withTiming(1, { duration: 250 });
     } else {
       translateY.value = withTiming(10, { duration: 200 });
       opacity.value = withTiming(0, { duration: 200 });
     }
-  }, [sageState]);
+  }, [soliState]);
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
     opacity: opacity.value,
   }));
 
-  if (sageState === 'idle') return null;
+  if (soliState === 'idle') return null;
 
   return (
     <Animated.View
       style={[
         styles.container,
         {
-          backgroundColor: stateBg[sageState],
-          borderColor: stateBorder[sageState],
+          backgroundColor: stateBg[soliState],
+          borderColor: stateBorder[soliState],
         },
         animStyle,
       ]}
     >
-      <SageAvatar size={40} state={sageState} />
+      <SoliAvatar size={40} state={soliState} />
       <View style={styles.textWrap}>
-        <Text style={[styles.name, { color: stateNameColor[sageState] }]}>Sage</Text>
+        <Text style={[styles.name, { color: stateNameColor[soliState] }]}>Soli</Text>
         <Text style={[styles.message, { color: C.textSecondary }]} numberOfLines={2}>{message}</Text>
       </View>
       {onDismiss && (

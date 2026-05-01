@@ -12,7 +12,7 @@ import {
 import { Typography, Spacing, Radius } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useUserStore } from '@/stores/userStore';
-import { SageAvatar } from '@/components/SageAvatar';
+import { SoliAvatar } from '@/components/SoliAvatar';
 
 type InsightTagColor = 'purple' | 'green' | 'amber';
 
@@ -209,8 +209,8 @@ export default function InsightsScreen() {
         ) : suggestion ? (
           <View style={[s.suggestionCard, { backgroundColor: C.bgCard, borderColor: C.purpleBorder }]}>
             <View style={s.suggestionTop}>
-              <SageAvatar size={28} state="watching" />
-              <Text style={[s.suggestionTitle, { color: C.purple }]}>Sage's recommendation</Text>
+              <SoliAvatar size={28} state="watching" />
+              <Text style={[s.suggestionTitle, { color: C.purple }]}>Soli's recommendation</Text>
             </View>
             <Text style={[s.suggestionBody, { color: C.textSecondary }]}>{suggestion.message}</Text>
             {suggestion.pills && suggestion.pills.length > 0 && (
@@ -226,8 +226,8 @@ export default function InsightsScreen() {
         ) : (
           <View style={[s.suggestionCard, { backgroundColor: C.bgCard, borderColor: C.purpleBorder }]}>
             <View style={s.suggestionTop}>
-              <SageAvatar size={28} state="watching" />
-              <Text style={[s.suggestionTitle, { color: C.purple }]}>Sage's recommendation</Text>
+              <SoliAvatar size={28} state="watching" />
+              <Text style={[s.suggestionTitle, { color: C.purple }]}>Soli's recommendation</Text>
             </View>
             <Text style={[s.suggestionBody, { color: C.textSecondary }]}>
               Complete a few more sessions and I'll start surfacing patterns specific to you. For now — your morning sessions tend to hit hardest. Lean into that.

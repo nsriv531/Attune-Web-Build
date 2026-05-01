@@ -9,13 +9,13 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { OnboardingLayout, CTAButton } from '@/components/OnboardingLayout';
-import { SageAvatar } from '@/components/SageAvatar';
+import { SoliAvatar } from '@/components/SoliAvatar';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { Colors, Typography, Spacing } from '@/constants/theme';
 
 export default function PreSessionScreen() {
   const router = useRouter();
-  const { sageForm } = useOnboardingStore();
+  const { soliForm } = useOnboardingStore();
 
   const avatarScale = useSharedValue(0.8);
   const avatarOpacity = useSharedValue(0);
@@ -50,16 +50,16 @@ export default function PreSessionScreen() {
         <View style={styles.glow} pointerEvents="none" />
 
         <Animated.View style={avatarStyle}>
-          <SageAvatar size={80} state="watching" form={sageForm} />
+          <SoliAvatar size={80} state="watching" />
         </Animated.View>
 
         <Animated.View style={[styles.copy, contentStyle]}>
-          <Text style={styles.headline}>Your first session, with Sage watching.</Text>
+          <Text style={styles.headline}>Your first session, with Soli watching.</Text>
           <Text style={styles.subline}>
             Sixty seconds. We'll show you how it works.
           </Text>
           <Text style={styles.note}>
-            Sage will respond in real time. Just focus.
+            Soli will respond in real time. Just focus.
           </Text>
         </Animated.View>
 
