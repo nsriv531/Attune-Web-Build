@@ -1,13 +1,14 @@
 import React from 'react';
 import { View, Text, ScrollView, SafeAreaView, StyleSheet } from 'react-native';
-import { Typography, Spacing, Radius } from '@/constants/theme';
+import { Typography, Spacing, Radius, Colors } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { KeycapSurface } from '@/components/KeycapSurface';
 
 export default function ResourcesScreen() {
   const C = useThemeColors();
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.bg }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={styles.content}
@@ -22,12 +23,12 @@ export default function ResourcesScreen() {
         </View>
 
         {/* Coming Soon Card */}
-        <View style={[styles.card, { backgroundColor: C.bgCard, borderColor: C.border }]}>
+        <KeycapSurface radius={Radius.lg} style={styles.cardOuter} contentStyle={styles.cardFace}>
           <Text style={[styles.cardTitle, { color: C.textPrimary }]}>Coming Soon</Text>
           <Text style={[styles.cardText, { color: C.textSecondary }]}>
             We're building a curated library of focus techniques, science-backed insights, and learning materials.
           </Text>
-        </View>
+        </KeycapSurface>
 
         {/* Placeholder Cards */}
         {[
@@ -35,13 +36,15 @@ export default function ResourcesScreen() {
           { title: 'Guides', desc: 'Deep dive into focus science' },
           { title: 'Community', desc: 'Connect with others' },
         ].map((item, idx) => (
-          <View
+          <KeycapSurface
             key={idx}
-            style={[styles.placeholderCard, { backgroundColor: C.bgCard, borderColor: C.border }]}
+            radius={Radius.lg}
+            style={styles.placeholderCardOuter}
+            contentStyle={styles.placeholderCardFace}
           >
             <Text style={[styles.placeholderTitle, { color: C.textPrimary }]}>{item.title}</Text>
             <Text style={[styles.placeholderDesc, { color: C.textTertiary }]}>{item.desc}</Text>
-          </View>
+          </KeycapSurface>
         ))}
       </ScrollView>
     </SafeAreaView>
@@ -63,12 +66,8 @@ const styles = StyleSheet.create({
     fontSize: Typography.size.base,
   },
 
-  card: {
-    borderWidth: 0.5,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-    marginBottom: Spacing.xl,
-  },
+  cardOuter: { marginBottom: Spacing.xl },
+  cardFace: { padding: Spacing.lg },
   cardTitle: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.lg,
@@ -81,12 +80,8 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 
-  placeholderCard: {
-    borderWidth: 0.5,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-    marginBottom: Spacing.md,
-  },
+  placeholderCardOuter: { marginBottom: Spacing.md },
+  placeholderCardFace: { padding: Spacing.lg },
   placeholderTitle: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.md,

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -8,7 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { OnboardingLayout, CTAButton } from '@/components/OnboardingLayout';
-import { useOnboardingStore } from '@/stores/onboardingStore';
+import { KeycapButton } from '@/components/KeycapSurface';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 
 function PermissionRow({
@@ -36,9 +36,14 @@ function PermissionRow({
           <Text style={styles.grantedText}>On</Text>
         </View>
       ) : (
-        <Pressable onPress={onAllow} style={styles.allowBtn}>
+        <KeycapButton
+          accent
+          radius={Radius.full}
+          contentStyle={styles.allowBtnFace}
+          onPress={onAllow}
+        >
           <Text style={styles.allowText}>Allow</Text>
-        </Pressable>
+        </KeycapButton>
       )}
     </View>
   );
@@ -63,12 +68,10 @@ export default function PermissionsScreen() {
   }));
 
   async function handleAllowNotifications() {
-    // In production: call expo-notifications requestPermissionsAsync()
     setNotifGranted(true);
   }
 
   function handleAllowScreenTime() {
-    // In production: trigger screen time access request
     setScreenTimeGranted(true);
   }
 
@@ -82,7 +85,7 @@ export default function PermissionsScreen() {
         <View style={styles.header}>
           <Text style={styles.headline}>Two quick asks.</Text>
           <Text style={styles.subline}>
-            Both make Sage meaningfully better. Neither is required to continue.
+            Both make Soli meaningfully better. Neither is required to continue.
           </Text>
         </View>
 
@@ -90,14 +93,14 @@ export default function PermissionsScreen() {
           <PermissionRow
             icon="🔔"
             title="Notifications"
-            description="So Sage can find you tomorrow at your best time."
+            description="So Soli can find you tomorrow at your best time."
             granted={notifGranted}
             onAllow={handleAllowNotifications}
           />
           <PermissionRow
             icon="🛡"
             title="Screen time access"
-            description={`So Sage can tell when you've drifted to another app. Sage never reads what's on your screen — just whether Attune is in front.`}
+            description={`So Soli can tell when you've drifted to another app. Soli never reads what's on your screen — just whether Attune is in front.`}
             granted={screenTimeGranted}
             onAllow={handleAllowScreenTime}
           />
@@ -126,7 +129,7 @@ const styles = StyleSheet.create({
   headline: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size['2xl'],
-    fontWeight: Typography.weight.semibold,
+    fontWeight: '700',
     color: Colors.textPrimary,
     lineHeight: 34,
   },
@@ -165,7 +168,7 @@ const styles = StyleSheet.create({
   permTitle: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.md,
-    fontWeight: Typography.weight.semibold,
+    fontWeight: '600',
     color: Colors.textPrimary,
   },
   permDesc: {
@@ -181,6 +184,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.full,
     paddingHorizontal: Spacing.md,
     paddingVertical: 4,
+    alignSelf: 'flex-start',
   },
   grantedText: {
     fontFamily: Typography.fontMono,
@@ -188,19 +192,15 @@ const styles = StyleSheet.create({
     color: Colors.green,
     letterSpacing: 0.3,
   },
-  allowBtn: {
-    backgroundColor: Colors.purpleDim,
-    borderWidth: 0.5,
-    borderColor: Colors.purpleBorder,
-    borderRadius: Radius.full,
+  allowBtnFace: {
     paddingHorizontal: Spacing.md,
     paddingVertical: 6,
   },
   allowText: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.sm,
-    fontWeight: Typography.weight.medium,
-    color: Colors.purple,
+    fontWeight: '700',
+    color: '#2C2000',
   },
   ctaWrap: {
     paddingBottom: Spacing['2xl'],

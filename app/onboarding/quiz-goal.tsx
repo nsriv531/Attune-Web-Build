@@ -1,22 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSpring,
   Easing,
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { OnboardingLayout, CTAButton } from '@/components/OnboardingLayout';
+import { KeycapButton } from '@/components/KeycapSurface';
 import { useOnboardingStore, type GoalType } from '@/stores/onboardingStore';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 
 const GOALS: { key: GoalType; label: string }[] = [
-  { key: 'deep-work',       label: 'Deep work'        },
-  { key: 'daily-homework',  label: 'Daily homework'   },
-  { key: 'exam-prep',       label: 'Exam prep'        },
+  { key: 'deep-work',       label: 'Deep work'          },
+  { key: 'daily-homework',  label: 'Daily homework'     },
+  { key: 'exam-prep',       label: 'Exam prep'          },
   { key: 'building-habit',  label: 'Building the habit' },
 ];
 
@@ -29,29 +29,23 @@ function GoalCard({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const scale = useSharedValue(1);
-
   function handlePress() {
-    scale.value = withSpring(0.97, { damping: 20 }, () => {
-      scale.value = withSpring(1, { damping: 14 });
-    });
     Haptics.selectionAsync();
     onSelect();
   }
 
-  const cardStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
   return (
-    <Pressable onPress={handlePress}>
-      <Animated.View style={[styles.card, selected && styles.cardSelected, cardStyle]}>
-        <Text style={[styles.cardLabel, selected && styles.cardLabelSelected]}>
-          {item.label}
-        </Text>
-        {selected && <View style={styles.dot} />}
-      </Animated.View>
-    </Pressable>
+    <KeycapButton
+      accent={selected}
+      radius={Radius.xl}
+      contentStyle={styles.cardFace}
+      onPress={handlePress}
+    >
+      <Text style={[styles.cardLabel, selected && styles.cardLabelSelected]}>
+        {item.label}
+      </Text>
+      {selected && <View style={styles.dot} />}
+    </KeycapButton>
   );
 }
 
@@ -111,7 +105,7 @@ const styles = StyleSheet.create({
   headline: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size['2xl'],
-    fontWeight: Typography.weight.semibold,
+    fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: Spacing['2xl'],
     lineHeight: 34,
@@ -120,35 +114,28 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: Spacing.md,
   },
-  card: {
-    backgroundColor: Colors.bgCard,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.xl,
+  cardFace: {
     paddingVertical: Spacing.base,
     paddingHorizontal: Spacing.base,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  cardSelected: {
-    borderColor: 'rgba(167,139,250,0.6)',
-    backgroundColor: Colors.purpleDim,
-  },
   cardLabel: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.md,
-    fontWeight: Typography.weight.medium,
+    fontWeight: '500',
     color: Colors.textSecondary,
   },
   cardLabelSelected: {
-    color: Colors.purple,
+    color: '#2C2000',
+    fontWeight: '700',
   },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: Colors.purple,
+    backgroundColor: '#2C2000',
   },
   ctaWrap: {
     paddingVertical: Spacing['2xl'],

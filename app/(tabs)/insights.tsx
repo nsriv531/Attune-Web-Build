@@ -9,10 +9,11 @@ import {
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
-import { Typography, Spacing, Radius } from '@/constants/theme';
+import { Typography, Spacing, Radius, Colors } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useUserStore } from '@/stores/userStore';
 import { SoliAvatar } from '@/components/SoliAvatar';
+import { KeycapSurface } from '@/components/KeycapSurface';
 
 type InsightTagColor = 'purple' | 'green' | 'amber';
 
@@ -60,7 +61,6 @@ const TIME_SLOTS = ['8am', '10am', '2pm', '8pm'];
 
 function intensityToColor(v: number, accent: string): string {
   if (v < 0.05) return 'rgba(255,255,255,0.04)';
-  // Build opacity variants of the accent hex color
   if (v < 0.30) return `${accent}2e`;
   if (v < 0.55) return `${accent}61`;
   if (v < 0.75) return `${accent}9e`;
@@ -126,7 +126,7 @@ function InsightCard({ insight }: { insight: AIInsight }) {
   };
   const tag = tagStyles[insight.tagColor];
   return (
-    <View style={[s.insightCard, { backgroundColor: C.bgCard, borderColor: C.border }]}>
+    <KeycapSurface radius={Radius.xl} style={s.insightCardOuter} contentStyle={s.insightCardFace}>
       <View style={s.insightTop}>
         <Text style={[s.insightTitle, { color: C.textPrimary }]}>{insight.title}</Text>
         <View style={[s.insightTag, { backgroundColor: tag.bg }]}>
@@ -134,7 +134,7 @@ function InsightCard({ insight }: { insight: AIInsight }) {
         </View>
       </View>
       <Text style={[s.insightBody, { color: C.textSecondary }]}>{insight.body}</Text>
-    </View>
+    </KeycapSurface>
   );
 }
 
@@ -165,7 +165,7 @@ export default function InsightsScreen() {
     : 0;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.bg }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={s.content}
@@ -177,21 +177,21 @@ export default function InsightsScreen() {
         </Text>
 
         <View style={s.statsRow}>
-          <View style={[s.statBox, { backgroundColor: C.bgCard, borderColor: C.border }]}>
+          <KeycapSurface radius={Radius.lg} style={{ flex: 1 }} contentStyle={s.statBoxFace}>
             <Text style={[s.statNum, { color: C.purple }]}>{totalXp}</Text>
             <Text style={[s.statLbl, { color: C.textTertiary }]}>Total XP</Text>
-          </View>
-          <View style={[s.statBox, { backgroundColor: C.bgCard, borderColor: C.border }]}>
+          </KeycapSurface>
+          <KeycapSurface radius={Radius.lg} style={{ flex: 1 }} contentStyle={s.statBoxFace}>
             <Text style={[s.statNum, { color: C.amber }]}>{streakDays}</Text>
             <Text style={[s.statLbl, { color: C.textTertiary }]}>Streak</Text>
-          </View>
-          <View style={[s.statBox, { backgroundColor: C.bgCard, borderColor: C.border }]}>
+          </KeycapSurface>
+          <KeycapSurface radius={Radius.lg} style={{ flex: 1 }} contentStyle={s.statBoxFace}>
             <Text style={[s.statNum, { color: C.green }]}>{avgFocus || '--'}</Text>
             <Text style={[s.statLbl, { color: C.textTertiary }]}>Avg focus</Text>
-          </View>
+          </KeycapSurface>
         </View>
 
-        <View style={[s.heatmapCard, { backgroundColor: C.bgCard, borderColor: C.border }]}>
+        <KeycapSurface radius={Radius.xl} style={s.heatmapCardOuter} contentStyle={s.heatmapCardFace}>
           <Text style={[s.cardLabel, { color: C.textTertiary }]}>Weekly focus heatmap</Text>
           {!hasRealData && (
             <Text style={[s.seedNote, { color: C.textHint }]}>
@@ -199,15 +199,15 @@ export default function InsightsScreen() {
             </Text>
           )}
           <HeatmapGrid data={heatmapData} />
-        </View>
+        </KeycapSurface>
 
         {isLoadingInsights ? (
-          <View style={[s.loadingCard, { backgroundColor: C.bgCard, borderColor: C.border }]}>
+          <KeycapSurface radius={Radius.xl} style={s.suggestionCardOuter} contentStyle={s.loadingCardFace}>
             <ActivityIndicator color={C.purple} size="small" />
             <Text style={[s.loadingText, { color: C.textTertiary }]}>Sage is analysing your sessions…</Text>
-          </View>
+          </KeycapSurface>
         ) : suggestion ? (
-          <View style={[s.suggestionCard, { backgroundColor: C.bgCard, borderColor: C.purpleBorder }]}>
+          <KeycapSurface radius={Radius.xl} style={s.suggestionCardOuter} contentStyle={s.suggestionCardFace}>
             <View style={s.suggestionTop}>
               <SoliAvatar size={28} state="watching" />
               <Text style={[s.suggestionTitle, { color: C.purple }]}>Soli's recommendation</Text>
@@ -222,9 +222,9 @@ export default function InsightsScreen() {
                 ))}
               </View>
             )}
-          </View>
+          </KeycapSurface>
         ) : (
-          <View style={[s.suggestionCard, { backgroundColor: C.bgCard, borderColor: C.purpleBorder }]}>
+          <KeycapSurface radius={Radius.xl} style={s.suggestionCardOuter} contentStyle={s.suggestionCardFace}>
             <View style={s.suggestionTop}>
               <SoliAvatar size={28} state="watching" />
               <Text style={[s.suggestionTitle, { color: C.purple }]}>Soli's recommendation</Text>
@@ -237,7 +237,7 @@ export default function InsightsScreen() {
                 <Text style={[s.pillText, { color: C.purple }]}>Try · 45min · 9am</Text>
               </View>
             </View>
-          </View>
+          </KeycapSurface>
         )}
 
         <Text style={[s.sectionTitle, { color: C.textPrimary }]}>Insights</Text>
@@ -271,10 +271,7 @@ const s = StyleSheet.create({
     gap: Spacing.sm,
     marginBottom: Spacing.base,
   },
-  statBox: {
-    flex: 1,
-    borderWidth: 0.5,
-    borderRadius: Radius.lg,
+  statBoxFace: {
     padding: Spacing.md,
     alignItems: 'center',
   },
@@ -291,11 +288,11 @@ const s = StyleSheet.create({
     marginTop: 2,
   },
 
-  heatmapCard: {
-    borderWidth: 0.5,
-    borderRadius: Radius.xl,
-    padding: Spacing.base,
+  heatmapCardOuter: {
     marginBottom: Spacing.base,
+  },
+  heatmapCardFace: {
+    padding: Spacing.base,
   },
   cardLabel: {
     fontFamily: Typography.fontMono,
@@ -311,25 +308,22 @@ const s = StyleSheet.create({
     fontStyle: 'italic',
   },
 
-  loadingCard: {
+  loadingCardFace: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    borderWidth: 0.5,
-    borderRadius: Radius.xl,
     padding: Spacing.base,
-    marginBottom: Spacing.base,
   },
   loadingText: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.sm,
   },
 
-  suggestionCard: {
-    borderWidth: 0.5,
-    borderRadius: Radius.xl,
-    padding: Spacing.base,
+  suggestionCardOuter: {
     marginBottom: Spacing.base,
+  },
+  suggestionCardFace: {
+    padding: Spacing.base,
     gap: Spacing.sm,
   },
   suggestionTop: {
@@ -370,11 +364,11 @@ const s = StyleSheet.create({
     fontWeight: Typography.weight.semibold,
     marginBottom: Spacing.md,
   },
-  insightCard: {
-    borderWidth: 0.5,
-    borderRadius: Radius.xl,
-    padding: Spacing.base,
+  insightCardOuter: {
     marginBottom: Spacing.md,
+  },
+  insightCardFace: {
+    padding: Spacing.base,
   },
   insightTop: {
     flexDirection: 'row',

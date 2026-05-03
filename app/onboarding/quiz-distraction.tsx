@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSpring,
   Easing,
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { OnboardingLayout, CTAButton } from '@/components/OnboardingLayout';
+import { KeycapButton } from '@/components/KeycapSurface';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 
@@ -29,29 +29,23 @@ function DistractionCard({
   selected: boolean;
   onToggle: () => void;
 }) {
-  const scale = useSharedValue(1);
-
   function handlePress() {
-    scale.value = withSpring(0.97, { damping: 20 }, () => {
-      scale.value = withSpring(1, { damping: 14 });
-    });
     Haptics.selectionAsync();
     onToggle();
   }
 
-  const cardStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
   return (
-    <Pressable onPress={handlePress}>
-      <Animated.View style={[styles.card, selected && styles.cardSelected, cardStyle]}>
-        <Text style={[styles.cardLabel, selected && styles.cardLabelSelected]}>{label}</Text>
-        <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
-          {selected && <View style={styles.checkDot} />}
-        </View>
-      </Animated.View>
-    </Pressable>
+    <KeycapButton
+      accent={selected}
+      radius={Radius.xl}
+      contentStyle={styles.cardFace}
+      onPress={handlePress}
+    >
+      <Text style={[styles.cardLabel, selected && styles.cardLabelSelected]}>{label}</Text>
+      <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
+        {selected && <View style={styles.checkDot} />}
+      </View>
+    </KeycapButton>
   );
 }
 
@@ -88,7 +82,7 @@ export default function QuizDistractionScreen() {
     <OnboardingLayout step={7}>
       <Animated.View style={[styles.container, contentStyle]}>
         <Text style={styles.headline}>What pulls you off track?</Text>
-        <Text style={styles.hint}>Sage will watch for these specifically.</Text>
+        <Text style={styles.hint}>Soli will watch for these specifically.</Text>
 
         <View style={styles.list}>
           {DISTRACTIONS.map((d) => (
@@ -121,7 +115,7 @@ const styles = StyleSheet.create({
   headline: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size['2xl'],
-    fontWeight: Typography.weight.semibold,
+    fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: Spacing.xs,
     lineHeight: 34,
@@ -136,31 +130,24 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: Spacing.md,
   },
-  card: {
-    backgroundColor: Colors.bgCard,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.xl,
+  cardFace: {
     paddingVertical: Spacing.base,
     paddingHorizontal: Spacing.base,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  cardSelected: {
-    borderColor: 'rgba(167,139,250,0.6)',
-    backgroundColor: Colors.purpleDim,
-  },
   cardLabel: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.md,
-    fontWeight: Typography.weight.medium,
+    fontWeight: '500',
     color: Colors.textSecondary,
     flex: 1,
     paddingRight: Spacing.sm,
   },
   cardLabelSelected: {
-    color: Colors.textPrimary,
+    color: '#2C2000',
+    fontWeight: '700',
   },
   checkbox: {
     width: 20,
@@ -172,14 +159,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkboxSelected: {
-    borderColor: Colors.purple,
-    backgroundColor: Colors.purple,
+    borderColor: '#2C2000',
+    backgroundColor: '#2C2000',
   },
   checkDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.amber,
   },
   ctaWrap: {
     paddingVertical: Spacing['2xl'],

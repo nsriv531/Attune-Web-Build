@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { SoliAvatar } from '@/components/SoliAvatar';
 import { CTAButton } from '@/components/OnboardingLayout';
+import { KeycapSurface } from '@/components/KeycapSurface';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { useSessionStore } from '@/stores/sessionStore';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
@@ -34,20 +35,20 @@ const RATIONALE: Record<string, Record<string, string>> = {
   gentle: {
     morning:    'You mentioned mornings work best. Let\'s start gentle and build momentum.',
     afternoon:  'Afternoons seem to be your window. A calm, steady session is a good fit.',
-    evening:    'Evening sessions can be grounding. Sage will stay close.',
+    evening:    'Evening sessions can be grounding. Soli will stay close.',
     'late-night': 'Night owl energy noted. Keep it focused and wrap up before midnight.',
   },
   steady: {
-    morning:    'Mornings are your peak. Lock in and let Sage hold the frame.',
-    afternoon:  'Afternoon block confirmed. Sage will be there with you.',
-    evening:    'Evening looks right. Same time tomorrow — Sage will expect you.',
+    morning:    'Mornings are your peak. Lock in and let Soli hold the frame.',
+    afternoon:  'Afternoon block confirmed. Soli will be there with you.',
+    evening:    'Evening looks right. Same time tomorrow — Soli will expect you.',
     'late-night': 'Late night focus is real. Keep the same rhythm and it compounds.',
   },
   direct: {
     morning:    'Morning. Your best window. Don\'t waste it.',
-    afternoon:  'Afternoon is solid. Show up at the same time and Sage will be ready.',
+    afternoon:  'Afternoon is solid. Show up at the same time and Soli will be ready.',
     evening:    'Evening session locked. Same time tomorrow — no excuses.',
-    'late-night': 'Late but committed. Sage will hold you to it.',
+    'late-night': 'Late but committed. Soli will hold you to it.',
   },
 };
 
@@ -126,7 +127,6 @@ export default function TomorrowScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* Full-width progress bar at 100% */}
       <View style={styles.progressTrack}>
         <View style={styles.progressFull} />
       </View>
@@ -137,25 +137,29 @@ export default function TomorrowScreen() {
             <SoliAvatar size={52} state="watching" />
           </Animated.View>
           <View style={styles.headerText}>
-            <Text style={styles.tagline}>Sage learns from this.</Text>
+            <Text style={styles.tagline}>Soli learns from this.</Text>
             <Text style={styles.headline}>Here's tomorrow.</Text>
           </View>
         </Animated.View>
 
-        <Animated.View style={[styles.card, contentStyle]}>
-          <SuggestionRow icon="⏱" label="Duration" value={`${suggestedDuration} min`} delay={200} />
-          <View style={styles.divider} />
-          <SuggestionRow icon="☀" label="Suggested time" value={suggestedTime} delay={350} />
-          <View style={styles.divider} />
-          <SuggestionRow icon="📚" label="Subject" value={topSubject} delay={500} />
+        <Animated.View style={contentStyle}>
+          <KeycapSurface radius={Radius.xl}>
+            <SuggestionRow icon="⏱" label="Duration" value={`${suggestedDuration} min`} delay={200} />
+            <View style={styles.divider} />
+            <SuggestionRow icon="☀" label="Suggested time" value={suggestedTime} delay={350} />
+            <View style={styles.divider} />
+            <SuggestionRow icon="📚" label="Subject" value={topSubject} delay={500} />
+          </KeycapSurface>
         </Animated.View>
 
-        <Animated.View style={[styles.rationaleCard, contentStyle]}>
-          <View style={styles.rationaleHeader}>
-            <SoliAvatar size={24} state="watching" />
-            <Text style={styles.sageName}>Sage</Text>
-          </View>
-          <Text style={styles.rationaleText}>{rationale}</Text>
+        <Animated.View style={contentStyle}>
+          <KeycapSurface radius={Radius.xl} contentStyle={styles.rationaleCardFace}>
+            <View style={styles.rationaleHeader}>
+              <SoliAvatar size={24} state="watching" />
+              <Text style={styles.sageName}>Soli</Text>
+            </View>
+            <Text style={styles.rationaleText}>{rationale}</Text>
+          </KeycapSurface>
         </Animated.View>
 
         <View style={styles.ctaWrap}>
@@ -207,15 +211,8 @@ const styles = StyleSheet.create({
   headline: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.xl,
-    fontWeight: Typography.weight.semibold,
+    fontWeight: '600',
     color: Colors.textPrimary,
-  },
-  card: {
-    backgroundColor: Colors.bgCard,
-    borderWidth: 0.5,
-    borderColor: Colors.border,
-    borderRadius: Radius.xl,
-    overflow: 'hidden',
   },
   row: {
     flexDirection: 'row',
@@ -242,18 +239,14 @@ const styles = StyleSheet.create({
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.md,
     color: Colors.textPrimary,
-    fontWeight: Typography.weight.medium,
+    fontWeight: '500',
   },
   divider: {
     height: 0.5,
     backgroundColor: Colors.border,
     marginHorizontal: Spacing.base,
   },
-  rationaleCard: {
-    backgroundColor: Colors.bgCard,
-    borderWidth: 0.5,
-    borderColor: Colors.border,
-    borderRadius: Radius.xl,
+  rationaleCardFace: {
     padding: Spacing.base,
     gap: Spacing.sm,
   },

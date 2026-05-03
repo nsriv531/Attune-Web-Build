@@ -16,7 +16,7 @@ import { useRouter } from 'expo-router';
 import { useAuth, useClerk } from '@clerk/clerk-expo';
 import { useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-import { Typography, Spacing, Radius } from '@/constants/theme';
+import { Typography, Spacing, Radius, Colors } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useThemeStore } from '@/stores/themeStore';
 import { PALETTES, PALETTE_ORDER, type PaletteKey } from '@/constants/palettes';
@@ -27,6 +27,7 @@ import { useAvatarCustomizationStore } from '@/stores/avatarCustomizationStore';
 import { useOnboardingStore, ONBOARDING_STORAGE_KEY } from '@/stores/onboardingStore';
 import { SoliAvatar } from '@/components/SoliAvatar';
 import { AvatarCustomizationShop } from '@/components/AvatarCustomizationShop';
+import { KeycapSurface, KeycapButton } from '@/components/KeycapSurface';
 
 const LEVEL_NAMES = ['Seedling', 'Sprout', 'Scholar', 'Focus Pro', 'Sage'];
 const LEVEL_XP    = [0, 200, 500, 1000, 2000];
@@ -70,11 +71,10 @@ export default function ProfileScreen() {
   const { signOut, isSignedIn } = useAuth();
   const { user } = useClerk();
   const deleteAccountMutation = useMutation(api.users.deleteAccount);
-  
+
   const [shopVisible, setShopVisible] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Load customization data on mount
   useEffect(() => {
     loadFromStorage();
   }, []);
@@ -82,42 +82,38 @@ export default function ProfileScreen() {
   const handleDeleteAccount = () => {
     Alert.alert(
       "Delete Account & Data",
-      isGuest 
+      isGuest
         ? "Are you sure? This will permanently delete all your locally saved progress and data."
         : "Are you sure? This will permanently delete your account, progress, and all cloud data. This action cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
-        { 
-          text: "Delete Everything", 
+        {
+          text: "Delete Everything",
           style: "destructive",
           onPress: async () => {
             setIsDeleting(true);
             try {
               if (isSignedIn) {
-                // Delete data from Convex
                 await deleteAccountMutation();
-                // Attempt to delete Clerk user (requires proper clerk permissions or backend flow, but client-side delete is supported for the current user)
                 await user?.delete();
               }
             } catch (e) {
               console.error("Error deleting remote account:", e);
-              // Even if remote delete fails (e.g. clerk restricted), we should still log them out locally
             } finally {
-              // Clear local state completely
               useUserStore.persist.clearStorage();
               useSessionStore.persist.clearStorage();
               useAuthStore.persist.clearStorage();
               await AsyncStorage.removeItem(ONBOARDING_STORAGE_KEY);
-              
+
               resetUserStore();
               resetCustomization();
               useOnboardingStore.getState().resetOnboardingFlag();
               setGuest(false);
-              
+
               if (isSignedIn) {
                 await signOut();
               }
-              
+
               setIsDeleting(false);
               router.replace('/sign-in');
             }
@@ -145,7 +141,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.bg }}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         {/* ── Avatar + identity ── */}
@@ -155,10 +151,12 @@ export default function ProfileScreen() {
           <View style={[styles.levelBadge, { backgroundColor: C.purpleDim, borderColor: C.purpleBorder }]}>
             <Text style={[styles.levelBadgeText, { color: C.purple }]}>Level {level} · {levelName}</Text>
           </View>
-          
+
           {/* Customization Button */}
-          <TouchableOpacity
-            style={[styles.customizeButton, { backgroundColor: C.bgCard, borderColor: C.purple }]}
+          <KeycapButton
+            radius={Radius.lg}
+            style={styles.customizeBtnOuter}
+            contentStyle={styles.customizeBtnFace}
             onPress={() => setShopVisible(true)}
           >
             <Text style={[styles.customizeButtonText, { color: C.purple }]}>
@@ -167,11 +165,11 @@ export default function ProfileScreen() {
             <View style={[styles.coinBadge, { backgroundColor: C.amber }]}>
               <Text style={styles.coinBadgeText}>{coins}</Text>
             </View>
-          </TouchableOpacity>
+          </KeycapButton>
         </View>
 
         {/* ── XP progress bar ── */}
-        <View style={[styles.xpCard, { backgroundColor: C.bgCard, borderColor: C.border }]}>
+        <KeycapSurface radius={Radius.xl} style={styles.xpCardOuter} contentStyle={styles.xpCardFace}>
           <View style={styles.xpCardTop}>
             <Text style={[styles.xpTotal, { color: C.purple }]}>{totalXp} XP</Text>
             {remaining > 0 && (
@@ -181,7 +179,7 @@ export default function ProfileScreen() {
           <View style={[styles.xpBarTrack, { backgroundColor: C.bgInput }]}>
             <View style={[styles.xpBarFill, { width: `${Math.round(pct * 100)}%`, backgroundColor: C.purple }]} />
           </View>
-        </View>
+        </KeycapSurface>
 
         {/* ── Stats grid ── */}
         <View style={styles.grid}>
@@ -191,15 +189,20 @@ export default function ProfileScreen() {
             { label: 'Avg focus', value: avgFocus || '--', color: C.green },
             { label: 'Hours',    value: totalHours,     color: C.purple },
           ].map((s) => (
-            <View key={s.label} style={[styles.gridCell, { backgroundColor: C.bgCard, borderColor: C.border }]}>
+            <KeycapSurface
+              key={s.label}
+              radius={Radius.lg}
+              style={styles.gridCellOuter}
+              contentStyle={styles.gridCellFace}
+            >
               <Text style={[styles.gridNum, { color: s.color }]}>{s.value}</Text>
               <Text style={[styles.gridLbl, { color: C.textTertiary }]}>{s.label}</Text>
-            </View>
+            </KeycapSurface>
           ))}
         </View>
 
         {/* ── Theme palette selector ── */}
-        <View style={[styles.paletteCard, { backgroundColor: C.bgCard, borderColor: C.border }]}>
+        <KeycapSurface radius={Radius.xl} style={styles.paletteCardOuter} contentStyle={styles.paletteCardFace}>
           <Text style={[styles.cardLabel, { color: C.textTertiary }]}>Appearance</Text>
           <View style={styles.paletteRow}>
             {PALETTE_ORDER.map((key) => {
@@ -233,10 +236,10 @@ export default function ProfileScreen() {
               );
             })}
           </View>
-        </View>
+        </KeycapSurface>
 
         {/* ── Unlocks ── */}
-        <View style={[styles.unlocksCard, { backgroundColor: C.bgCard, borderColor: C.border }]}>
+        <KeycapSurface radius={Radius.xl} style={styles.unlocksCardOuter} contentStyle={styles.unlocksCardFace}>
           <Text style={[styles.cardLabel, { color: C.textTertiary }]}>Sage unlocks</Text>
           {(UNLOCKS[level] ?? []).map((u) => (
             <View key={u} style={styles.unlockRow}>
@@ -252,14 +255,19 @@ export default function ProfileScreen() {
               </Text>
             </View>
           )}
-        </View>
+        </KeycapSurface>
 
         {/* ── Recent sessions ── */}
         {sessions.length > 0 && (
           <>
             <Text style={[styles.sectionTitle, { color: C.textPrimary }]}>Recent sessions</Text>
             {sessions.slice(0, 5).map((s) => (
-              <View key={s.id} style={[styles.sessionRow, { backgroundColor: C.bgCard, borderColor: C.border }]}>
+              <KeycapSurface
+                key={s.id}
+                radius={Radius.lg}
+                style={styles.sessionRowOuter}
+                contentStyle={styles.sessionRowFace}
+              >
                 <View style={styles.sessionLeft}>
                   <Text style={[styles.sessionSubject, { color: C.textPrimary }]} numberOfLines={1}>{s.subject}</Text>
                   <Text style={[styles.sessionMeta, { color: C.textTertiary }]}>
@@ -274,7 +282,7 @@ export default function ProfileScreen() {
                   </Text>
                   <Text style={[styles.sessionScoreLbl, { color: C.textTertiary }]}>focus</Text>
                 </View>
-              </View>
+              </KeycapSurface>
             ))}
           </>
         )}
@@ -295,7 +303,7 @@ export default function ProfileScreen() {
         <View style={{ height: 32 }} />
 
       </ScrollView>
-      
+
       {/* Avatar Customization Shop Modal */}
       <AvatarCustomizationShop visible={shopVisible} onClose={() => setShopVisible(false)} />
     </SafeAreaView>
@@ -328,13 +336,39 @@ const styles = StyleSheet.create({
     fontSize: Typography.size.sm,
   },
 
-  xpCard: {
-    borderWidth: 0.5,
-    borderRadius: Radius.xl,
-    padding: Spacing.base,
-    marginBottom: Spacing.base,
+  customizeBtnOuter: {
+    marginTop: Spacing.base,
+    alignSelf: 'stretch',
+  },
+  customizeBtnFace: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.base,
     gap: Spacing.sm,
   },
+  customizeButtonText: {
+    fontFamily: Typography.fontSans,
+    fontSize: Typography.size.sm,
+    fontWeight: Typography.weight.semibold,
+  },
+  coinBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    borderRadius: Radius.full,
+    minWidth: 36,
+    alignItems: 'center',
+  },
+  coinBadgeText: {
+    fontFamily: Typography.fontMono,
+    fontSize: Typography.size.xs,
+    fontWeight: Typography.weight.semibold,
+    color: '#1a1a1a',
+  },
+
+  xpCardOuter: { marginBottom: Spacing.base },
+  xpCardFace: { padding: Spacing.base, gap: Spacing.sm },
   xpCardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -365,10 +399,8 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     marginBottom: Spacing.base,
   },
-  gridCell: {
-    width: '48%',
-    borderWidth: 0.5,
-    borderRadius: Radius.lg,
+  gridCellOuter: { width: '48%' },
+  gridCellFace: {
     padding: Spacing.md,
     alignItems: 'center',
   },
@@ -385,14 +417,8 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
 
-  // ── Palette selector ──
-  paletteCard: {
-    borderWidth: 0.5,
-    borderRadius: Radius.xl,
-    padding: Spacing.base,
-    marginBottom: Spacing.base,
-    gap: Spacing.md,
-  },
+  paletteCardOuter: { marginBottom: Spacing.base },
+  paletteCardFace: { padding: Spacing.base, gap: Spacing.md },
   paletteRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -429,13 +455,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
 
-  unlocksCard: {
-    borderWidth: 0.5,
-    borderRadius: Radius.xl,
-    padding: Spacing.base,
-    marginBottom: Spacing.xl,
-    gap: Spacing.sm,
-  },
+  unlocksCardOuter: { marginBottom: Spacing.xl },
+  unlocksCardFace: { padding: Spacing.base, gap: Spacing.sm },
   unlockRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -457,14 +478,12 @@ const styles = StyleSheet.create({
     fontWeight: Typography.weight.semibold,
     marginBottom: Spacing.md,
   },
-  sessionRow: {
+  sessionRowOuter: { marginBottom: Spacing.sm },
+  sessionRowFace: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderWidth: 0.5,
-    borderRadius: Radius.lg,
     padding: Spacing.md,
-    marginBottom: Spacing.sm,
   },
   sessionLeft: { flex: 1 },
   sessionSubject: {
@@ -490,38 +509,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  // ── Avatar Customization ──
-  customizeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1.5,
-    borderRadius: Radius.lg,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.base,
-    marginTop: Spacing.base,
-    gap: Spacing.sm,
-  },
-  customizeButtonText: {
-    fontFamily: Typography.fontSans,
-    fontSize: Typography.size.sm,
-    fontWeight: Typography.weight.semibold,
-  },
-  coinBadge: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
-    borderRadius: Radius.full,
-    minWidth: 36,
-    alignItems: 'center',
-  },
-  coinBadgeText: {
-    fontFamily: Typography.fontMono,
-    fontSize: Typography.size.xs,
-    fontWeight: Typography.weight.semibold,
-    color: '#1a1a1a',
-  },
-
-  // ── Danger Zone ──
   dangerZone: {
     marginTop: Spacing.xl,
     paddingTop: Spacing.md,

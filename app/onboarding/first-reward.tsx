@@ -11,6 +11,7 @@ import Animated, {
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { CTAButton } from '@/components/OnboardingLayout';
+import { KeycapSurface } from '@/components/KeycapSurface';
 import { SoliAvatar } from '@/components/SoliAvatar';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { useUserStore } from '@/stores/userStore';
@@ -47,9 +48,11 @@ function RewardCard({
   }));
 
   return (
-    <Animated.View style={[styles.rewardCard, style]}>
-      <Text style={[styles.rewardNum, { color }]}>{value}</Text>
-      <Text style={[styles.rewardLabel, { color: `${color}99` }]}>{label}</Text>
+    <Animated.View style={style}>
+      <KeycapSurface radius={Radius.lg} contentStyle={styles.rewardFace}>
+        <Text style={[styles.rewardNum, { color }]}>{value}</Text>
+        <Text style={[styles.rewardLabel, { color: `${color}99` }]}>{label}</Text>
+      </KeycapSurface>
     </Animated.View>
   );
 }
@@ -108,13 +111,13 @@ export default function FirstRewardScreen() {
           <RewardCard value="100" label="Focus" color={Colors.green} delay={600} />
         </View>
 
-        <View style={styles.sageCard}>
+        <KeycapSurface radius={Radius.xl} style={styles.sageCardOuter} contentStyle={styles.sageCardFace}>
           <View style={styles.sageCardTop}>
             <SoliAvatar size={28} state="watching" />
             <Text style={styles.sageName}>Soli</Text>
           </View>
           <Text style={styles.sageMsg}>{message}</Text>
-        </View>
+        </KeycapSurface>
 
         <View style={styles.ctaWrap}>
           <CTAButton
@@ -156,7 +159,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size['2xl'],
-    fontWeight: Typography.weight.semibold,
+    fontWeight: '700',
     color: Colors.textPrimary,
     textAlign: 'center',
   },
@@ -170,11 +173,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.md,
   },
-  rewardCard: {
-    backgroundColor: Colors.bgCard,
-    borderWidth: 0.5,
-    borderColor: Colors.border,
-    borderRadius: Radius.lg,
+  rewardFace: {
     paddingVertical: Spacing.base,
     paddingHorizontal: Spacing.lg,
     alignItems: 'center',
@@ -183,7 +182,7 @@ const styles = StyleSheet.create({
   rewardNum: {
     fontFamily: Typography.fontMono,
     fontSize: Typography.size['2xl'],
-    fontWeight: Typography.weight.semibold,
+    fontWeight: '600',
   },
   rewardLabel: {
     fontFamily: Typography.fontMono,
@@ -192,12 +191,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginTop: 3,
   },
-  sageCard: {
+  sageCardOuter: {
     width: '100%',
-    backgroundColor: Colors.bgCard,
-    borderWidth: 0.5,
-    borderColor: Colors.border,
-    borderRadius: Radius.xl,
+  },
+  sageCardFace: {
     padding: Spacing.base,
     gap: Spacing.sm,
   },

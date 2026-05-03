@@ -18,7 +18,7 @@ import { Colors, Typography, Spacing } from '@/constants/theme';
 const LINES = [
   "Reading your distraction profile...",
   "Calibrating session length...",
-  "Tuning Sage's coaching style...",
+  "Tuning Soli's coaching style...",
 ];
 
 function FadeLine({ text, delay }: { text: string; delay: number }) {
@@ -52,7 +52,7 @@ export default function SageLearningScreen() {
     );
 
     const t = setTimeout(() => {
-      router.push('/onboarding/sage-plan' as never);
+      router.push('/onboarding/soli-plan' as never);
     }, 3800);
 
     return () => clearTimeout(t);

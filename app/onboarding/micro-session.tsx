@@ -1,16 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSpring,
   withRepeat,
   withSequence,
   Easing,
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { TimerRing } from '@/components/TimerRing';
+import { KeycapButton, KeycapSurface } from '@/components/KeycapSurface';
 import { SoliAvatar, SoliState } from '@/components/SoliAvatar';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { Colors, Typography, Spacing } from '@/constants/theme';
@@ -58,7 +58,6 @@ export default function MicroSessionScreen() {
     };
   }, []);
 
-  // Scripted moment at 30s remaining: Sage transitions to nudge with "I'm here."
   useEffect(() => {
     if (countdown === 30 && soliState === 'watching') {
       setSoliState('nudge');
@@ -77,7 +76,6 @@ export default function MicroSessionScreen() {
     }
   }, [countdown]);
 
-  // On session complete: ring pulse + navigate
   const doneRef = useRef(false);
   useEffect(() => {
     if (countdown === 0 && !doneRef.current) {
@@ -110,31 +108,27 @@ export default function MicroSessionScreen() {
   }));
 
   const subject = subjects[0] ?? 'Focus';
-  const minutes = Math.floor(countdown / 60);
-  const seconds = countdown % 60;
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
-        {/* Subject label */}
         <Text style={styles.subject}>{subject.toUpperCase()}</Text>
 
-        {/* Timer ring */}
         <Animated.View style={ringWrapStyle}>
           <TimerRing secondsRemaining={countdown} totalSeconds={SESSION_SECONDS} />
         </Animated.View>
 
-        {/* Sage avatar */}
         <View style={styles.sageWrap}>
           <SoliAvatar size={56} state={soliState as any} />
           {showMessage && (
-            <Animated.View style={[styles.messageBubble, messageStyle]}>
-              <Text style={styles.messageText}>{soliMessage}</Text>
+            <Animated.View style={messageStyle}>
+              <KeycapSurface radius={12} contentStyle={styles.messageBubbleFace}>
+                <Text style={styles.messageText}>{soliMessage}</Text>
+              </KeycapSurface>
             </Animated.View>
           )}
         </View>
 
-        {/* Status label */}
         <View style={styles.statusRow}>
           <View
             style={[
@@ -143,8 +137,6 @@ export default function MicroSessionScreen() {
                 backgroundColor:
                   soliState === 'nudge'
                     ? Colors.amber
-                    : soliState === 'celebrate'
-                    ? Colors.green
                     : Colors.green,
               },
             ]}
@@ -156,8 +148,6 @@ export default function MicroSessionScreen() {
                 color:
                   soliState === 'nudge'
                     ? Colors.amber
-                    : soliState === 'celebrate'
-                    ? Colors.green
                     : Colors.green,
               },
             ]}
@@ -166,16 +156,19 @@ export default function MicroSessionScreen() {
           </Text>
         </View>
 
-        {/* Micro-session note */}
         <Text style={styles.note}>
           {countdown === 0 ? 'Session complete.' : 'Stay with it. Soli is watching.'}
         </Text>
 
-        {/* Exit button */}
         {countdown > 0 && !done && (
-          <TouchableOpacity style={styles.exitButton} onPress={handleExitEarly}>
+          <KeycapButton
+            radius={8}
+            style={styles.exitBtnOuter}
+            contentStyle={styles.exitBtnFace}
+            onPress={handleExitEarly}
+          >
             <Text style={styles.exitButtonText}>Exit Early</Text>
-          </TouchableOpacity>
+          </KeycapButton>
         )}
       </View>
     </SafeAreaView>
@@ -204,11 +197,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.sm,
   },
-  messageBubble: {
-    backgroundColor: Colors.bgCard,
-    borderWidth: 0.5,
-    borderColor: Colors.borderMid,
-    borderRadius: 12,
+  messageBubbleFace: {
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
   },
@@ -231,7 +220,7 @@ const styles = StyleSheet.create({
   statusText: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.sm,
-    fontWeight: Typography.weight.medium,
+    fontWeight: '500',
   },
   note: {
     fontFamily: Typography.fontMono,
@@ -240,19 +229,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: 0.3,
   },
-  exitButton: {
+  exitBtnOuter: {
+    marginTop: Spacing.md,
+  },
+  exitBtnFace: {
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    backgroundColor: Colors.bgCard,
-    borderWidth: 1,
-    borderColor: Colors.borderMid,
-    borderRadius: 8,
-    marginTop: Spacing.md,
   },
   exitButtonText: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.sm,
-    fontWeight: Typography.weight.medium,
+    fontWeight: '500',
     color: Colors.textSecondary,
     textAlign: 'center',
   },
