@@ -77,7 +77,8 @@ function AuthSync() {
     if (isSignedIn && user) {
       storeUser({
         name: user.fullName || user.username || 'User',
-        email: user.primaryEmailAddress?.emailAddress,
+        email: user.primaryEmailAddress?.emailAddress || '',
+        age: 0, // Need to handle age somehow, maybe from clerk metadata or just default
       });
     }
   }, [isSignedIn, user, storeUser]);

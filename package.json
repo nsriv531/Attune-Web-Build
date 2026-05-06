@@ -13,6 +13,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "convex:dev": "npx convex dev",
+    "convex:deploy": "npx convex deploy",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts,.tsx",
     "test": "jest"

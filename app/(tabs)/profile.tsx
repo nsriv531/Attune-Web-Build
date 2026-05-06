@@ -137,7 +137,7 @@ export default function ProfileScreen() {
       ? Math.round(sessions.reduce((a, s) => a + s.focusScore, 0) / sessions.length)
       : 0;
 
-  const totalHours = Math.round((sessions.reduce((a, s) => a + s.durationMinutes, 0) / 60) * 10) / 10;
+  const totalHours = Math.round((sessions.reduce((a, s) => a + (s.timeOverall / 60), 0) / 60) * 10) / 10;
 
   function handleSelectPalette(key: PaletteKey) {
     setPalette(key);
@@ -259,11 +259,11 @@ export default function ProfileScreen() {
           <>
             <Text style={[styles.sectionTitle, { color: C.textPrimary }]}>Recent sessions</Text>
             {sessions.slice(0, 5).map((s) => (
-              <View key={s.id} style={[styles.sessionRow, { backgroundColor: C.bgCard, borderColor: C.border }]}>
+              <View key={s._id} style={[styles.sessionRow, { backgroundColor: C.bgCard, borderColor: C.border }]}>
                 <View style={styles.sessionLeft}>
-                  <Text style={[styles.sessionSubject, { color: C.textPrimary }]} numberOfLines={1}>{s.subject}</Text>
+                  <Text style={[styles.sessionSubject, { color: C.textPrimary }]} numberOfLines={1}>{s.subject || 'Unknown'}</Text>
                   <Text style={[styles.sessionMeta, { color: C.textTertiary }]}>
-                    {s.durationMinutes}min · {new Date(s.startedAt).toLocaleDateString()}
+                    {Math.round(s.timeOverall / 60)}min · {new Date(s.startedAt).toLocaleDateString()}
                   </Text>
                 </View>
                 <View style={styles.sessionRight}>

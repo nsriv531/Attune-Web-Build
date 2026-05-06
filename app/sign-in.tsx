@@ -74,7 +74,7 @@ export default function SignInScreen() {
       await setActive({ session: result.createdSessionId });
     }
   } catch (err: any) {
-    console.error("Sign-In Error:", JSON.stringify(err, null, 2));
+    console.log("Sign-In Error:", JSON.stringify(err, null, 2));
     setError(err.errors?.[0]?.message || "An error occurred during sign in.");
   } finally {
     setLoading(false);
@@ -110,7 +110,7 @@ export default function SignInScreen() {
       await setActive({ session: result.createdSessionId });
     }
   } catch (err: any) {
-    console.error("Verification Error:", JSON.stringify(err, null, 2));
+    console.log("Verification Error:", JSON.stringify(err, null, 2));
     setError(err.errors?.[0]?.message || "Invalid verification code.");
   } finally {
     setLoading(false);
