@@ -67,4 +67,5 @@
   "jest": {
     "preset": "jest-expo"
   }
+  "build": "expo export --platform web"
 }
