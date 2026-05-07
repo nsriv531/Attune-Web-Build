@@ -2,7 +2,7 @@ import { useState } from "react";
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { useSignUp } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/backend/stores/authStore';
 
 export default function SignUpScreen() {
   const { signUp, setActive, isLoaded } = useSignUp();

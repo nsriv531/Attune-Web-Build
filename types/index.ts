@@ -13,6 +13,13 @@ export type SessionDuration = number;
 
 export type FocusFeeling = 'solid' | 'good' | 'rough';
 
+export type DistractionLog = {
+  timeLeft: number;
+  timeCameBack: number;
+  distractionTime: number;
+};
+
+// Alias for backward compatibility if needed in stores
 export type DistractionEvent = {
   timestamp: number;
   type: 'app-switch' | 'idle' | 'scroll-burst';
@@ -20,34 +27,74 @@ export type DistractionEvent = {
 };
 
 export type Session = {
-  id: string;
-  subject: string;
-  subjectId: string;
-  durationMinutes: number;
-  startedAt: number;
-  endedAt?: number;
+  _id: string;
+  userId: string;
+  subject?: string;
+  subjectId?: string;
+  timeOverall: number;
+  compiledDistractionTime: number;
+  categoryMusic?: string;
+  breakTime?: number;
+  resumeTime?: number;
   focusScore: number;
-  distractionEvents: DistractionEvent[];
-  feeling?: FocusFeeling;
-  reflectionNote?: string;
-  xpEarned: number;
-  completed: boolean;
+  distractionLogs: DistractionLog[];
+  startedAt: number;
+};
+
+export type Avatar = {
+  userId: string;
+  animalType: 'cat' | 'dog' | 'fox' | 'bear' | 'rabbit' | 'koala';
+  hairColor: 'black' | 'brown' | 'blonde' | 'red' | 'blue' | 'pink' | 'white';
+  skinColor: 'fair' | 'tan' | 'brown' | 'dark';
+  hat: 'none' | 'cap' | 'beanie' | 'crown' | 'wizard';
+  clothing: 'none' | 'shirt' | 'hoodie' | 'scarf';
+  accessory: 'none' | 'glasses' | 'sunglasses' | 'monocle';
+};
+
+export type Subscription = {
+  userId: string;
+  platform: 'ios' | 'android';
+  productId: string;
+  originalTransactionId: string;
+  status: 'active' | 'expired' | 'grace_period';
+  startDate: number;
+  endDate: number;
 };
 
 export type SageState = 'idle' | 'watching' | 'nudge' | 'alert' | 'celebrate';
 
-export type AvatarLevel = {
-  level: number;
-  xpRequired: number;
+export type User = {
+  _id: string;
   name: string;
-  unlocks: string[];
+  email: string;
+  tokenIdentifier: string;
+  age: number;
+  spotifyId?: string;
+  xpScore: number;
+  coins: number;
+  unlockedItems: string[];
+  equippedItems: any; // Or a more specific type
+  streakDays?: number;
+  totalSessions?: number;
+  lastSessionDate?: string;
+  avatar?: Avatar;
+  isPremium: boolean;
 };
 
-export type HeatmapCell = {
-  dayIndex: number;   // 0 = Mon, 6 = Sun
-  hourIndex: number;  // 0 = 8am slot
-  intensity: number;  // 0–1
-  sessionCount: number;
+export type Feedback = {
+  sessionId: string;
+  userId: string;
+  rating: number; // 1-4
+  comment?: string;
+};
+
+export type SweetSpot = {
+  bestDuration: number;
+  avgFocus: number;
+};
+
+export type PeakDaysHours = {
+  heatmap: number[][]; // 7x24 grid
 };
 
 export type AIInsight = {
@@ -62,14 +109,4 @@ export type AIInsight = {
 export type SmartSuggestion = {
   message: string;
   pills: Array<{ label: string }>;
-};
-
-export type UserProfile = {
-  id: string;
-  name: string;
-  streakDays: number;
-  totalXp: number;
-  avatarLevel: number;
-  totalSessions: number;
-  joinedAt: number;
 };

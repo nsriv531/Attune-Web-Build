@@ -14,22 +14,20 @@ import {
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useAuth, useClerk } from '@clerk/clerk-expo';
-import { useMutation } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Typography, Spacing, Radius } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useThemeStore } from '@/stores/themeStore';
+import { useThemeStore } from '@/backend/stores/themeStore';
 import { PALETTES, PALETTE_ORDER, type PaletteKey } from '@/constants/palettes';
-import { useUserStore } from '@/stores/userStore';
-import { useSessionStore } from '@/stores/sessionStore';
-import { useAuthStore } from '@/stores/authStore';
-import { useAvatarCustomizationStore } from '@/stores/avatarCustomizationStore';
-import { useOnboardingStore, ONBOARDING_STORAGE_KEY } from '@/stores/onboardingStore';
+import { useUserStore, getAvatarLevel, xpToNextLevel, AVATAR_LEVELS } from '@/backend/stores/userStore';
+import { useSessionStore } from '@/backend/stores/sessionStore';
+import { useAuthStore } from '@/backend/stores/authStore';
+import { useAvatarCustomizationStore } from '@/backend/stores/avatarCustomizationStore';
+import { useOnboardingStore, ONBOARDING_STORAGE_KEY } from '@/backend/stores/onboardingStore';
 import { SageAvatar } from '@/components/SageAvatar';
 import { AvatarCustomizationShop } from '@/components/AvatarCustomizationShop';
 
-const LEVEL_NAMES = ['Seedling', 'Sprout', 'Scholar', 'Focus Pro', 'Sage'];
-const LEVEL_XP    = [0, 200, 500, 1000, 2000];
 const UNLOCKS: Record<number, string[]> = {
   1: ['Default Sage'],
   2: ['Default Sage', 'Night Sage skin'],
@@ -38,38 +36,27 @@ const UNLOCKS: Record<number, string[]> = {
   5: ['All skins', 'Animated aura', 'Custom avatar name'],
 };
 
-function getLevel(xp: number) {
-  let lvl = 1;
-  for (let i = 0; i < LEVEL_XP.length; i++) {
-    if (xp >= LEVEL_XP[i]) lvl = i + 1;
-  }
-  return lvl;
-}
-
-function progressToNext(xp: number) {
-  const lvl = getLevel(xp);
-  if (lvl >= LEVEL_NAMES.length) return 1;
-  const curr = LEVEL_XP[lvl - 1];
-  const next = LEVEL_XP[lvl];
-  return (xp - curr) / (next - curr);
-}
-
-function xpToNext(xp: number) {
-  const lvl = getLevel(xp);
-  if (lvl >= LEVEL_NAMES.length) return 0;
-  return LEVEL_XP[lvl] - xp;
-}
-
 export default function ProfileScreen() {
   const C = useThemeColors();
   const router = useRouter();
   const { paletteKey, setPalette } = useThemeStore();
-  const { name, totalXp, streakDays, totalSessions, sessions, reset: resetUserStore } = useUserStore();
+  const { name, totalXp: localXp, streakDays: localStreakDays, totalSessions: localTotalSessions, sessions: localSessions, reset: resetUserStore } = useUserStore();
+  
+  const { isSignedIn, signOut } = useAuth();
+  const { user } = useClerk();
+  
+  // Backend Queries
+  const convexSessions = useQuery(api.sessions.list, isSignedIn ? { limit: 50 } : "skip");
+  const convexStats = useQuery(api.sessions.getStats, isSignedIn ? {} : "skip");
+  const deleteAccountMutation = useMutation(api.users.deleteAccount);
+
+  const sessions = isSignedIn ? (convexSessions ?? []) : localSessions;
+  const totalXp = isSignedIn ? (convexStats?.totalXp ?? 0) : localXp;
+  const streakDays = isSignedIn ? (convexStats?.streakDays ?? 0) : localStreakDays;
+  const totalSessions = isSignedIn ? (convexStats?.totalSessions ?? 0) : localTotalSessions;
+
   const { loadFromStorage, coins, reset: resetCustomization } = useAvatarCustomizationStore();
   const { isGuest, setGuest } = useAuthStore();
-  const { signOut, isSignedIn } = useAuth();
-  const { user } = useClerk();
-  const deleteAccountMutation = useMutation(api.users.deleteAccount);
   
   const [shopVisible, setShopVisible] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -94,16 +81,12 @@ export default function ProfileScreen() {
             setIsDeleting(true);
             try {
               if (isSignedIn) {
-                // Delete data from Convex
                 await deleteAccountMutation();
-                // Attempt to delete Clerk user (requires proper clerk permissions or backend flow, but client-side delete is supported for the current user)
                 await user?.delete();
               }
             } catch (e) {
               console.error("Error deleting remote account:", e);
-              // Even if remote delete fails (e.g. clerk restricted), we should still log them out locally
             } finally {
-              // Clear local state completely
               useUserStore.persist.clearStorage();
               useSessionStore.persist.clearStorage();
               useAuthStore.persist.clearStorage();
@@ -127,17 +110,26 @@ export default function ProfileScreen() {
     );
   };
 
-  const level = getLevel(totalXp);
-  const levelName = LEVEL_NAMES[level - 1];
-  const pct = progressToNext(totalXp);
-  const remaining = xpToNext(totalXp);
+  const levelInfo = getAvatarLevel(totalXp);
+  const level = levelInfo.level;
+  const levelName = levelInfo.name;
+  
+  const progressToNext = () => {
+    if (level >= AVATAR_LEVELS.length) return 1;
+    const curr = AVATAR_LEVELS[level - 1].xpRequired;
+    const next = AVATAR_LEVELS[level].xpRequired;
+    return (totalXp - curr) / (next - curr);
+  };
+  
+  const pct = progressToNext();
+  const remaining = xpToNextLevel(totalXp);
 
   const avgFocus =
     sessions.length > 0
-      ? Math.round(sessions.reduce((a, s) => a + s.focusScore, 0) / sessions.length)
+      ? Math.round(sessions.reduce((a: number, s: any) => a + s.focusScore, 0) / sessions.length)
       : 0;
 
-  const totalHours = Math.round((sessions.reduce((a, s) => a + s.durationMinutes, 0) / 60) * 10) / 10;
+  const totalHours = Math.round((sessions.reduce((a: number, s: any) => a + (s.timeOverall / 60), 0) / 60) * 10) / 10;
 
   function handleSelectPalette(key: PaletteKey) {
     setPalette(key);
@@ -259,11 +251,11 @@ export default function ProfileScreen() {
           <>
             <Text style={[styles.sectionTitle, { color: C.textPrimary }]}>Recent sessions</Text>
             {sessions.slice(0, 5).map((s) => (
-              <View key={s.id} style={[styles.sessionRow, { backgroundColor: C.bgCard, borderColor: C.border }]}>
+              <View key={s._id} style={[styles.sessionRow, { backgroundColor: C.bgCard, borderColor: C.border }]}>
                 <View style={styles.sessionLeft}>
-                  <Text style={[styles.sessionSubject, { color: C.textPrimary }]} numberOfLines={1}>{s.subject}</Text>
+                  <Text style={[styles.sessionSubject, { color: C.textPrimary }]} numberOfLines={1}>{s.subject || 'Unknown'}</Text>
                   <Text style={[styles.sessionMeta, { color: C.textTertiary }]}>
-                    {s.durationMinutes}min · {new Date(s.startedAt).toLocaleDateString()}
+                    {Math.round(s.timeOverall / 60)}min · {new Date(s.startedAt).toLocaleDateString()}
                   </Text>
                 </View>
                 <View style={styles.sessionRight}>

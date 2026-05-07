@@ -13,7 +13,11 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { Typography, Spacing, Colors, Radius } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useAvatarCustomizationStore, SHOP_ITEMS, type ShopItem } from '@/stores/avatarCustomizationStore';
+import { useAvatarCustomizationStore, SHOP_ITEMS, type ShopItem } from '@/backend/stores/avatarCustomizationStore';
+import { useAuth } from '@clerk/clerk-expo';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { ShopService } from '@/backend/services/ShopService';
 
 const RARITY_COLORS = {
   common: { bg: '#e8e8e8', text: '#4b5563', border: '#b0b0b0' },
@@ -49,11 +53,26 @@ interface AvatarCustomizationShopProps {
 
 export function AvatarCustomizationShop({ visible, onClose }: AvatarCustomizationShopProps) {
   const C = useThemeColors();
-  const { coins, ownedItems, purchaseItem, hasItem, equippedItems, equipItem, unequipItem } = useAvatarCustomizationStore();
+  const localStore = useAvatarCustomizationStore();
+  const { isSignedIn } = useAuth();
+  
+  const currentUser = useQuery(api.users.currentUser, isSignedIn ? {} : "skip");
+  const purchaseMutation = useMutation(api.users.purchaseAvatarItem);
+  const equipMutation = useMutation(api.users.equipAvatarItem);
+  const unequipMutation = useMutation(api.users.unequipAvatarItem);
+
+  const coins = isSignedIn ? (currentUser?.coins ?? 0) : localStore.coins;
+  const ownedItems = isSignedIn ? (currentUser?.unlockedItems ?? []) : localStore.ownedItems;
+  const equippedItems = isSignedIn ? (currentUser?.equippedItems ?? {}) : localStore.equippedItems;
+
+  function hasItem(id: string) {
+    return ownedItems.includes(id);
+  }
+
   const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null);
   const [justPurchased, setJustPurchased] = useState<string | null>(null);
 
-  const handlePurchase = (item: ShopItem) => {
+  const handlePurchase = async (item: ShopItem) => {
     if (hasItem(item.id)) {
       Alert.alert('Already Owned', 'You already own this item!');
       return;
@@ -64,22 +83,37 @@ export function AvatarCustomizationShop({ visible, onClose }: AvatarCustomizatio
       return;
     }
 
-    if (purchaseItem(item.id)) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    const result = await ShopService.purchaseItem({
+      itemId: item.id,
+      price: item.price,
+      isSignedIn: !!isSignedIn,
+      purchaseMutation
+    });
+
+    if (result.success) {
       setJustPurchased(item.id);
       setTimeout(() => setJustPurchased(null), 2000);
       Alert.alert('Success!', `You purchased ${item.name}!`);
+    } else {
+      Alert.alert('Error', 'Failed to purchase item.');
     }
   };
 
-  const handleEquip = (item: ShopItem) => {
+  const handleEquip = async (item: ShopItem) => {
     const isEquipped = equippedItems[item.type] === item.id;
     if (isEquipped) {
-      unequipItem(item.type);
-      Haptics.selectionAsync();
+      await ShopService.unequipItem({
+        type: item.type,
+        isSignedIn: !!isSignedIn,
+        unequipMutation
+      });
     } else {
-      equipItem(item.type, item.id);
-      Haptics.selectionAsync();
+      await ShopService.equipItem({
+        type: item.type,
+        itemId: item.id,
+        isSignedIn: !!isSignedIn,
+        equipMutation
+      });
     }
   };
 
