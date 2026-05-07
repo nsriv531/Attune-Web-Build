@@ -75,6 +75,7 @@ interface UserState {
   // Actions
   setUser: (userId: string, name: string) => void;
   addSession: (session: Session) => void;
+  deleteLastSession: () => void;
   addXP: (amount: number) => void;
   incrementStreak: () => void;
   setSuggestion: (s: SmartSuggestion | null) => void;
@@ -107,6 +108,26 @@ export const useUserStore = create<UserState>()(
             sessions,
             heatmap,
             totalSessions: s.totalSessions + 1,
+          };
+        }),
+
+      deleteLastSession: () =>
+        set((s) => {
+          if (s.sessions.length === 0) return {};
+          
+          const sessionToDelete = s.sessions[0];
+          const newSessions = s.sessions.slice(1);
+          const heatmap = buildHeatmap(newSessions);
+
+          // Approximate XP to deduct based on the reverse calculation
+          const xpToDeduct = Math.floor(sessionToDelete.timeOverall / 60) + 
+            (sessionToDelete.focusScore >= 90 ? 20 : sessionToDelete.focusScore >= 75 ? 10 : sessionToDelete.focusScore >= 60 ? 5 : 0);
+
+          return {
+            sessions: newSessions,
+            heatmap,
+            totalSessions: Math.max(0, s.totalSessions - 1),
+            totalXp: Math.max(0, s.totalXp - xpToDeduct)
           };
         }),
 

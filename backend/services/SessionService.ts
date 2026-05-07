@@ -138,4 +138,57 @@ export class SessionService {
 
     userState.setSuggestion({ message, pills });
   }
+
+  /**
+   * Deletes the most recent session.
+   */
+  static async deleteLastSession(params: {
+    isSignedIn: boolean;
+    deleteLastSessionMutation: any;
+    updateInsightsMutation: any;
+  }) {
+    const { isSignedIn, deleteLastSessionMutation, updateInsightsMutation } = params;
+    
+    if (isSignedIn) {
+      try {
+        const response = await deleteLastSessionMutation();
+        if (response && response.success) {
+          // Refresh background AI insights
+          await updateInsightsMutation();
+          
+          // Re-fetch current user coins to sync UI (handled by useQuery in components)
+          return { success: true };
+        }
+        return { success: false, error: new Error('Failed to delete in cloud') };
+      } catch (error) {
+        console.error('Failed to delete session in Convex', error);
+        return { success: false, error };
+      }
+    } else {
+      const userState = useUserStore.getState();
+      const shopState = useAvatarCustomizationStore.getState();
+      
+      if (userState.sessions.length === 0) {
+        return { success: false, error: new Error('No sessions to delete') };
+      }
+
+      // Calculate approximate coins to deduct
+      const sessionToDelete = userState.sessions[0];
+      const xpToDeduct = Math.floor(sessionToDelete.timeOverall / 60) + 
+            (sessionToDelete.focusScore >= 90 ? 20 : sessionToDelete.focusScore >= 75 ? 10 : sessionToDelete.focusScore >= 60 ? 5 : 0);
+      const coinsToDeduct = Math.floor(xpToDeduct / 2);
+
+      // We must deduct coins manually for guests, but ensure we don't drop below 0
+      const currentCoins = shopState.coins;
+      const amountToSpend = Math.min(coinsToDeduct, currentCoins);
+      
+      if (amountToSpend > 0) {
+         shopState.spendCoins(amountToSpend);
+      }
+
+      userState.deleteLastSession();
+      
+      return { success: true };
+    }
+  }
 }

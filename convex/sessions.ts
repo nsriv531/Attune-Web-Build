@@ -198,3 +198,53 @@ export const enforceStreak = mutation({
     }
   },
 });
+
+export const deleteLastSession = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+
+    if (!user) throw new Error("User not found");
+
+    // Get the most recent session
+    const lastSession = await ctx.db
+      .query("sessions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .order("desc")
+      .first();
+
+    if (!lastSession) {
+      throw new Error("No sessions found to delete");
+    }
+
+    // Reverse the XP and coins calculation
+    const xpEarned = calculateXP(lastSession.timeOverall / 60, lastSession.focusScore);
+    const coinsEarned = Math.floor(xpEarned / 2);
+
+    await ctx.db.patch(user._id, {
+      xpScore: Math.max(0, user.xpScore - xpEarned),
+      coins: Math.max(0, user.coins - coinsEarned),
+      totalSessions: Math.max(0, (user.totalSessions || 1) - 1),
+    });
+
+    // Delete feedback associated with the session
+    const feedbacks = await ctx.db
+      .query("feedback")
+      .withIndex("by_session", (q) => q.eq("sessionId", lastSession._id))
+      .collect();
+    for (const f of feedbacks) {
+      await ctx.db.delete(f._id);
+    }
+
+    // Delete the session itself
+    await ctx.db.delete(lastSession._id);
+
+    return { success: true, deletedSessionId: lastSession._id };
+  },
+});
