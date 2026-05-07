@@ -2,12 +2,12 @@
 // Single source of truth for all design tokens — Milk & Honey Keycap theme
 
 export const Colors = {
-  // Backgrounds — Milky warm white (whole milk with a drop of honey)
-  bg: '#F5F0E8',
-  bgCard: '#F0EBE2',
-  bgCardHigh: '#F8F4EE',
-  bgSession: '#F5F0E8',
-  bgInput: 'rgba(44,40,32,0.07)',
+  // Backgrounds — clean milk white, neutral and minimalist
+  bg: '#F9F8F6',
+  bgCard: '#F1F0EE',
+  bgCardHigh: '#FFFFFF',
+  bgSession: '#F9F8F6',
+  bgInput: 'rgba(0,0,0,0.055)',
 
   // Accent — golden amber honey (primary interactive color)
   purple: '#E8A020',
@@ -43,7 +43,7 @@ export const Colors = {
 
   // Keycap depth system — the "stem" color visible below the keycap face
   // Used by KeycapSurface as the outer wrapper background
-  keycapDepthColor: 'rgba(175,158,128,0.65)',
+  keycapDepthColor: 'rgba(180,175,165,0.55)',
   keycapAccentDepthColor: 'rgba(130,72,0,0.45)',
   keycapPressedDepthColor: 'rgba(175,158,128,0.30)',
 
