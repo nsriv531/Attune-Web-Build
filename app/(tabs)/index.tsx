@@ -27,6 +27,7 @@ import { TimerRing } from '@/components/TimerRing';
 import { KeycapSurface, KeycapButton } from '@/components/KeycapSurface';
 import { useRitualAudio } from '@/hooks/useAudioPlayer';
 import { SoliAvatar } from '@/components/SoliAvatar';
+import { InteractiveIconButton } from '@/components/InteractiveIconButton';
 import type { RitualSound } from '@/types';
 
 const DURATIONS: number[] = [15, 18, 25, 45];
@@ -448,6 +449,25 @@ export default function HomeScreen() {
           </View>
         </FadeSlideUp>
 
+        {/* ── Rive Animation Test ── */}
+        <FadeSlideUp delay={400}>
+          <View style={styles.cardPad}>
+            <KeycapSurface radius={20} contentStyle={styles.testFace}>
+              <View style={styles.testHeader}>
+                <Text style={styles.testTitle}>Rive Test</Text>
+                <Text style={styles.testSubtitle}>Click to trigger animation</Text>
+              </View>
+              <View style={styles.testIconContainer}>
+                <InteractiveIconButton
+                  fileName="25691-49048-interactive-icon-set.riv"
+                  size={64}
+                  onPress={() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)}
+                />
+              </View>
+            </KeycapSurface>
+          </View>
+        </FadeSlideUp>
+
         <View style={{ height: 24 }} />
       </ScrollView>
     </SafeAreaView>
@@ -799,5 +819,31 @@ const styles = StyleSheet.create({
     fontFamily: Typography.fontSans,
     fontSize: 11,
     fontWeight: '500',
+  },
+
+  // Rive test section
+  testFace: {
+    padding: 16,
+    alignItems: 'center',
+  },
+  testHeader: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  testTitle: {
+    fontFamily: Typography.fontSans,
+    fontSize: 14,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    marginBottom: 4,
+  },
+  testSubtitle: {
+    fontFamily: Typography.fontSans,
+    fontSize: 12,
+    color: Colors.textSecondary,
+  },
+  testIconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

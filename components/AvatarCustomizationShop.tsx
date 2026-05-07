@@ -17,7 +17,7 @@ import { useAvatarCustomizationStore, SHOP_ITEMS, type ShopItem } from '@/stores
 
 const RARITY_COLORS = {
   common: { bg: '#e8e8e8', text: '#4b5563', border: '#b0b0b0' },
-  rare: { bg: '#4a90e2', text: '#ffffff', border: '#2e5cc4' },
+  rare: { bg: '#4a90e2', text: 'rgb(255, 255, 255)', border: '#2e5cc4' },
   epic: { bg: '#9b59b6', text: '#ffffff', border: '#7d3fa3' },
   legendary: { bg: '#f39c12', text: '#ffffff', border: '#d68910' },
 };
