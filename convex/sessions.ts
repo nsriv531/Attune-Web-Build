@@ -135,7 +135,27 @@ export const getStats = query({
       .collect();
 
     const totalXp = user.xpScore;
-    const streakDays = user.streakDays || 0;
+    let streakDays = user.streakDays || 0;
+    
+    // Check if streak is broken
+    if (user.lastSessionDate && streakDays > 0) {
+      const today = new Date();
+      // Reset hours to strictly compare dates
+      today.setHours(0, 0, 0, 0);
+      
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      const lastSessionStr = user.lastSessionDate;
+      const todayStr = today.toISOString().split("T")[0];
+      const yesterdayStr = yesterday.toISOString().split("T")[0];
+      
+      // If the last session wasn't today and wasn't yesterday, the streak is broken.
+      if (lastSessionStr !== todayStr && lastSessionStr !== yesterdayStr) {
+        streakDays = 0;
+      }
+    }
+
     const totalSessions = sessions.length;
     const avgFocusScore = totalSessions > 0 
       ? Math.round(sessions.reduce((acc, s) => acc + s.focusScore, 0) / totalSessions)
@@ -147,5 +167,34 @@ export const getStats = query({
       totalSessions,
       avgFocusScore,
     };
+  },
+});
+
+export const enforceStreak = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return;
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+
+    if (!user || !user.lastSessionDate || !user.streakDays) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const lastSessionStr = user.lastSessionDate;
+    const todayStr = today.toISOString().split("T")[0];
+    const yesterdayStr = yesterday.toISOString().split("T")[0];
+    
+    if (lastSessionStr !== todayStr && lastSessionStr !== yesterdayStr) {
+      await ctx.db.patch(user._id, { streakDays: 0 });
+    }
   },
 });

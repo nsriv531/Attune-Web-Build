@@ -24,7 +24,7 @@ import { TimerRing } from '@/components/TimerRing';
 import { useRitualAudio } from '@/hooks/useAudioPlayer';
 import type { RitualSound } from '@/types';
 import { useUser } from '@clerk/clerk-expo';
-import { useQuery } from 'convex/react';
+import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 
 const DURATIONS: number[] = [15, 18, 25, 45];
@@ -40,6 +40,14 @@ export default function HomeScreen() {
   const { name, streakDays: localStreakDays, sessions: localSessions } = useUserStore();
   const sessions = isSignedIn ? (convexSessions ?? []) : localSessions;
   const streakDays = isSignedIn ? (convexStats?.streakDays ?? 0) : localStreakDays;
+  
+  // Background streak enforcement
+  const enforceStreakMutation = useMutation(api.sessions.enforceStreak);
+  useEffect(() => {
+    if (isSignedIn) {
+      enforceStreakMutation();
+    }
+  }, [isSignedIn, enforceStreakMutation]);
   const { durationMinutes, setDuration, startSession, ritualSound, setRitualSound } = useSessionStore();
 
   const { previewTimerActive } = useRitualAudio(true); // Enable audio previews on this screen
