@@ -144,13 +144,13 @@ Create the `ConvexReactClient` at module scope, not inside a component:
 // Bad: re-creates the client on every render
 function App() {
   const convex = new ConvexReactClient(
-    import.meta.env.VITE_CONVEX_URL as string,
+    process.env.VITE_CONVEX_URL as string,
   );
   return <ConvexProvider client={convex}>...</ConvexProvider>;
 }
 
 // Good: created once at module scope
-const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
+const convex = new ConvexReactClient(process.env.VITE_CONVEX_URL as string);
 function App() {
   return <ConvexProvider client={convex}>...</ConvexProvider>;
 }
@@ -165,7 +165,7 @@ import { createRoot } from "react-dom/client";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
 import App from "./App";
 
-const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
+const convex = new ConvexReactClient(process.env.VITE_CONVEX_URL as string);
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
