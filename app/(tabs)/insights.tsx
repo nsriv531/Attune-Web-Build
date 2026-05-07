@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Typography, Spacing, Radius } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useUserStore } from '@/stores/userStore';
+import { useUserStore } from '@/backend/stores/userStore';
 import { SageAvatar } from '@/components/SageAvatar';
 import { useUser } from '@clerk/clerk-expo';
 import { useQuery } from 'convex/react';
@@ -176,6 +176,7 @@ export default function InsightsScreen() {
   const C = useThemeColors();
   const { isSignedIn } = useUser();
   const convexSessions = useQuery(api.sessions.list, isSignedIn ? { limit: 50 } : "skip");
+  const convexStats = useQuery(api.sessions.getStats, isSignedIn ? {} : "skip");
   const sweetSpot = useQuery(api.insights.getSweetSpot, isSignedIn ? {} : "skip");
   const peakDaysHours = useQuery(api.insights.getPeakDaysHours, isSignedIn ? {} : "skip");
 
@@ -212,9 +213,9 @@ export default function InsightsScreen() {
 
   const displayInsights = localInsights.length > 0 ? localInsights : SEED_INSIGHTS;
 
-  const totalSessions = sessions.length;
-  const streakDays = localStreakDays; // We'll need a proper stats query or get it from user
-  const totalXp = localTotalXp;
+  const totalSessions = isSignedIn ? (convexStats?.totalSessions ?? 0) : localTotalSessions;
+  const streakDays = isSignedIn ? (convexStats?.streakDays ?? 0) : localStreakDays; 
+  const totalXp = isSignedIn ? (convexStats?.totalXp ?? 0) : localTotalXp;
 
   const avgFocus = sessions.length > 0
     ? Math.round(sessions.reduce((a: number, x: any) => a + x.focusScore, 0) / sessions.length)

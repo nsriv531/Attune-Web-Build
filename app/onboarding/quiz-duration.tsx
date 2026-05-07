@@ -10,7 +10,7 @@ import Animated, {
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { OnboardingLayout, CTAButton } from '@/components/OnboardingLayout';
-import { useOnboardingStore, type OnboardingDuration } from '@/stores/onboardingStore';
+import { useOnboardingStore, type OnboardingDuration } from '@/backend/stores/onboardingStore';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 
 const DURATIONS: { key: OnboardingDuration; label: string; desc: string }[] = [

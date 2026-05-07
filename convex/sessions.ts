@@ -52,6 +52,7 @@ export const saveSession = mutation({
 
     const focusScore = calculateFocusScore(args.distractionLogs, args.timeOverall);
     const xpEarned = calculateXP(args.timeOverall / 60, focusScore);
+    const coinsEarned = Math.floor(xpEarned / 2); // 1 coin per 2 XP
 
     const sessionId = await ctx.db.insert("sessions", {
       userId: user._id,
@@ -84,12 +85,13 @@ export const saveSession = mutation({
 
     await ctx.db.patch(user._id, {
       xpScore: user.xpScore + xpEarned,
+      coins: (user.coins || 0) + coinsEarned,
       totalSessions: (user.totalSessions || 0) + 1,
       streakDays: newStreak,
       lastSessionDate: today,
     });
 
-    return { sessionId, xpEarned, focusScore, newStreak };
+    return { sessionId, xpEarned, focusScore, newStreak, coinsEarned };
   },
 });
 

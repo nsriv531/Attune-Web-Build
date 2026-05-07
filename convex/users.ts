@@ -38,6 +38,9 @@ export const store = mutation({
       email: args.email,
       age: args.age,
       xpScore: 0,
+      coins: 500, // Starting currency
+      unlockedItems: [],
+      equippedItems: {},
       streakDays: 0,
       totalSessions: 0,
     });
@@ -54,6 +57,90 @@ export const store = mutation({
     });
 
     return userId;
+  },
+});
+
+export const purchaseAvatarItem = mutation({
+  args: {
+    itemId: v.string(),
+    price: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+
+    if (!user) throw new Error("User not found");
+
+    if (user.unlockedItems.includes(args.itemId)) {
+      throw new Error("Item already owned");
+    }
+
+    if (user.coins < args.price) {
+      throw new Error("Not enough coins");
+    }
+
+    await ctx.db.patch(user._id, {
+      coins: user.coins - args.price,
+      unlockedItems: [...user.unlockedItems, args.itemId],
+    });
+  },
+});
+
+export const equipAvatarItem = mutation({
+  args: {
+    type: v.string(),
+    itemId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+
+    if (!user) throw new Error("User not found");
+
+    if (!user.unlockedItems.includes(args.itemId)) {
+      throw new Error("Item not owned");
+    }
+
+    await ctx.db.patch(user._id, {
+      equippedItems: {
+        ...user.equippedItems,
+        [args.type]: args.itemId,
+      },
+    });
+  },
+});
+
+export const unequipAvatarItem = mutation({
+  args: {
+    type: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+
+    if (!user) throw new Error("User not found");
+
+    const newEquipped = { ...user.equippedItems };
+    delete newEquipped[args.type];
+
+    await ctx.db.patch(user._id, {
+      equippedItems: newEquipped,
+    });
   },
 });
 

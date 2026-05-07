@@ -71,6 +71,9 @@ export type User = {
   age: number;
   spotifyId?: string;
   xpScore: number;
+  coins: number;
+  unlockedItems: string[];
+  equippedItems: any; // Or a more specific type
   streakDays?: number;
   totalSessions?: number;
   lastSessionDate?: string;

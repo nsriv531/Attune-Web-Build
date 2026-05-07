@@ -12,6 +12,10 @@ export default defineSchema({
     spotifyRefreshToken: v.optional(v.string()),
     spotifyTokenExpiresAt: v.optional(v.number()),
     xpScore: v.number(), // default 0
+    coins: v.number(), // default 500
+    unlockedItems: v.array(v.string()), // Shop item IDs
+    equippedItems: v.any(), // Record<ClothingItem, string>
+
     // Keep these for internal logic if needed, but primary focus is the new fields
     streakDays: v.optional(v.number()),
     totalSessions: v.optional(v.number()),

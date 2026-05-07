@@ -13,7 +13,7 @@ import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-expo';
 import { ConvexProviderWithClerk } from 'convex/react-clerk';
 import { ConvexReactClient, useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
-import { useOnboardingStore, ONBOARDING_STORAGE_KEY } from '@/stores/onboardingStore';
+import { useOnboardingStore, ONBOARDING_STORAGE_KEY } from '@/backend/stores/onboardingStore';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -63,7 +63,7 @@ const tokenCache = {
   },
 };
 
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/backend/stores/authStore';
 import { useTimer } from '@/hooks/useTimer';
 
 /* =========================

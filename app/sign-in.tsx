@@ -3,7 +3,7 @@ import { View, TextInput, Button, Text, StyleSheet, ActivityIndicator, Touchable
 import { useSignIn } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/backend/stores/authStore';
 
 export default function SignInScreen() {
   const { signIn, setActive, isLoaded } = useSignIn();

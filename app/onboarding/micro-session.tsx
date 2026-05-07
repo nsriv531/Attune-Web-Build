@@ -12,7 +12,7 @@ import Animated, {
 import { useRouter } from 'expo-router';
 import { TimerRing } from '@/components/TimerRing';
 import { SageAvatar } from '@/components/SageAvatar';
-import { useOnboardingStore } from '@/stores/onboardingStore';
+import { useOnboardingStore } from '@/backend/stores/onboardingStore';
 import { Colors, Typography, Spacing } from '@/constants/theme';
 
 const SESSION_SECONDS = 60;

@@ -11,7 +11,7 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { OnboardingLayout, CTAButton } from '@/components/OnboardingLayout';
 import { SageAvatar } from '@/components/SageAvatar';
-import { useOnboardingStore, type SageForm } from '@/stores/onboardingStore';
+import { useOnboardingStore, type SageForm } from '@/backend/stores/onboardingStore';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 
 const FORMS: { key: SageForm; label: string; hint: string }[] = [

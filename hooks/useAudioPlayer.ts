@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { createAudioPlayer } from 'expo-audio';
-import { useSessionStore } from '@/stores/sessionStore';
+import { useSessionStore } from '@/backend/stores/sessionStore';
 import { fetchTracksByCategory, FreeToUseTrack } from '@/lib/freetouse';
 import { useConvex } from 'convex/react';
 
