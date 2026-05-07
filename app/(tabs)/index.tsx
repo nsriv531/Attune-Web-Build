@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -28,6 +28,7 @@ import { KeycapSurface, KeycapButton } from '@/components/KeycapSurface';
 import { useRitualAudio } from '@/hooks/useAudioPlayer';
 import { SoliAvatar } from '@/components/SoliAvatar';
 import { InteractiveIconButton } from '@/components/InteractiveIconButton';
+import { ProfileSidebar } from '@/components/ProfileSidebar';
 import type { RitualSound } from '@/types';
 
 const DURATIONS: number[] = [15, 18, 25, 45];
@@ -192,6 +193,7 @@ export default function HomeScreen() {
   const { previewTimerActive } = useRitualAudio(true);
 
   const [showDurationPicker, setShowDurationPicker] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Preview progress bar
   const previewProgress = useSharedValue(0);
@@ -238,8 +240,9 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <TopAppBar userName={name} />
+    <>
+      <SafeAreaView style={styles.safe}>
+        <TopAppBar userName={name} onMenuPress={() => setMenuOpen(!menuOpen)} />
 
       <ScrollView
         style={{ flex: 1 }}
@@ -470,7 +473,10 @@ export default function HomeScreen() {
 
         <View style={{ height: 24 }} />
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+
+      <ProfileSidebar visible={menuOpen} onClose={() => setMenuOpen(false)} />
+    </>
   );
 }
 

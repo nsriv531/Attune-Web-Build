@@ -10,12 +10,14 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 import { Typography, Spacing, Colors, Radius } from '@/constants/theme';
+import { MenuToggleButton } from '@/components/MenuToggleButton';
 
 interface TopAppBarProps {
   userName?: string;
   userImage?: string;
   onNotifications?: () => void;
   onProfile?: () => void;
+  onMenuPress?: () => void;
 }
 
 function WavesIcon({ color }: { color: string }) {
@@ -61,6 +63,7 @@ export default function TopAppBar({
   userName = 'User',
   onNotifications,
   onProfile,
+  onMenuPress,
 }: TopAppBarProps) {
   // Wave float animation — perpetual gentle up/down on the logo icon
   const waveY = useSharedValue(0);
@@ -83,8 +86,9 @@ export default function TopAppBar({
 
   return (
     <View style={styles.container}>
-      {/* Logo + app name */}
+      {/* Menu toggle + Logo + app name */}
       <View style={styles.leftSection}>
+        <MenuToggleButton onPress={onMenuPress} size={40} />
         <Animated.View style={waveStyle}>
           <WavesIcon color={Colors.amber} />
         </Animated.View>
