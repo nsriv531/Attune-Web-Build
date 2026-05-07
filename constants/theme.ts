@@ -2,39 +2,43 @@
 // Single source of truth for all design tokens
 
 export const Colors = {
-  // Backgrounds
-  bg: '#0e0e12',
-  bgCard: '#13131f',
-  bgSession: '#0b0b10',
-  bgInput: 'rgba(255,255,255,0.06)',
+  // Backgrounds — Golden Hour light theme
+  bg: '#FFF9E6',
+  bgCard: '#FFFFFF',
+  bgSession: '#FFF9E6',
+  bgInput: 'rgba(131,85,0,0.06)',
 
-  // Accent
-  purple: '#a78bfa',
-  purpleDim: 'rgba(167,139,250,0.18)',
-  purpleBorder: 'rgba(167,139,250,0.4)',
-  purpleMid: '#7c5cbf',
+  // Accent (golden amber — replacing "purple")
+  purple: '#FDBA31',
+  purpleDim: 'rgba(253,186,49,0.15)',
+  purpleBorder: 'rgba(253,186,49,0.4)',
+  purpleMid: '#E0A122',
 
   // Semantic
   green: '#4ade80',
   greenDim: 'rgba(74,222,128,0.14)',
-  amber: '#fbbf24',
-  amberDim: 'rgba(251,191,36,0.14)',
+  amber: '#FDBA31',
+  amberDim: 'rgba(253,186,49,0.15)',
   teal: '#5eead4',
+  red: '#f87171',
 
-  // Text
-  textPrimary: '#ffffff',
-  textSecondary: 'rgba(255,255,255,0.55)',
-  textTertiary: 'rgba(255,255,255,0.28)',
-  textHint: 'rgba(255,255,255,0.16)',
+  // Text — warm charcoal for light theme
+  textPrimary: '#1C1917',
+  textSecondary: '#6B6865',
+  textTertiary: '#A3A09D',
+  textHint: '#D1CDCB',
 
   // Borders
-  border: 'rgba(255,255,255,0.07)',
-  borderMid: 'rgba(255,255,255,0.14)',
+  border: '#F2EBE5',
+  borderMid: '#E6DDD5',
+
+  // Glass effect
+  bgGlass: 'rgba(255,255,255,0.6)',
 } as const;
 
 export const Typography = {
-  fontSans: 'DMSans',
-  fontMono: 'DMMono',
+  fontSans: 'PlusJakartaSans_400Regular',
+  fontMono: 'PlusJakartaSans_600SemiBold',
 
   size: {
     xs: 10,

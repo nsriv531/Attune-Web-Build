@@ -1,5 +1,4 @@
-// app/(tabs)/index.tsx  — Setup / Cue screen
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,35 +7,104 @@ import {
   Pressable,
   SafeAreaView,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
+import { Typography, Spacing, Radius } from '@/constants/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useUserStore } from '@/stores/userStore';
-import type { SessionDuration, RitualSound } from '@/types';
+import TopAppBar from '@/components/TopAppBar';
+import { TimerRing } from '@/components/TimerRing';
+import { useRitualAudio } from '@/hooks/useAudioPlayer';
+import type { RitualSound } from '@/types';
+import { useUser } from '@clerk/clerk-expo';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 
-const DURATIONS: SessionDuration[] = [25, 45, 60, 90];
-const SOUNDS: { key: RitualSound; label: string }[] = [
-  { key: 'lofi-rain',   label: 'Lo-fi rain' },
-  { key: 'forest',      label: 'Forest' },
-  { key: 'white-noise', label: 'White noise' },
-  { key: 'silence',     label: 'Silence' },
-];
-const SUBJECTS = [
-  { id: 'bio-1',  name: 'Biology — Chapter 7' },
-  { id: 'math-1', name: 'Mathematics — Calculus' },
-  { id: 'hist-1', name: 'History — WW2' },
-  { id: 'eng-1',  name: 'English Literature' },
-  { id: 'chem-1', name: 'Chemistry — Organic' },
-];
+const DURATIONS: number[] = [15, 18, 25, 45];
 
-export default function SetupScreen() {
+export default function HomeScreen() {
+  const C = useThemeColors();
   const router = useRouter();
-  const { name, streakDays, suggestion } = useUserStore();
-  const { subject, durationMinutes, ritualSound, setSubject, setDuration, setRitualSound, startSession } =
-    useSessionStore();
+  
+  const { isSignedIn } = useUser();
+  const convexSessions = useQuery(api.sessions.list, isSignedIn ? { limit: 50 } : "skip");
+  const convexStats = useQuery(api.sessions.getStats, isSignedIn ? {} : "skip");
 
-  const [showSubjectPicker, setShowSubjectPicker] = useState(false);
+  const { name, streakDays: localStreakDays, sessions: localSessions } = useUserStore();
+  const sessions = isSignedIn ? (convexSessions ?? []) : localSessions;
+  const streakDays = isSignedIn ? (convexStats?.streakDays ?? 0) : localStreakDays;
+  const { durationMinutes, setDuration, startSession, ritualSound, setRitualSound } = useSessionStore();
+
+  const { previewTimerActive } = useRitualAudio(true); // Enable audio previews on this screen
+
+  // Animation for audio preview slider
+  const previewProgress = useSharedValue(0);
+  
+  useEffect(() => {
+    if (previewTimerActive) {
+      previewProgress.value = 1;
+      previewProgress.value = withTiming(0, { duration: 15000, easing: Easing.linear });
+    } else {
+      previewProgress.value = 0;
+    }
+  }, [previewTimerActive]);
+
+  const previewBarStyle = useAnimatedStyle(() => ({
+    width: `${previewProgress.value * 100}%`,
+  }));
+
+  const [showDurationPicker, setShowDurationPicker] = useState(false);
+  const [customDuration, setCustomDuration] = useState('');
+
+  // Calculate today's focused minutes
+  const todayMinutes = React.useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return sessions.reduce((total, session) => {
+      if (!session.startedAt) return total;
+      const sessionDate = new Date(session.startedAt);
+      sessionDate.setHours(0, 0, 0, 0);
+
+      if (sessionDate.getTime() === today.getTime()) {
+        const minutes = ('durationMinutes' in session ? session.durationMinutes : (session as any).plannedDuration) || 0;
+        return total + minutes;
+      }
+      return total;
+    }, 0);
+  }, [sessions]);
+
+  // Calculate Weekly Equilibrium Data (Mon-Sun)
+  const weeklyData = React.useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const data = [0, 0, 0, 0, 0, 0, 0];
+    
+    sessions.forEach((session) => {
+      if (!session.startedAt) return;
+      const sDate = new Date(session.startedAt);
+      sDate.setHours(0,0,0,0);
+      
+      const diffTime = today.getTime() - sDate.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays <= 7 && diffDays >= 0) {
+        let idx = sDate.getDay() - 1;
+        if (idx === -1) idx = 6;
+        data[idx] += ('durationMinutes' in session ? session.durationMinutes : (session as any).plannedDuration) || 0;
+      }
+    });
+
+    const max = Math.max(...data, 60); // Base minimum max to prevent empty looking charts
+    return data.map(val => Math.min((val / max) * 100, 100));
+  }, [sessions]);
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
@@ -44,321 +112,609 @@ export default function SetupScreen() {
   function handleStart() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     startSession();
-    router.push('/(tabs)/session');
+    router.navigate('/(tabs)/session');
   }
 
+  function handleDurationSelect(duration: number) {
+    setDuration(duration);
+    Haptics.selectionAsync();
+  }
+
+  // Animation for today's focus column
+  const highlightScale = useSharedValue(1);
+  const highlightStyle = useAnimatedStyle(() => ({
+    transform: [{ scaleY: highlightScale.value }],
+  }));
+
+  useEffect(() => {
+    highlightScale.value = withTiming(1.1, { duration: 1500, easing: Easing.inOut(Easing.ease) });
+  }, []);
+
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
       <ScrollView
-        style={styles.scroll}
+        style={{ flex: 1 }}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
       >
-        {/* ── Header ── */}
-        <View style={styles.header}>
-          <Text style={styles.greeting}>{greeting}</Text>
-          <Text style={styles.heading}>
-            Ready to{'\n'}study, <Text style={styles.headingAccent}>{name}?</Text>
+        {/* TopAppBar */}
+        <TopAppBar userName={name} />
+
+        {/* ── Greeting Section ── */}
+        <View style={styles.greeting}>
+          <Text style={[styles.greetingText, { color: C.textPrimary }]}>
+            {greeting}, {name}
+          </Text>
+          <Text style={[styles.greetingSubtitle, { color: C.textSecondary }]}>
+            The light is perfect for deep work today.
           </Text>
         </View>
 
-        {/* ── Sage suggestion pill ── */}
-        {suggestion && (
-          <Pressable style={styles.suggestionPill} onPress={() => router.push('/(tabs)/insights')}>
-            <View style={styles.suggestionDot} />
-            <Text style={styles.suggestionText} numberOfLines={1}>
-              Sage: {suggestion.message.split('.')[0]}
-            </Text>
-          </Pressable>
-        )}
-
-        {/* ── Streak chip ── */}
-        <View style={styles.streakRow}>
-          <View style={styles.streakChip}>
-            <Text style={styles.streakNum}>{streakDays}</Text>
-            <Text style={styles.streakLbl}> day streak</Text>
+        {/* ── Focus Hero Section ── */}
+        <View style={styles.heroSection}>
+          {/* Circular Timer Ring */}
+          <View style={styles.timerContainer}>
+            <TimerRing secondsRemaining={durationMinutes * 60} totalSeconds={durationMinutes * 60} />
           </View>
-        </View>
 
-        {/* ── Subject picker ── */}
-        <Text style={styles.sectionLabel}>Subject</Text>
-        <Pressable
-          style={styles.subjectInput}
-          onPress={() => setShowSubjectPicker((v) => !v)}
-        >
-          <Text style={styles.subjectValue}>{subject}</Text>
-          <Text style={styles.chevron}>{showSubjectPicker ? '▲' : '▼'}</Text>
-        </Pressable>
+          {/* Mascot */}
+          <View style={styles.mascot}>
+            <Text style={{ fontSize: 60 }}>🌱</Text>
+          </View>
 
-        {showSubjectPicker && (
-          <View style={styles.subjectDropdown}>
-            {SUBJECTS.map((s) => (
+          {/* Start CTA */}
+          <Pressable
+            style={[styles.startBtn, { backgroundColor: C.amber }]}
+            onPress={handleStart}
+          >
+            <Text style={[styles.startBtnText, { color: C.textPrimary }]}>Start Focus Session</Text>
+          </Pressable>
+
+          {/* Duration Pills */}
+          <View style={styles.durationRow}>
+            {DURATIONS.map((d) => (
               <Pressable
-                key={s.id}
-                style={[styles.subjectOption, s.name === subject && styles.subjectOptionSel]}
-                onPress={() => {
-                  setSubject(s.name, s.id);
-                  setShowSubjectPicker(false);
-                  Haptics.selectionAsync();
-                }}
+                key={d}
+                style={[
+                  styles.durationPill,
+                  {
+                    backgroundColor: durationMinutes === d ? C.amberDim : '#FFFFFF',
+                    borderColor: durationMinutes === d ? C.amber : C.border,
+                  },
+                ]}
+                onPress={() => handleDurationSelect(d)}
               >
                 <Text
-                  style={[styles.subjectOptionText, s.name === subject && styles.subjectOptionTextSel]}
+                  style={[
+                    styles.durationText,
+                    {
+                      color: durationMinutes === d ? C.amber : C.textTertiary,
+                    },
+                  ]}
                 >
-                  {s.name}
+                  {d}
                 </Text>
               </Pressable>
             ))}
+
+            <Pressable
+              style={[
+                styles.durationPill,
+                styles.customPill,
+                {
+                  backgroundColor: '#FFFFFF',
+                  borderColor: C.border,
+                },
+              ]}
+              onPress={() => setShowDurationPicker(!showDurationPicker)}
+            >
+              <Text style={[styles.durationText, { color: C.textSecondary }]}>✎ Custom</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Custom Duration Input */}
+        {showDurationPicker && (
+          <View style={styles.customDurationSection}>
+            <Text style={[styles.label, { color: C.textSecondary }]}>Enter minutes:</Text>
+            <View style={styles.customInputRow}>
+              <Pressable
+                style={[styles.customBtn, { backgroundColor: C.bgCard }]}
+                onPress={() => {
+                  const val = parseInt(customDuration || '0');
+                  if (val > 0) {
+                    handleDurationSelect(val);
+                    setShowDurationPicker(false);
+                    setCustomDuration('');
+                  }
+                }}
+              >
+                <Text style={[styles.customBtnText, { color: C.textPrimary }]}>Set</Text>
+              </Pressable>
+            </View>
           </View>
         )}
 
-        {/* ── Duration ── */}
-        <Text style={styles.sectionLabel}>Session length</Text>
-        <View style={styles.durationRow}>
-          {DURATIONS.map((d) => (
-            <Pressable
-              key={d}
-              style={[styles.durBtn, durationMinutes === d && styles.durBtnSel]}
-              onPress={() => {
-                setDuration(d);
-                Haptics.selectionAsync();
-              }}
-            >
-              <Text style={[styles.durNum, durationMinutes === d && styles.durNumSel]}>{d}</Text>
-              <Text style={[styles.durLbl, durationMinutes === d && styles.durLblSel]}>min</Text>
-            </Pressable>
-          ))}
+        {/* ── Sound Selection ── */}
+        <View style={styles.soundSection}>
+          <Text style={[styles.soundSectionTitle, { color: C.textSecondary }]}>Ritual Sound</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.soundScroll}>
+            {(['silence', 'lofi', 'rain', 'forest', 'white-noise'] as RitualSound[]).map((sound) => {
+              const icons: Record<string, string> = {
+                'silence': '🔇',
+                'lofi': '🎧',
+                'rain': '🌧',
+                'forest': '🌲',
+                'white-noise': '📻'
+              };
+              
+              return (
+                <Pressable
+                  key={sound}
+                  style={[
+                    styles.soundPill,
+                    {
+                      backgroundColor: ritualSound === sound ? C.amberDim : '#FFFFFF',
+                      borderColor: ritualSound === sound ? C.amber : C.border,
+                    },
+                  ]}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setRitualSound(sound);
+                  }}
+                >
+                  <Text style={styles.soundIcon}>{icons[sound]}</Text>
+                  <Text
+                    style={[
+                      styles.soundText,
+                      {
+                        color: ritualSound === sound ? C.amber : C.textTertiary,
+                      },
+                    ]}
+                  >
+                    {sound === 'white-noise' ? 'White Noise' : sound.charAt(0).toUpperCase() + sound.slice(1)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+          {previewTimerActive && (
+            <View style={styles.previewBarContainer}>
+              <Animated.View style={[styles.previewBar, { backgroundColor: C.amber }, previewBarStyle]} />
+            </View>
+          )}
         </View>
 
-        {/* ── Ritual sound ── */}
-        <Text style={styles.sectionLabel}>Ritual sound</Text>
-        <View style={styles.soundRow}>
-          {SOUNDS.map((s) => (
-            <Pressable
-              key={s.key}
-              style={[styles.soundBtn, ritualSound === s.key && styles.soundBtnSel]}
-              onPress={() => {
-                setRitualSound(s.key);
-                Haptics.selectionAsync();
-              }}
-            >
-              <Text style={[styles.soundText, ritualSound === s.key && styles.soundTextSel]}>
-                {s.label}
+        {/* ── Stats Grid ── */}
+        <View style={styles.statsGrid}>
+          <View
+            style={[
+              styles.statsCard,
+              {
+                backgroundColor: C.bgCard,
+                borderColor: '#F2EBE5',
+              },
+            ]}
+          >
+            <View style={styles.statsCardHeader}>
+              <Text style={[styles.statsIcon, { color: C.amber }]}>⏱</Text>
+              <Text style={[styles.statsLabel, { color: C.amber }]}>TODAY</Text>
+            </View>
+            <View style={styles.statsValueRow}>
+              <Text style={[styles.statsValue, { color: C.textPrimary }]}>{todayMinutes}</Text>
+              <Text style={[styles.statsUnit, { color: C.textSecondary }]}>min</Text>
+            </View>
+            <Text style={[styles.statsCaption, { color: C.textTertiary }]}>Focused time</Text>
+          </View>
+
+          <View
+            style={[
+              styles.statsCard,
+              {
+                backgroundColor: C.bgCard,
+                borderColor: '#F2EBE5',
+              },
+            ]}
+          >
+            <View style={styles.statsCardHeader}>
+              <Text style={[styles.statsIcon, { color: '#F97316' }]}>🔥</Text>
+              <Text style={[styles.statsLabel, { color: '#F97316' }]}>STREAK</Text>
+            </View>
+            <View style={styles.statsValueRow}>
+              <Text style={[styles.statsValue, { color: C.textPrimary }]}>{streakDays}</Text>
+              <Text style={[styles.statsUnit, { color: C.textSecondary }]}>days</Text>
+            </View>
+            <Text style={[styles.statsCaption, { color: C.textTertiary }]}>In flow state</Text>
+          </View>
+        </View>
+
+        {/* ── Performance Mode Glass Card ── */}
+        <View
+          style={[
+            styles.performanceCard,
+            {
+              backgroundColor: '#FEF8F2',
+            },
+          ]}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.perfTitle, { color: C.textPrimary }]}>Performance Mode</Text>
+            <Text style={[styles.perfSubtitle, { color: C.textSecondary }]}>
+              Enhanced focus for critical milestones.
+            </Text>
+          </View>
+          <Pressable
+            style={[
+              styles.perfButton,
+              {
+                backgroundColor: '#292524',
+              },
+            ]}
+            onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+          >
+            <Text style={{ fontSize: 18, color: '#fff' }}>⚡</Text>
+          </Pressable>
+        </View>
+
+        {/* ── Weekly Equilibrium Chart ── */}
+        <View
+          style={[
+            styles.chartCard,
+            {
+              backgroundColor: C.bgCard,
+              borderColor: C.border,
+            },
+          ]}
+        >
+          <View style={styles.chartHeader}>
+            <Text style={[styles.chartTitle, { color: C.textPrimary }]}>Weekly Equilibrium</Text>
+            <Text style={[styles.moreIcon, { color: C.textTertiary }]}>⋯</Text>
+          </View>
+
+          {/* Bar Chart */}
+          <View style={styles.barChart}>
+            {weeklyData.map((height, idx) => (
+              <Animated.View
+                key={idx}
+                style={[
+                  styles.barContainer,
+                  idx === 3 ? highlightStyle : {},
+                ]}
+              >
+                <View
+                  style={[
+                    styles.bar,
+                    {
+                      height: `${height}%`,
+                      backgroundColor: idx === 3 ? '#FFE0B2' : '#F9F6F4',
+                    },
+                  ]}
+                />
+              </Animated.View>
+            ))}
+          </View>
+
+          {/* Days Label */}
+          <View style={styles.daysLabel}>
+            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, idx) => (
+              <Text
+                key={idx}
+                style={[
+                  styles.dayText,
+                  {
+                    color: idx === 3 ? C.amber : C.textTertiary,
+                  },
+                ]}
+              >
+                {day}
               </Text>
-            </Pressable>
-          ))}
+            ))}
+          </View>
         </View>
-
-        <View style={styles.spacer} />
-
-        {/* ── CTA ── */}
-        <Pressable style={styles.startBtn} onPress={handleStart}>
-          <Text style={styles.startBtnText}>Start session</Text>
-        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
-  scroll: { flex: 1 },
-  content: { padding: Spacing.xl, paddingBottom: 40 },
+  content: { paddingBottom: 60 },
 
-  header: { marginBottom: Spacing.lg },
   greeting: {
-    fontFamily: Typography.fontMono,
-    fontSize: Typography.size.sm,
-    color: Colors.textTertiary,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    marginBottom: 4,
+    paddingHorizontal: Spacing.xl,
+    marginBottom: Spacing.lg,
+    marginTop: Spacing.md,
   },
-  heading: {
+  greetingText: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size['2xl'],
     fontWeight: Typography.weight.semibold,
-    color: Colors.textPrimary,
-    lineHeight: 36,
+    marginBottom: Spacing.xs,
   },
-  headingAccent: { color: Colors.purple },
-
-  suggestionPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    backgroundColor: Colors.purpleDim,
-    borderWidth: 0.5,
-    borderColor: Colors.purpleBorder,
-    borderRadius: Radius.full,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    alignSelf: 'flex-start',
-    marginBottom: Spacing.base,
-  },
-  suggestionDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.purple,
-  },
-  suggestionText: {
-    fontFamily: Typography.fontSans,
-    fontSize: Typography.size.sm,
-    color: Colors.purple,
-    fontWeight: Typography.weight.medium,
-  },
-
-  streakRow: { marginBottom: Spacing.xl },
-  streakChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.bgCard,
-    borderWidth: 0.5,
-    borderColor: Colors.border,
-    borderRadius: Radius.full,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 6,
-    alignSelf: 'flex-start',
-  },
-  streakNum: {
-    fontFamily: Typography.fontMono,
-    fontSize: Typography.size.base,
-    color: Colors.amber,
-    fontWeight: Typography.weight.medium,
-  },
-  streakLbl: {
-    fontFamily: Typography.fontMono,
-    fontSize: Typography.size.sm,
-    color: Colors.textTertiary,
-  },
-
-  sectionLabel: {
-    fontFamily: Typography.fontMono,
-    fontSize: Typography.size.xs,
-    color: Colors.textTertiary,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    marginBottom: Spacing.sm,
-  },
-
-  subjectInput: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.bgInput,
-    borderWidth: 0.5,
-    borderColor: Colors.borderMid,
-    borderRadius: Radius.lg,
-    paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.md,
-    marginBottom: Spacing.lg,
-  },
-  subjectValue: {
-    fontFamily: Typography.fontSans,
-    fontSize: Typography.size.md,
-    color: Colors.textPrimary,
-  },
-  chevron: {
-    fontSize: 10,
-    color: Colors.textTertiary,
-  },
-  subjectDropdown: {
-    backgroundColor: Colors.bgCard,
-    borderWidth: 0.5,
-    borderColor: Colors.borderMid,
-    borderRadius: Radius.lg,
-    marginTop: -Spacing.md,
-    marginBottom: Spacing.lg,
-    overflow: 'hidden',
-  },
-  subjectOption: {
-    paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 0.5,
-    borderBottomColor: Colors.border,
-  },
-  subjectOptionSel: { backgroundColor: Colors.purpleDim },
-  subjectOptionText: {
+  greetingSubtitle: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.base,
-    color: Colors.textSecondary,
   },
-  subjectOptionTextSel: { color: Colors.purple },
+
+  heroSection: {
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
+    marginBottom: Spacing.xl,
+  },
+
+  timerContainer: {
+    marginBottom: Spacing.lg,
+  },
+
+  mascot: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: '#EBE7DD',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.xl,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 5,
+  },
+
+  startBtn: {
+    width: '100%',
+    borderRadius: 30,
+    paddingVertical: 18,
+    alignItems: 'center',
+    marginBottom: Spacing.xl,
+    shadowColor: '#FDBA31',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  startBtnText: {
+    fontFamily: Typography.fontSans,
+    fontSize: 16,
+    fontWeight: '500',
+  },
 
   durationRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
+    width: '100%',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+  },
+  durationPill: {
+    borderRadius: 24,
+    borderWidth: 1,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: 10,
+    minWidth: 54,
+    alignItems: 'center',
+  },
+  customPill: {
+    paddingHorizontal: Spacing.xl,
+  },
+  durationText: {
+    fontFamily: Typography.fontSans,
+    fontSize: 15,
+    fontWeight: '500',
+  },
+
+  customDurationSection: {
+    paddingHorizontal: Spacing.xl,
     marginBottom: Spacing.xl,
   },
-  durBtn: {
+  label: {
+    fontFamily: Typography.fontSans,
+    fontSize: Typography.size.sm,
+    marginBottom: Spacing.sm,
+  },
+  customInputRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  customBtn: {
     flex: 1,
-    backgroundColor: Colors.bgInput,
-    borderWidth: 0.5,
-    borderColor: Colors.border,
     borderRadius: Radius.md,
     paddingVertical: Spacing.md,
     alignItems: 'center',
-  },
-  durBtnSel: {
-    backgroundColor: Colors.purpleDim,
-    borderColor: Colors.purpleBorder,
-  },
-  durNum: {
-    fontFamily: Typography.fontMono,
-    fontSize: Typography.size.xl,
-    fontWeight: Typography.weight.semibold,
-    color: Colors.textSecondary,
-  },
-  durNumSel: { color: Colors.purple },
-  durLbl: {
-    fontFamily: Typography.fontMono,
-    fontSize: Typography.size.xs,
-    color: Colors.textHint,
-    textTransform: 'uppercase',
-    marginTop: 2,
-  },
-  durLblSel: { color: 'rgba(167,139,250,0.6)' },
-
-  soundRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-    marginBottom: Spacing['2xl'],
-  },
-  soundBtn: {
-    backgroundColor: Colors.bgInput,
     borderWidth: 0.5,
-    borderColor: Colors.border,
-    borderRadius: Radius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
   },
-  soundBtnSel: {
-    backgroundColor: Colors.bgInput,
-    borderColor: Colors.borderMid,
+  customBtnText: {
+    fontFamily: Typography.fontSans,
+    fontWeight: Typography.weight.medium,
+  },
+
+  soundSection: {
+    marginBottom: Spacing.xl,
+  },
+  soundSectionTitle: {
+    fontFamily: Typography.fontSans,
+    fontSize: 14,
+    fontWeight: '500',
+    paddingHorizontal: Spacing.xl,
+    marginBottom: Spacing.sm,
+  },
+  soundScroll: {
+    paddingHorizontal: Spacing.xl,
+    gap: Spacing.sm,
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  soundPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 24,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 6,
+  },
+  soundIcon: {
+    fontSize: 14,
   },
   soundText: {
     fontFamily: Typography.fontSans,
-    fontSize: Typography.size.sm,
-    color: Colors.textTertiary,
+    fontSize: 14,
+    fontWeight: '500',
   },
-  soundTextSel: { color: Colors.textPrimary },
+  previewBarContainer: {
+    height: 3,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    marginHorizontal: Spacing.xl,
+    marginTop: Spacing.md,
+    borderRadius: Radius.full,
+    overflow: 'hidden',
+  },
+  previewBar: {
+    height: '100%',
+    borderRadius: Radius.full,
+  },
 
-  spacer: { flex: 1, minHeight: Spacing.xl },
+  statsGrid: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+    marginBottom: Spacing.xl,
+  },
+  statsCard: {
+    flex: 1,
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: Spacing.xl,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  statsCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+    gap: 6,
+  },
+  statsIcon: {
+    fontSize: 14,
+  },
+  statsLabel: {
+    fontFamily: Typography.fontSans,
+    fontSize: 12,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    fontWeight: '600',
+  },
+  statsValueRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+  },
+  statsValue: {
+    fontFamily: Typography.fontSans,
+    fontSize: 28,
+    fontWeight: '600',
+  },
+  statsUnit: {
+    fontFamily: Typography.fontSans,
+    fontSize: 14,
+    fontWeight: '400',
+  },
+  statsCaption: {
+    fontFamily: Typography.fontSans,
+    fontSize: 12,
+    marginTop: 4,
+  },
 
-  startBtn: {
-    backgroundColor: Colors.purple,
-    borderRadius: Radius.xl,
-    paddingVertical: Spacing.lg,
+  performanceCard: {
+    marginHorizontal: Spacing.xl,
+    borderRadius: 24,
+    padding: Spacing.xl,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.xl,
+  },
+  perfTitle: {
+    fontFamily: Typography.fontSans,
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  perfSubtitle: {
+    fontFamily: Typography.fontSans,
+    fontSize: 14,
+    lineHeight: 20,
+    paddingRight: Spacing.md,
+  },
+  perfButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+
+  chartCard: {
+    marginHorizontal: Spacing.xl,
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: Spacing.xl,
+    paddingBottom: Spacing.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  chartHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.xl,
+  },
+  chartTitle: {
+    fontFamily: Typography.fontSans,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  moreIcon: {
+    fontSize: 24,
+    lineHeight: 24,
+  },
+
+  barChart: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    height: 140,
+    gap: Spacing.sm,
+    marginBottom: Spacing.lg,
+  },
+  barContainer: {
+    flex: 1,
+    height: '100%',
+    justifyContent: 'flex-end',
     alignItems: 'center',
   },
-  startBtnText: {
+  bar: {
+    width: '60%',
+    borderRadius: 16,
+  },
+
+  daysLabel: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.sm,
+  },
+  dayText: {
     fontFamily: Typography.fontSans,
-    fontSize: Typography.size.lg,
-    fontWeight: Typography.weight.semibold,
-    color: '#fff',
-    letterSpacing: 0.2,
+    fontSize: 13,
+    fontWeight: '500',
   },
 });

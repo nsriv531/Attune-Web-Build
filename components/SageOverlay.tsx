@@ -8,7 +8,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { SageAvatar } from './SageAvatar';
-import { Colors, Typography, Radius, Spacing } from '@/constants/theme';
+import { Typography, Radius, Spacing } from '@/constants/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type SageState = 'idle' | 'watching' | 'nudge' | 'alert' | 'celebrate';
 
@@ -18,33 +19,34 @@ interface SageOverlayProps {
   onDismiss?: () => void;
 }
 
-const STATE_BG: Record<SageState, string> = {
-  idle:      Colors.bgCard,
-  watching:  Colors.bgCard,
-  nudge:     'rgba(251,191,36,0.08)',
-  alert:     'rgba(248,113,113,0.08)',
-  celebrate: 'rgba(74,222,128,0.08)',
-};
-
-const STATE_BORDER: Record<SageState, string> = {
-  idle:      Colors.border,
-  watching:  Colors.border,
-  nudge:     'rgba(251,191,36,0.25)',
-  alert:     'rgba(248,113,113,0.3)',
-  celebrate: 'rgba(74,222,128,0.3)',
-};
-
-const STATE_NAME_COLOR: Record<SageState, string> = {
-  idle:      Colors.purple,
-  watching:  Colors.purple,
-  nudge:     Colors.amber,
-  alert:     '#f87171',
-  celebrate: Colors.green,
-};
-
 export function SageOverlay({ sageState, message, onDismiss }: SageOverlayProps) {
+  const C = useThemeColors();
   const translateY = useSharedValue(20);
   const opacity = useSharedValue(0);
+
+  const stateBg: Record<SageState, string> = {
+    idle:      C.bgCard,
+    watching:  C.bgCard,
+    nudge:     'rgba(251,191,36,0.08)',
+    alert:     'rgba(248,113,113,0.08)',
+    celebrate: 'rgba(74,222,128,0.08)',
+  };
+
+  const stateBorder: Record<SageState, string> = {
+    idle:      C.border,
+    watching:  C.border,
+    nudge:     'rgba(251,191,36,0.25)',
+    alert:     'rgba(248,113,113,0.3)',
+    celebrate: 'rgba(74,222,128,0.3)',
+  };
+
+  const stateNameColor: Record<SageState, string> = {
+    idle:      C.purple,
+    watching:  C.purple,
+    nudge:     C.amber,
+    alert:     '#f87171',
+    celebrate: C.green,
+  };
 
   useEffect(() => {
     if (sageState !== 'idle') {
@@ -68,20 +70,20 @@ export function SageOverlay({ sageState, message, onDismiss }: SageOverlayProps)
       style={[
         styles.container,
         {
-          backgroundColor: STATE_BG[sageState],
-          borderColor: STATE_BORDER[sageState],
+          backgroundColor: stateBg[sageState],
+          borderColor: stateBorder[sageState],
         },
         animStyle,
       ]}
     >
       <SageAvatar size={40} state={sageState} />
       <View style={styles.textWrap}>
-        <Text style={[styles.name, { color: STATE_NAME_COLOR[sageState] }]}>Sage</Text>
-        <Text style={styles.message} numberOfLines={2}>{message}</Text>
+        <Text style={[styles.name, { color: stateNameColor[sageState] }]}>Sage</Text>
+        <Text style={[styles.message, { color: C.textSecondary }]} numberOfLines={2}>{message}</Text>
       </View>
       {onDismiss && (
         <Pressable onPress={onDismiss} hitSlop={8}>
-          <Text style={styles.dismiss}>✕</Text>
+          <Text style={[styles.dismiss, { color: C.textTertiary }]}>✕</Text>
         </Pressable>
       )}
     </Animated.View>
@@ -110,12 +112,10 @@ const styles = StyleSheet.create({
   message: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.sm,
-    color: Colors.textSecondary,
     lineHeight: 18,
   },
   dismiss: {
     fontSize: 12,
-    color: Colors.textTertiary,
     paddingLeft: 4,
   },
 });

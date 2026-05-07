@@ -1,5 +1,7 @@
 // stores/sessionStore.ts
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { DistractionEvent, FocusFeeling, SessionDuration, RitualSound } from '@/types';
 
 // ─── Focus score algorithm ───────────────────────────────────────────────────
@@ -35,6 +37,7 @@ interface SessionState {
   subjectId: string;
   durationMinutes: SessionDuration;
   ritualSound: RitualSound;
+  setupComplete: boolean;
 
   // Runtime
   isActive: boolean;
@@ -60,6 +63,7 @@ interface SessionState {
   setRitualSound: (sound: RitualSound) => void;
   startSession: () => void;
   tick: () => void;
+  fastForward: (seconds: number) => void;
   pause: () => void;
   resume: () => void;
   recordDistraction: (event: DistractionEvent) => void;
@@ -92,122 +96,152 @@ function pickMessage(state: 'watching' | 'nudge' | 'alert'): string {
   return msgs[Math.floor(Math.random() * msgs.length)];
 }
 
-export const useSessionStore = create<SessionState>((set, get) => ({
-  subject: 'Biology — Chapter 7',
-  subjectId: 'bio-1',
-  durationMinutes: 45,
-  ritualSound: 'lofi-rain',
+export const useSessionStore = create<SessionState>()(
+  persist(
+    (set, get) => ({
+      subject: 'Biology — Chapter 7',
+      subjectId: 'bio-1',
+      durationMinutes: 45,
+      ritualSound: 'silence',
+      setupComplete: false,
 
-  isActive: false,
-  isPaused: false,
-  secondsRemaining: 45 * 60,
-  secondsElapsed: 0,
-  startedAt: null,
-  distractionEvents: [],
-
-  sageMessage: pickMessage('watching'),
-  sageState: 'watching',
-  consecutiveDistractionSeconds: 0,
-
-  focusScore: 0,
-  xpEarned: 0,
-  feeling: null,
-
-  // ─ Config setters ──────────────────────────────────────────────────────────
-  setSubject: (subject, id) => set({ subject, subjectId: id }),
-  setDuration: (duration) => set({ durationMinutes: duration, secondsRemaining: duration * 60 }),
-  setRitualSound: (ritualSound) => set({ ritualSound }),
-
-  // ─ Session lifecycle ───────────────────────────────────────────────────────
-  startSession: () =>
-    set((s) => ({
-      isActive: true,
-      isPaused: false,
-      secondsRemaining: s.durationMinutes * 60,
-      secondsElapsed: 0,
-      startedAt: Date.now(),
-      distractionEvents: [],
-      sageState: 'watching',
-      sageMessage: pickMessage('watching'),
-      consecutiveDistractionSeconds: 0,
-      focusScore: 0,
-      xpEarned: 0,
-      feeling: null,
-    })),
-
-  tick: () =>
-    set((s) => {
-      if (!s.isActive || s.isPaused) return s;
-      const secondsRemaining = s.secondsRemaining - 1;
-      const secondsElapsed = s.secondsElapsed + 1;
-
-      // Rotate Sage's message every 5 minutes
-      const shouldRefreshMsg = secondsElapsed % 300 === 0;
-
-      return {
-        secondsRemaining: Math.max(0, secondsRemaining),
-        secondsElapsed,
-        sageMessage: shouldRefreshMsg ? pickMessage('watching') : s.sageMessage,
-      };
-    }),
-
-  pause: () => set({ isPaused: true }),
-  resume: () => set({ isPaused: false }),
-
-  recordDistraction: (event) =>
-    set((s) => {
-      const events = [...s.distractionEvents, event];
-      const consecutive = s.consecutiveDistractionSeconds + event.durationSeconds;
-
-      // Escalate Sage state based on consecutive distraction time
-      let sageState = s.sageState;
-      let sageMessage = s.sageMessage;
-
-      if (consecutive >= 60) {
-        sageState = 'alert';
-        sageMessage = pickMessage('alert');
-      } else if (consecutive >= 30) {
-        sageState = 'nudge';
-        sageMessage = pickMessage('nudge');
-      }
-
-      return { distractionEvents: events, consecutiveDistractionSeconds: consecutive, sageState, sageMessage };
-    }),
-
-  clearDistraction: () =>
-    set({
-      consecutiveDistractionSeconds: 0,
-      sageState: 'watching',
-      sageMessage: pickMessage('watching'),
-    }),
-
-  endSession: () =>
-    set((s) => {
-      const focusScore = calculateFocusScore(s.distractionEvents, s.secondsElapsed);
-      const xpEarned = calculateXP(s.durationMinutes, focusScore);
-      return {
-        isActive: false,
-        focusScore,
-        xpEarned,
-        sageState: 'celebrate',
-      };
-    }),
-
-  setFeeling: (feeling) => set({ feeling }),
-
-  reset: () =>
-    set((s) => ({
       isActive: false,
       isPaused: false,
-      secondsRemaining: s.durationMinutes * 60,
+      secondsRemaining: 45 * 60,
       secondsElapsed: 0,
       startedAt: null,
       distractionEvents: [],
-      sageState: 'watching',
+
       sageMessage: pickMessage('watching'),
+      sageState: 'watching',
       consecutiveDistractionSeconds: 0,
+
       focusScore: 0,
       xpEarned: 0,
       feeling: null,
-    })),
-}));
+
+      // ─ Config setters ──────────────────────────────────────────────────────────
+      setSubject: (subject, id) => set({ subject, subjectId: id }),
+      setDuration: (duration) => set({ durationMinutes: duration, secondsRemaining: duration * 60 }),
+      setRitualSound: (ritualSound) => set({ ritualSound }),
+
+      // ─ Session lifecycle ───────────────────────────────────────────────────────
+      startSession: () =>
+        set((s) => ({
+          isActive: true,
+          isPaused: false,
+          secondsRemaining: s.durationMinutes * 60,
+          secondsElapsed: 0,
+          startedAt: Date.now(),
+          distractionEvents: [],
+          sageState: 'watching',
+          sageMessage: pickMessage('watching'),
+          consecutiveDistractionSeconds: 0,
+          focusScore: 0,
+          xpEarned: 0,
+          feeling: null,
+        })),
+
+      tick: () =>
+        set((s) => {
+          if (!s.isActive || s.isPaused) return s;
+          const secondsRemaining = s.secondsRemaining - 1;
+          const secondsElapsed = s.secondsElapsed + 1;
+
+          // Rotate Sage's message every 5 minutes
+          const shouldRefreshMsg = secondsElapsed % 300 === 0;
+
+          return {
+            secondsRemaining: Math.max(0, secondsRemaining),
+            secondsElapsed,
+            sageMessage: shouldRefreshMsg ? pickMessage('watching') : s.sageMessage,
+          };
+        }),
+
+      fastForward: (seconds: number) =>
+        set((s) => {
+          if (!s.isActive || s.isPaused) return s;
+          const secondsRemaining = Math.max(0, s.secondsRemaining - seconds);
+          const secondsElapsed = s.secondsElapsed + seconds;
+
+          const shouldRefreshMsg = Math.floor(secondsElapsed / 300) > Math.floor(s.secondsElapsed / 300);
+
+          return {
+            secondsRemaining,
+            secondsElapsed,
+            sageMessage: shouldRefreshMsg ? pickMessage('watching') : s.sageMessage,
+          };
+        }),
+
+      pause: () => set({ isPaused: true }),
+      resume: () => set({ isPaused: false }),
+
+      recordDistraction: (event) =>
+        set((s) => {
+          const events = [...s.distractionEvents, event];
+          const consecutive = s.consecutiveDistractionSeconds + event.durationSeconds;
+
+          // Escalate Sage state based on consecutive distraction time
+          let sageState = s.sageState;
+          let sageMessage = s.sageMessage;
+
+          if (consecutive >= 60) {
+            sageState = 'alert';
+            sageMessage = pickMessage('alert');
+          } else if (consecutive >= 30) {
+            sageState = 'nudge';
+            sageMessage = pickMessage('nudge');
+          }
+
+          return { distractionEvents: events, consecutiveDistractionSeconds: consecutive, sageState, sageMessage };
+        }),
+
+      clearDistraction: () =>
+        set({
+          consecutiveDistractionSeconds: 0,
+          sageState: 'watching',
+          sageMessage: pickMessage('watching'),
+        }),
+
+      endSession: () =>
+        set((s) => {
+          const focusScore = calculateFocusScore(s.distractionEvents, s.secondsElapsed);
+          const xpEarned = calculateXP(s.durationMinutes, focusScore);
+          return {
+            isActive: false,
+            focusScore,
+            xpEarned,
+            sageState: 'celebrate',
+          };
+        }),
+
+      setFeeling: (feeling) => set({ feeling }),
+
+      reset: () =>
+        set((s) => ({
+          isActive: false,
+          isPaused: false,
+          secondsRemaining: s.durationMinutes * 60,
+          secondsElapsed: 0,
+          startedAt: null,
+          distractionEvents: [],
+          sageState: 'watching',
+          sageMessage: pickMessage('watching'),
+          consecutiveDistractionSeconds: 0,
+          focusScore: 0,
+          xpEarned: 0,
+          feeling: null,
+        })),
+    }),
+    {
+      name: 'session-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        subject: state.subject,
+        subjectId: state.subjectId,
+        durationMinutes: state.durationMinutes,
+        ritualSound: state.ritualSound,
+      }), // only persist config settings, not active run state
+    }
+  )
+);
