@@ -16,7 +16,6 @@ export function InteractiveIconButton({
   const riveRef = useRef<RiveViewHandle>(null);
 
   const handlePress = () => {
-    // Trigger the "Star Idle" input on the state machine
     riveRef.current?.fireState('State Machine 1', 'Star Idle');
     onPress?.();
   };
