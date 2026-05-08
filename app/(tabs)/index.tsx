@@ -462,7 +462,7 @@ export default function HomeScreen() {
               </View>
               <View style={styles.testIconContainer}>
                 <InteractiveIconButton
-                  fileName="25691-49048-interactive-icon-set.riv"
+                  fileName="interactive-icon-set"
                   size={64}
                   onPress={() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)}
                 />

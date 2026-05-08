@@ -129,6 +129,7 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={({ route }) => ({
         headerShown: false,
+        linking: undefined,
         tabBarStyle: styles.tabBar,
         tabBarActiveTintColor: '#2C2000',
         tabBarInactiveTintColor: Colors.textTertiary,

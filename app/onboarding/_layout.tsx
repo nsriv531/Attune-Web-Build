@@ -2,7 +2,7 @@ import { Stack } from 'expo-router';
 
 export default function OnboardingStackLayout() {
   return (
-    <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
+    <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right', linking: undefined }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="soli-reveal" />
       <Stack.Screen name="soli-form" />
