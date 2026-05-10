@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Typography, Spacing, Radius } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useUserStore } from '@/stores/userStore';
+import { useUserStore } from '@/backend/stores/userStore';
 import { SageAvatar } from '@/components/SageAvatar';
 import { useUser } from '@clerk/clerk-expo';
 import { useQuery } from 'convex/react';
@@ -177,38 +177,45 @@ export default function InsightsScreen() {
   const { isSignedIn } = useUser();
   const convexSessions = useQuery(api.sessions.list, isSignedIn ? { limit: 50 } : "skip");
   const convexStats = useQuery(api.sessions.getStats, isSignedIn ? {} : "skip");
-  const convexRecommendations = useQuery(api.recommendations.list, isSignedIn ? {} : "skip");
+  const sweetSpot = useQuery(api.insights.getSweetSpot, isSignedIn ? {} : "skip");
+  const peakDaysHours = useQuery(api.insights.getPeakDaysHours, isSignedIn ? {} : "skip");
 
   const localSessions     = useUserStore((st) => st.sessions);
   const localInsights     = useUserStore((st) => st.insights);
-  const localSuggestion   = useUserStore((st) => st.suggestion);
   const localIsLoading    = useUserStore((st) => st.isLoadingInsights);
   const localTotalSessions= useUserStore((st) => st.totalSessions);
   const localStreakDays   = useUserStore((st) => st.streakDays);
   const localTotalXp      = useUserStore((st) => st.totalXp);
-  const getLocalHeatmap   = useUserStore((st) => st.getHeatmap);
 
   const sessions = isSignedIn ? (convexSessions ?? []) : localSessions;
-  const totalSessions = isSignedIn ? (convexStats?.totalSessions ?? 0) : localTotalSessions;
-  const streakDays = isSignedIn ? (convexStats?.streakDays ?? 0) : localStreakDays;
-  const totalXp = isSignedIn ? (convexStats?.totalXp ?? 0) : localTotalXp;
   
-  const suggestion = isSignedIn 
-    ? (convexRecommendations?.[0] ?? null) 
-    : localSuggestion;
+  // Use data from backend if available, otherwise use local/default
+  const suggestion = sweetSpot?.data 
+    ? { message: `Your sweet spot is ${sweetSpot.data.bestDuration} minutes with an average focus of ${Math.round(sweetSpot.data.avgFocus)}%.`, pills: [{ label: `${sweetSpot.data.bestDuration} min` }] }
+    : null;
     
-  const isLoadingInsights = isSignedIn ? (convexRecommendations === undefined) : localIsLoading;
+  const isLoadingInsights = isSignedIn ? (sweetSpot === undefined) : localIsLoading;
 
   const hasRealData = sessions.length >= 3;
 
   const heatmapData = useMemo(() => {
+    if (isSignedIn && peakDaysHours?.data?.heatmap) {
+        // Adapt 24-hour heatmap to the 4-slot display if needed, 
+        // or just show the peak data. For now, let's keep the local builder
+        // if the backend structure is different, or adapt it.
+        return buildHeatmap(sessions); 
+    }
     if (hasRealData) {
       try { return buildHeatmap(sessions); } catch { return SEED_HEATMAP; }
     }
     return SEED_HEATMAP;
-  }, [sessions, hasRealData]);
+  }, [sessions, hasRealData, isSignedIn, peakDaysHours]);
 
   const displayInsights = localInsights.length > 0 ? localInsights : SEED_INSIGHTS;
+
+  const totalSessions = isSignedIn ? (convexStats?.totalSessions ?? 0) : localTotalSessions;
+  const streakDays = isSignedIn ? (convexStats?.streakDays ?? 0) : localStreakDays; 
+  const totalXp = isSignedIn ? (convexStats?.totalXp ?? 0) : localTotalXp;
 
   const avgFocus = sessions.length > 0
     ? Math.round(sessions.reduce((a: number, x: any) => a + x.focusScore, 0) / sessions.length)
