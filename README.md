@@ -1,5 +1,4 @@
-<<<<<<< HEAD
-# StudyLoop
+# Attune
 
 A focus session app built on the **Cue → Focus → Reward → Reflection → Smart Suggestion** loop.  
 Avatar companion (Sage), distraction detection, AI-powered study cycle insights.
@@ -9,8 +8,8 @@ Avatar companion (Sage), distraction detection, AI-powered study cycle insights.
 ## Clone and run in 3 commands
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/studyloop.git
-cd studyloop
+git clone https://github.com/YOUR_USERNAME/react-native-app.git
+cd into the app
 node scripts/setup.js
 ```
 
@@ -38,7 +37,7 @@ Scan the QR code with **Expo Go** (iOS App Store / Google Play Store) and you're
 
 ## Environment variables
 
-After running setup, open `.env.local` and fill in your Supabase credentials:
+After running setup, open `.env.local` and fill in your Convex credentials:
 
 ```env
 EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
@@ -75,7 +74,7 @@ npx expo start --android # Android Emulator (Android Studio required)
 
 ## Project structure
 
-```
+```(probably needs to change to reflect the actual sturcture)
 app/
   _layout.tsx              Root shell (fonts, navigation, QueryClient)
   (tabs)/
@@ -106,28 +105,6 @@ lib/
 constants/
   theme.ts                 All design tokens — colors, typography, spacing
 
-supabase/
-  schema.sql               Full DB schema — run in Supabase SQL editor
-  functions/
-    sage-suggestion/       Edge Function — proxies Claude API (server-side)
-```
-
----
-
-## Supabase setup (for full AI features)
-
-1. Create a project at [supabase.com](https://supabase.com)
-2. Go to SQL Editor → paste and run `supabase/schema.sql`
-3. Add your URL and anon key to `.env.local`
-4. Deploy the Edge Function:
-
-```bash
-npm install -g supabase
-supabase login
-supabase link --project-ref YOUR_PROJECT_REF
-supabase secrets set ANTHROPIC_API_KEY=sk-ant-your-key-here
-supabase functions deploy sage-suggestion
-```
 
 ---
 

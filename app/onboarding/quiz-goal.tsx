@@ -10,7 +10,7 @@ import Animated, {
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { OnboardingLayout, CTAButton } from '@/components/OnboardingLayout';
-import { useOnboardingStore, type GoalType } from '@/stores/onboardingStore';
+import { useOnboardingStore, type GoalType } from '@/backend/stores/onboardingStore';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 
 const GOALS: { key: GoalType; label: string }[] = [

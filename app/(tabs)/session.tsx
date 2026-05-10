@@ -12,17 +12,22 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Typography, Spacing, Radius, Colors } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useSessionStore } from '@/stores/sessionStore';
-import { useUserStore } from '@/stores/userStore';
+import { useSessionStore } from '@/backend/stores/sessionStore';
+import { useUserStore } from '@/backend/stores/userStore';
 import { useRitualAudio } from '@/hooks/useAudioPlayer';
 import { TimerRing } from '@/components/TimerRing';
 import { SageOverlay } from '@/components/SageOverlay';
 import { StatCard } from '@/components/StatCard';
 import { MediaPlayer } from '@/components/MediaPlayer';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { useAuth } from '@clerk/clerk-expo';
 
 export default function SessionScreen() {
   const C = useThemeColors();
   const router = useRouter();
+  const { isSignedIn } = useAuth();
+  
   const {
     isActive,
     setupComplete,
@@ -37,7 +42,11 @@ export default function SessionScreen() {
     startSession,
   } = useSessionStore();
 
-  const { streakDays, totalXp, totalSessions } = useUserStore();
+  const { streakDays: localStreakDays, totalXp: localTotalXp, totalSessions: localTotalSessions } = useUserStore();
+  const convexStats = useQuery(api.sessions.getStats, isSignedIn ? {} : "skip");
+  const streakDays = isSignedIn ? (convexStats?.streakDays ?? 0) : localStreakDays;
+  const totalXp = isSignedIn ? (convexStats?.totalXp ?? 0) : localTotalXp;
+  const totalSessions = isSignedIn ? (convexStats?.totalSessions ?? 0) : localTotalSessions;
   
   // Handle Ritual Audio
   const { player, currentTrack, nextTrack, prevTrack, loading } = useRitualAudio();
