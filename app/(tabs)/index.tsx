@@ -26,13 +26,14 @@ import type { RitualSound } from '@/types';
 import { useUser } from '@clerk/clerk-expo';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import { SageOtter } from '@/components/SageOtter';
 
 const DURATIONS: number[] = [15, 18, 25, 45];
 
 export default function HomeScreen() {
   const C = useThemeColors();
   const router = useRouter();
-  
+
   const { isSignedIn } = useUser();
   const convexSessions = useQuery(api.sessions.list, isSignedIn ? { limit: 50 } : "skip");
   const convexStats = useQuery(api.sessions.getStats, isSignedIn ? {} : "skip");
@@ -40,7 +41,7 @@ export default function HomeScreen() {
   const { name, streakDays: localStreakDays, sessions: localSessions } = useUserStore();
   const sessions = isSignedIn ? (convexSessions ?? []) : localSessions;
   const streakDays = isSignedIn ? (convexStats?.streakDays ?? 0) : localStreakDays;
-  
+
   // Background streak enforcement
   const enforceStreakMutation = useMutation(api.sessions.enforceStreak);
   useEffect(() => {
@@ -54,7 +55,7 @@ export default function HomeScreen() {
 
   // Animation for audio preview slider
   const previewProgress = useSharedValue(0);
-  
+
   useEffect(() => {
     if (previewTimerActive) {
       previewProgress.value = 1;
@@ -94,15 +95,15 @@ export default function HomeScreen() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const data = [0, 0, 0, 0, 0, 0, 0];
-    
+
     sessions.forEach((session) => {
       if (!session.startedAt) return;
       const sDate = new Date(session.startedAt);
-      sDate.setHours(0,0,0,0);
-      
+      sDate.setHours(0, 0, 0, 0);
+
       const diffTime = today.getTime() - sDate.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
+
       if (diffDays <= 7 && diffDays >= 0) {
         let idx = sDate.getDay() - 1;
         if (idx === -1) idx = 6;
@@ -167,7 +168,7 @@ export default function HomeScreen() {
 
           {/* Mascot */}
           <View style={styles.mascot}>
-            <Text style={{ fontSize: 60 }}>🌱</Text>
+            <SageOtter size={170} state="alert" />
           </View>
 
           {/* Start CTA */}
@@ -255,7 +256,7 @@ export default function HomeScreen() {
                 'forest': '🌲',
                 'white-noise': '📻'
               };
-              
+
               return (
                 <Pressable
                   key={sound}

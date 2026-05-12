@@ -61,7 +61,7 @@ export type Subscription = {
   endDate: number;
 };
 
-export type SageState = 'idle' | 'watching' | 'nudge' | 'alert' | 'celebrate';
+export type SageState = 'idle' | 'watching' | 'nudge' | 'alert' | 'celebrate' | 'excessive_celebration';
 
 export type User = {
   _id: string;

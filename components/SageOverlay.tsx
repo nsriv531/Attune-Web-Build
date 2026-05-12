@@ -11,7 +11,7 @@ import { SageAvatar } from './SageAvatar';
 import { Typography, Radius, Spacing } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
-type SageState = 'idle' | 'watching' | 'nudge' | 'alert' | 'celebrate';
+type SageState = 'idle' | 'watching' | 'nudge' | 'alert' | 'celebrate' | 'excessive_celebration';
 
 interface SageOverlayProps {
   sageState: SageState;
@@ -30,6 +30,7 @@ export function SageOverlay({ sageState, message, onDismiss }: SageOverlayProps)
     nudge:     'rgba(251,191,36,0.08)',
     alert:     'rgba(248,113,113,0.08)',
     celebrate: 'rgba(74,222,128,0.08)',
+    excessive_celebration: 'rgba(74,222,128,0.15)',
   };
 
   const stateBorder: Record<SageState, string> = {
@@ -38,6 +39,7 @@ export function SageOverlay({ sageState, message, onDismiss }: SageOverlayProps)
     nudge:     'rgba(251,191,36,0.25)',
     alert:     'rgba(248,113,113,0.3)',
     celebrate: 'rgba(74,222,128,0.3)',
+    excessive_celebration: 'rgba(74,222,128,0.5)',
   };
 
   const stateNameColor: Record<SageState, string> = {
@@ -46,6 +48,7 @@ export function SageOverlay({ sageState, message, onDismiss }: SageOverlayProps)
     nudge:     C.amber,
     alert:     '#f87171',
     celebrate: C.green,
+    excessive_celebration: C.green,
   };
 
   useEffect(() => {
