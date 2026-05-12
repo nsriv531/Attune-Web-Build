@@ -3,8 +3,12 @@ module.exports = function (api) {
   return {
     presets: ['babel-preset-expo'],
     plugins: [
-      '@babel/plugin-syntax-import-meta',
       'react-native-worklets/plugin',
     ],
+    env: {
+      web: {
+        plugins: ['babel-plugin-transform-import-meta'],
+      },
+    },
   };
 };

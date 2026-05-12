@@ -61,7 +61,7 @@ export type Subscription = {
   endDate: number;
 };
 
-export type SageState = 'idle' | 'watching' | 'nudge' | 'alert' | 'celebrate';
+export type SageState = 'idle' | 'watching' | 'nudge' | 'alert' | 'celebrate' | 'excessive_celebration';
 
 export type User = {
   _id: string;
@@ -109,4 +109,14 @@ export type AIInsight = {
 export type SmartSuggestion = {
   message: string;
   pills: Array<{ label: string }>;
+};
+
+export type Resource = {
+  _id: string;
+  title: string;
+  description: string;
+  url: string;
+  category: string;
+  externalId?: string;
+  publishedAt: number;
 };

@@ -70,6 +70,7 @@ interface UserState {
   insights: AIInsight[];
   suggestion: SmartSuggestion | null;
   heatmap: number[][];
+  bookmarkedResourceIds: string[];
   isLoadingInsights: boolean;
 
   // Actions
@@ -80,6 +81,7 @@ interface UserState {
   incrementStreak: () => void;
   setSuggestion: (s: SmartSuggestion | null) => void;
   setInsights: (insights: AIInsight[]) => void;
+  toggleBookmark: (resourceId: string) => void;
   setLoadingInsights: (v: boolean) => void;
   reset: () => void;
 }
@@ -96,6 +98,7 @@ export const useUserStore = create<UserState>()(
       insights: [],
       suggestion: null,
       heatmap: Array.from({ length: 4 }, () => new Array(7).fill(0)),
+      bookmarkedResourceIds: [],
       isLoadingInsights: false,
 
       setUser: (userId, name) => set({ userId, name }),
@@ -139,6 +142,17 @@ export const useUserStore = create<UserState>()(
 
       setSuggestion: (suggestion) => set({ suggestion }),
       setInsights: (insights) => set({ insights }),
+      
+      toggleBookmark: (resourceId) =>
+        set((s) => {
+          const isBookmarked = s.bookmarkedResourceIds.includes(resourceId);
+          if (isBookmarked) {
+            return { bookmarkedResourceIds: s.bookmarkedResourceIds.filter((id) => id !== resourceId) };
+          } else {
+            return { bookmarkedResourceIds: [...s.bookmarkedResourceIds, resourceId] };
+          }
+        }),
+
       setLoadingInsights: (isLoadingInsights) => set({ isLoadingInsights }),
       
       reset: () => set({
@@ -151,6 +165,7 @@ export const useUserStore = create<UserState>()(
         insights: [],
         suggestion: null,
         heatmap: Array.from({ length: 4 }, () => new Array(7).fill(0)),
+        bookmarkedResourceIds: [],
         isLoadingInsights: false,
       }),
     }),
@@ -164,6 +179,7 @@ export const useUserStore = create<UserState>()(
         totalSessions: state.totalSessions,
         sessions: state.sessions,
         heatmap: state.heatmap,
+        bookmarkedResourceIds: state.bookmarkedResourceIds,
       }),
     }
   )

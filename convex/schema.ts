@@ -122,4 +122,20 @@ export default defineSchema({
     userId: v.id("users"),
     data: v.any(), // productivity timing metrics
   }).index("by_user", ["userId"]),
+
+  resources: defineTable({
+    title: v.string(),
+    description: v.string(),
+    url: v.string(),
+    category: v.string(),
+    externalId: v.optional(v.string()), // Used to prevent duplicates from external APIs
+    publishedAt: v.number(),
+  }).index("by_published", ["publishedAt"])
+    .index("by_external_id", ["externalId"]),
+
+  bookmarkedResources: defineTable({
+    userId: v.id("users"),
+    resourceId: v.id("resources"),
+  }).index("by_user", ["userId"])
+    .index("by_user_and_resource", ["userId", "resourceId"]),
 });
