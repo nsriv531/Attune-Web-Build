@@ -126,44 +126,50 @@ export const internalUpsertResource = internalMutation({
 export const syncExternalResources = action({
   args: {},
   handler: async (ctx) => {
-    console.log("Starting resource sync...");
+    console.log("Starting Wikipedia Concepts sync...");
 
-    // STUB: This is where you will do a fetch() to the Mindshift API or RSS feed.
-    // Example: const response = await fetch("https://api.mindshift.com/v1/articles");
-    // const data = await response.json();
-    
-    // For now, we will simulate receiving an array of articles from an external source:
-    const mockExternalData = [
-      {
-        id: "mindshift-article-101",
-        title: "The Neuroscience of Deep Work",
-        summary: "How minimizing context-switching literally changes your brain chemistry over 30 days.",
-        link: "https://example.com/deep-work",
-        category: "Science",
-        timestamp: Date.now() - 1000 * 60 * 60 * 24 * 2, // 2 days ago
-      },
-      {
-        id: "mindshift-article-102",
-        title: "The 5-Minute Break Rule",
-        summary: "Why resting your eyes on distant objects is more effective than closing them.",
-        link: "https://example.com/break-rule",
-        category: "Techniques",
-        timestamp: Date.now() - 1000 * 60 * 60 * 24 * 5, // 5 days ago
-      }
+    // We will pull core productivity and psychology concepts from Wikipedia
+    // This API is extremely reliable, fast, and does not require an API key.
+    const topics = [
+      "Cognitive_behavioral_therapy",
+      "Pomodoro_Technique",
+      "Attention_span",
+      "Flow_(psychology)",
+      "Executive_dysfunction",
+      "Time_management",
+      "Neuroplasticity"
     ];
 
     let newCount = 0;
 
-    for (const article of mockExternalData) {
-      await ctx.runMutation(internal.resources.internalUpsertResource, {
-        title: article.title,
-        description: article.summary,
-        url: article.link,
-        category: article.category,
-        externalId: article.id,
-        publishedAt: article.timestamp,
-      });
-      newCount++;
+    for (const topic of topics) {
+      try {
+        const apiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${topic}`;
+        const response = await fetch(apiUrl);
+        
+        if (!response.ok) {
+          console.warn(`Wikipedia API failed for ${topic}: ${response.statusText}`);
+          continue;
+        }
+
+        const data = await response.json();
+        
+        // Ensure we got a valid extract
+        if (!data.title || !data.extract) continue;
+
+        await ctx.runMutation(internal.resources.internalUpsertResource, {
+          title: data.title,
+          description: data.extract.substring(0, 300) + (data.extract.length > 300 ? "..." : ""),
+          url: data.content_urls?.desktop?.page || `https://en.wikipedia.org/wiki/${topic}`,
+          category: "Concepts", 
+          externalId: `wiki_${data.pageid || topic}`,
+          publishedAt: Date.now() - (newCount * 1000), // Slight offset for sorting
+        });
+        
+        newCount++;
+      } catch (error) {
+        console.error(`Error syncing topic ${topic}:`, error);
+      }
     }
 
     console.log(`Sync complete. Processed ${newCount} external resources.`);
