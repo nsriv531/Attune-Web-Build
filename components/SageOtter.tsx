@@ -12,14 +12,12 @@ import Animated, {
 
 const AnimatedG = Animated.createAnimatedComponent(G);
 
-// Tovi's Palette + Volumetric Shadows
 const SAGE_COLORS = {
     fur: '#A68A6D',          // Main warm brown
     furShadow: '#8C7257',    // Darker brown for z-axis depth
     mask: '#F4E3C5',         // Creamy beige
     maskShadow: '#E0CBB0',   // Shadow for the cream area
     outline: '#2D241E',      // Charcoal
-    ring: '#F2D388'          // Golden comet ring
 };
 
 export function SageOtter({ size = 150, state = 'idle' }) {
@@ -32,12 +30,10 @@ export function SageOtter({ size = 150, state = 'idle' }) {
         const smoothBreathe = Easing.inOut(Easing.sin);
 
         if (state === 'idle') {
-            // Soft, heavy hovering to emphasize plumpness
             hoverY.value = withRepeat(withTiming(-6, { duration: 2000, easing: smoothBreathe }), -1, true);
             bodyScale.value = withRepeat(withTiming(1.03, { duration: 2000, easing: smoothBreathe }), -1, true);
             tailRotate.value = withRepeat(withTiming(6, { duration: 2500, easing: smoothBreathe }), -1, true);
 
-            // Blinking
             eyeScaleY.value = withRepeat(
                 withSequence(
                     withTiming(1, { duration: 3500 }),
@@ -57,15 +53,14 @@ export function SageOtter({ size = 150, state = 'idle' }) {
     }));
 
     const bodyProps = useAnimatedProps(() => ({
-        // Anchor scaling at the bottom so he squishes down naturally
-        transform: [{ translateY: 75 }, { scaleY: bodyScale.value }, { translateY: -75 }]
+        transform: [{ translateY: 85 }, { scaleY: bodyScale.value }, { translateY: -85 }]
     }));
 
     const tailProps = useAnimatedProps(() => ({
         transform: [
-            { translateX: 65 }, { translateY: 65 },
+            { translateX: 65 }, { translateY: 70 },
             { rotate: `${tailRotate.value}deg` },
-            { translateX: -65 }, { translateY: -65 }
+            { translateX: -65 }, { translateY: -70 }
         ]
     }));
 
@@ -77,59 +72,54 @@ export function SageOtter({ size = 150, state = 'idle' }) {
         <Svg width={size} height={size} viewBox="0 0 100 100">
             <AnimatedG animatedProps={floatProps}>
 
-                {/* 1. The Comet Ring (Background) */}
-                <Path d="M 15 65 A 40 40 0 0 1 85 35" fill="none" stroke={SAGE_COLORS.ring} strokeWidth="6" strokeLinecap="round" opacity={0.4} />
-
-                {/* 2. Tail (Animated independently) */}
+                {/* 1. Tail (Untouched) */}
                 <AnimatedG animatedProps={tailProps}>
-                    {/* Tail Shadow for depth */}
-                    <Path d="M 50 68 Q 88 80 78 48" fill="none" stroke={SAGE_COLORS.furShadow} strokeWidth="18" strokeLinecap="round" />
-                    {/* Main Tail */}
-                    <Path d="M 50 65 Q 85 75 75 45" fill="none" stroke={SAGE_COLORS.fur} strokeWidth="18" strokeLinecap="round" />
+                    <Path d="M 50 72 Q 88 85 78 52" fill="none" stroke={SAGE_COLORS.furShadow} strokeWidth="18" strokeLinecap="round" />
+                    <Path d="M 50 69 Q 85 80 75 49" fill="none" stroke={SAGE_COLORS.fur} strokeWidth="18" strokeLinecap="round" />
                 </AnimatedG>
 
-                {/* 3. Main Body (Tilted 15 degrees for the floating pose) */}
+                {/* 2. Main Body */}
                 <G transform="rotate(-15, 50, 50)">
                     <AnimatedG animatedProps={bodyProps}>
-                        {/* Base Body Pill */}
-                        <Rect x="20" y="30" width="60" height="55" rx="27.5" fill={SAGE_COLORS.fur} />
+                        {/* Base Body Pill - WIDTH REDUCED from 60 to 50, centered at 50 */}
+                        <Rect x="25" y="25" width="50" height="70" rx="25" fill={SAGE_COLORS.fur} />
 
-                        {/* Z-Axis Depth: Bottom Body Shadow (Crescent shape) */}
-                        <Path d="M 20 55 C 20 90 80 90 80 55 C 70 80 30 80 20 55 Z" fill={SAGE_COLORS.furShadow} />
+                        {/* Z-Axis Depth: Bottom Body Shadow - Coordinates adjusted to match new width */}
+                        <Path d="M 25 65 C 25 105 75 105 75 65 C 65 90 35 90 25 65 Z" fill={SAGE_COLORS.furShadow} />
 
-                        {/* Cream Belly Patch */}
-                        <Rect x="30" y="45" width="40" height="35" rx="17.5" fill={SAGE_COLORS.mask} />
+                        {/* Cream Belly Patch - WIDTH REDUCED to 32, centered at 50 */}
+                        <Rect x="34" y="45" width="32" height="45" rx="16" fill={SAGE_COLORS.mask} />
 
-                        {/* Z-Axis Depth: Belly Shadow */}
-                        <Path d="M 30 60 C 30 85 70 85 70 60 C 60 78 40 78 30 60 Z" fill={SAGE_COLORS.maskShadow} />
+                        {/* Z-Axis Depth: Belly Shadow - Coordinates adjusted to match new belly width */}
+                        <Path d="M 34 65 C 34 100 66 100 66 65 C 58 85 42 85 34 65 Z" fill={SAGE_COLORS.maskShadow} />
                     </AnimatedG>
 
-                    {/* Ears */}
+                    {/* Ears (Untouched) */}
                     <Circle cx="26" cy="30" r="7" fill={SAGE_COLORS.furShadow} />
                     <Circle cx="74" cy="30" r="7" fill={SAGE_COLORS.furShadow} />
 
-                    {/* Head Skull */}
+                    {/* Head Skull (Untouched) */}
                     <Ellipse cx="50" cy="38" rx="28" ry="24" fill={SAGE_COLORS.fur} />
 
-                    {/* Head Z-Axis Depth: Under-chin shadow dropped onto the body */}
+                    {/* Head Z-Axis Depth: Under-chin shadow (Untouched) */}
                     <Ellipse cx="50" cy="50" rx="24" ry="12" fill={SAGE_COLORS.furShadow} opacity={0.5} />
 
-                    {/* Face Mask - Smooth, rounded interlocking paths */}
+                    {/* Face Mask (Untouched) */}
                     <Path d="M 24 40 Q 30 28 50 32 Q 70 28 76 40 C 76 55 60 60 50 60 C 40 60 24 55 24 40 Z" fill={SAGE_COLORS.mask} />
 
-                    {/* Nose and Mouth */}
+                    {/* Nose and Mouth (Untouched) */}
                     <Rect x="46" y="43" width="8" height="4.5" rx="2.25" fill={SAGE_COLORS.outline} />
                     <Path d="M 44 48 Q 47 50 50 48 Q 53 50 56 48" fill="none" stroke={SAGE_COLORS.outline} strokeWidth="1.5" strokeLinecap="round" />
 
-                    {/* Expressive Eyes */}
+                    {/* Expressive Eyes (Untouched) */}
                     <AnimatedG animatedProps={eyeProps}>
                         <Rect x="34" y="39" width="5.5" height="9" rx="2.75" fill={SAGE_COLORS.outline} />
                         <Rect x="60.5" y="39" width="5.5" height="9" rx="2.75" fill={SAGE_COLORS.outline} />
                     </AnimatedG>
 
-                    {/* Flippers (Overlapping the belly line for 3D illusion) */}
-                    <Rect x="22" y="58" width="14" height="8" rx="4" fill={SAGE_COLORS.furShadow} transform="rotate(25, 29, 62)" />
-                    <Rect x="64" y="58" width="14" height="8" rx="4" fill={SAGE_COLORS.furShadow} transform="rotate(-25, 71, 62)" />
+                    {/* Flippers - Shifted slightly inward to re-attach to the slimmer body */}
+                    <Rect x="25" y="65" width="14" height="8" rx="4" fill={SAGE_COLORS.furShadow} transform="rotate(25, 32, 69)" />
+                    <Rect x="61" y="65" width="14" height="8" rx="4" fill={SAGE_COLORS.furShadow} transform="rotate(-25, 68, 69)" />
                 </G>
             </AnimatedG>
         </Svg>

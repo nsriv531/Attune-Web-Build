@@ -168,7 +168,7 @@ export default function HomeScreen() {
 
           {/* Mascot */}
           <View style={styles.mascot}>
-            <SageOtter size={170} state="celebrate" />
+            <SageOtter size={170} state="idle" />
           </View>
 
           {/* Start CTA */}
