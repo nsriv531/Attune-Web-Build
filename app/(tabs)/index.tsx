@@ -72,7 +72,7 @@ function AnimatedBar({ targetHeight, idx, isToday, accent }: {
             : Colors.keycapDepthColor,
         }]}>
           <Animated.View style={[styles.barFace, {
-            backgroundColor: isToday ? accent : Colors.bgCardHigh,
+            backgroundColor: isToday ? accent : Colors.bgCard,
           }, barStyle]}>
             {/* Shine strip on active bar */}
             {isToday && (
