@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
   },
   tabKeycapAccentDepth: {
     backgroundColor: Colors.keycapAccentDepthColor,
-    borderColor: Colors.amberBorder,
+    borderColor: Colors.purpleBorder,
   },
   tabKeycapFace: {
     borderRadius: 11,

@@ -27,9 +27,15 @@ import { TimerRing } from '@/components/TimerRing';
 import { KeycapSurface, KeycapButton } from '@/components/KeycapSurface';
 import { useRitualAudio } from '@/hooks/useAudioPlayer';
 import { SoliAvatar } from '@/components/SoliAvatar';
-import { InteractiveIconButton } from '@/components/InteractiveIconButton';
 import { ProfileSidebar } from '@/components/ProfileSidebar';
+import { RiveSection } from '@/components/RiveSection';
 import type { RitualSound } from '@/types';
+
+class RiveBoundary extends React.Component<{ children: React.ReactNode }, { crashed: boolean }> {
+  state = { crashed: false };
+  static getDerivedStateFromError() { return { crashed: true }; }
+  render() { return this.state.crashed ? null : this.props.children; }
+}
 
 const DURATIONS: number[] = [15, 18, 25, 45];
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -194,6 +200,8 @@ export default function HomeScreen() {
 
   const [showDurationPicker, setShowDurationPicker] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const riveSection = <RiveBoundary><RiveSection/></RiveBoundary>
 
   // Preview progress bar
   const previewProgress = useSharedValue(0);
@@ -460,13 +468,7 @@ export default function HomeScreen() {
                 <Text style={styles.testTitle}>Rive Test</Text>
                 <Text style={styles.testSubtitle}>Click to trigger animation</Text>
               </View>
-              <View style={styles.testIconContainer}>
-                <InteractiveIconButton
-                  fileName="interactive-icon-set"
-                  size={64}
-                  onPress={() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)}
-                />
-              </View>
+              {riveSection}
             </KeycapSurface>
           </View>
         </FadeSlideUp>
