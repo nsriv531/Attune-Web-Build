@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -29,6 +29,7 @@ import { useRitualAudio } from '@/hooks/useAudioPlayer';
 import { SoliAvatar } from '@/components/SoliAvatar';
 import { ProfileSidebar } from '@/components/ProfileSidebar';
 import { RiveSection } from '@/components/RiveSection';
+import { useFontStore } from '@/stores/fontStore';
 import type { RitualSound } from '@/types';
 
 class RiveBoundary extends React.Component<{ children: React.ReactNode }, { crashed: boolean }> {
@@ -142,10 +143,11 @@ function AnimatedMascot({ size = 74 }: { size?: number }) {
 }
 
 // ── Duration pill ─────────────────────────────────────────────────────────
-function DurationPill({ label, isActive, onPress }: {
+function DurationPill({ label, isActive, onPress, font }: {
   label: string;
   isActive: boolean;
   onPress: () => void;
+  font: string;
 }) {
   return (
     <KeycapButton
@@ -155,7 +157,7 @@ function DurationPill({ label, isActive, onPress }: {
       contentStyle={styles.durationPillFace}
       onPress={onPress}
     >
-      <Text style={[styles.durationText, { color: isActive ? '#2C2000' : Colors.textTertiary }]}>
+      <Text style={[styles.durationText, { color: isActive ? '#2C2000' : Colors.textTertiary, fontFamily: font }]}>
         {label}
       </Text>
     </KeycapButton>
@@ -163,10 +165,11 @@ function DurationPill({ label, isActive, onPress }: {
 }
 
 // ── Sound pill ────────────────────────────────────────────────────────────
-function SoundPill({ sound, isActive, onPress }: {
+function SoundPill({ sound, isActive, onPress, font }: {
   sound: RitualSound;
   isActive: boolean;
   onPress: () => void;
+  font: string;
 }) {
   const icons: Record<string, string> = {
     'silence': '🔇', 'lofi': '🎧', 'rain': '🌧',
@@ -184,7 +187,7 @@ function SoundPill({ sound, isActive, onPress }: {
       onPress={onPress}
     >
       <Text style={styles.soundIcon}>{icons[sound]}</Text>
-      <Text style={[styles.soundText, { color: isActive ? '#2C2000' : Colors.textTertiary }]}>
+      <Text style={[styles.soundText, { color: isActive ? '#2C2000' : Colors.textTertiary, fontFamily: font }]}>
         {label}
       </Text>
     </KeycapButton>
@@ -197,6 +200,9 @@ export default function HomeScreen() {
   const { name, streakDays, sessions } = useUserStore();
   const { durationMinutes, setDuration, startSession, ritualSound, setRitualSound } = useSessionStore();
   const { previewTimerActive } = useRitualAudio(true);
+  const { current: currentFont, cycle: cycleFont } = useFontStore();
+  const font = currentFont.regular;
+  const styles = useMemo(() => makeStyles(font), [font]);
 
   const [showDurationPicker, setShowDurationPicker] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -265,6 +271,23 @@ export default function HomeScreen() {
           </View>
         </FadeSlideUp>
 
+        {/* ── Font Tester ── */}
+        <FadeSlideUp delay={70}>
+          <View style={styles.fontTesterRow}>
+            <KeycapButton
+              radius={Radius.full}
+              contentStyle={styles.fontTesterFace}
+              onPress={cycleFont}
+            >
+              <Text style={[styles.fontTesterLabel, { fontFamily: font }]}>Aa</Text>
+              <Text style={[styles.fontTesterText, { fontFamily: font }]}>
+                Font: {currentFont.label}
+              </Text>
+              <Text style={[styles.fontTesterHint, { fontFamily: font }]}>tap to cycle</Text>
+            </KeycapButton>
+          </View>
+        </FadeSlideUp>
+
         {/* ── Timer Hero Card ── */}
         <FadeSlideUp delay={120}>
           <View style={styles.heroCardWrapper}>
@@ -302,6 +325,7 @@ export default function HomeScreen() {
                     label={String(d)}
                     isActive={durationMinutes === d}
                     onPress={() => handleDurationSelect(d)}
+                    font={font}
                   />
                 ))}
                 <KeycapButton
@@ -331,6 +355,7 @@ export default function HomeScreen() {
                     Haptics.selectionAsync();
                     setRitualSound(sound);
                   }}
+                  font={font}
                 />
               ))}
             </ScrollView>
@@ -486,7 +511,7 @@ const cardShadow = Platform.OS === 'ios'
   ? { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10 }
   : { elevation: 2 };
 
-const styles = StyleSheet.create({
+const makeStyles = (font: string) => StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: Colors.bg,
@@ -501,7 +526,7 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
   greetingText: {
-    fontFamily: Typography.fontSans,
+    fontFamily: font,
     fontSize: 22,
     fontWeight: '700',
     letterSpacing: -0.4,
@@ -510,7 +535,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   greetingSubtitle: {
-    fontFamily: Typography.fontSans,
+    fontFamily: font,
     fontSize: 13,
     color: Colors.textSecondary,
     lineHeight: 20,
@@ -533,7 +558,7 @@ const styles = StyleSheet.create({
 
   // Time display (inside ring, as children)
   timeDisplay: {
-    fontFamily: Typography.fontSans,
+    fontFamily: font,
     fontSize: 34,
     fontWeight: '800',
     letterSpacing: -1.5,
@@ -542,7 +567,7 @@ const styles = StyleSheet.create({
     marginTop: -2,
   },
   timeLabel: {
-    fontFamily: Typography.fontSans,
+    fontFamily: font,
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 2.5,
@@ -561,7 +586,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   startBtnText: {
-    fontFamily: Typography.fontSans,
+    fontFamily: font,
     fontSize: 15,
     fontWeight: '800',
     color: '#2C2000',
@@ -583,7 +608,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   durationText: {
-    fontFamily: Typography.fontSans,
+    fontFamily: font,
     fontSize: 13,
     fontWeight: '600',
   },
@@ -593,7 +618,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   soundSectionTitle: {
-    fontFamily: Typography.fontSans,
+    fontFamily: font,
     fontSize: 13,
     fontWeight: '600',
     color: Colors.textSecondary,
@@ -615,7 +640,7 @@ const styles = StyleSheet.create({
   },
   soundIcon: { fontSize: 14 },
   soundText: {
-    fontFamily: Typography.fontSans,
+    fontFamily: font,
     fontSize: 13,
     fontWeight: '600',
   },
@@ -653,7 +678,7 @@ const styles = StyleSheet.create({
   },
   statsIcon: { fontSize: 13 },
   statsLabel: {
-    fontFamily: Typography.fontSans,
+    fontFamily: font,
     fontSize: 9,
     fontWeight: '800',
     letterSpacing: 1.5,
@@ -665,7 +690,7 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   statsValue: {
-    fontFamily: Typography.fontSans,
+    fontFamily: font,
     fontSize: 28,
     fontWeight: '800',
     color: Colors.textPrimary,
@@ -673,13 +698,13 @@ const styles = StyleSheet.create({
     lineHeight: 32,
   },
   statsUnit: {
-    fontFamily: Typography.fontSans,
+    fontFamily: font,
     fontSize: 13,
     fontWeight: '600',
     color: Colors.textTertiary,
   },
   statsCaption: {
-    fontFamily: Typography.fontSans,
+    fontFamily: font,
     fontSize: 10,
     color: Colors.textTertiary,
     marginTop: 4,
@@ -701,14 +726,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   perfTitle: {
-    fontFamily: Typography.fontSans,
+    fontFamily: font,
     fontSize: 14,
     fontWeight: '800',
     color: Colors.textPrimary,
     marginBottom: 2,
   },
   perfSubtitle: {
-    fontFamily: Typography.fontSans,
+    fontFamily: font,
     fontSize: 11,
     color: Colors.textSecondary,
     lineHeight: 16,
@@ -731,14 +756,14 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   nudgeTitle: {
-    fontFamily: Typography.fontSans,
+    fontFamily: font,
     fontSize: 14,
     fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: 3,
   },
   nudgeSubtitle: {
-    fontFamily: Typography.fontSans,
+    fontFamily: font,
     fontSize: 12,
     color: Colors.textSecondary,
     lineHeight: 17,
@@ -751,7 +776,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   nudgeBtnText: {
-    fontFamily: Typography.fontSans,
+    fontFamily: font,
     fontSize: 13,
     fontWeight: '800',
     color: '#2C2000',
@@ -769,7 +794,7 @@ const styles = StyleSheet.create({
     marginBottom: 13,
   },
   chartTitle: {
-    fontFamily: Typography.fontSans,
+    fontFamily: font,
     fontSize: 14,
     fontWeight: '800',
     color: Colors.textPrimary,
@@ -824,7 +849,7 @@ const styles = StyleSheet.create({
   dayText: {
     flex: 1,
     textAlign: 'center',
-    fontFamily: Typography.fontSans,
+    fontFamily: font,
     fontSize: 11,
     fontWeight: '500',
   },
@@ -839,14 +864,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   testTitle: {
-    fontFamily: Typography.fontSans,
+    fontFamily: font,
     fontSize: 14,
     fontWeight: '800',
     color: Colors.textPrimary,
     marginBottom: 4,
   },
   testSubtitle: {
-    fontFamily: Typography.fontSans,
+    fontFamily: font,
     fontSize: 12,
     color: Colors.textSecondary,
   },
@@ -854,4 +879,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
+  // Font tester
+  fontTesterRow: {
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    alignItems: 'flex-start',
+  },
+  fontTesterFace: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    gap: 8,
+  },
+  fontTesterLabel: {
+    fontFamily: font,
+    fontSize: 18,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    letterSpacing: -0.5,
+  },
+  fontTesterText: {
+    fontFamily: font,
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  fontTesterHint: {
+    fontFamily: font,
+    fontSize: 11,
+    fontWeight: '500',
+    color: Colors.textTertiary,
+    marginLeft: 4,
+  },
 });
+
+// Default static stylesheet — used by sub-components defined outside HomeScreen.
+// HomeScreen itself shadows this with a useMemo'd dynamic stylesheet so the
+// active font flows through. Sub-components override fontFamily inline via a `font` prop.
+const styles = makeStyles(Typography.fontSans);

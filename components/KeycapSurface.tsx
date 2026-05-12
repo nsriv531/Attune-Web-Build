@@ -1,11 +1,5 @@
-import React, { useRef } from 'react';
+import React, { useState } from 'react';
 import { View, Pressable, ViewStyle, StyleSheet, Platform } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-} from 'react-native-reanimated';
 import { Colors, Radius } from '@/constants/theme';
 
 interface KeycapSurfaceProps {
@@ -19,8 +13,7 @@ interface KeycapSurfaceProps {
 }
 
 /**
- * Static keycap card surface — provides the 3D depth illusion
- * without any press interaction. Use for non-interactive cards.
+ * Flat 2D card surface — non-interactive. No depth, no shadow, no shine.
  */
 export function KeycapSurface({
   accent = false,
@@ -29,53 +22,23 @@ export function KeycapSurface({
   contentStyle,
   children,
 }: KeycapSurfaceProps) {
-  const depthColor = accent ? Colors.keycapAccentDepthColor : Colors.keycapDepthColor;
   const faceColor = accent ? Colors.amber : Colors.bgCard;
-  const highlight = accent ? Colors.keycapAccentHighlight : Colors.keycapHighlight;
   const borderColor = accent ? Colors.amberBorder : Colors.border;
 
   return (
     <View
       style={[
-        styles.depthWrapper,
         {
-          backgroundColor: depthColor,
+          backgroundColor: faceColor,
           borderRadius: radius,
           borderColor,
           borderWidth: 1,
         },
-        // Ambient shadow
-        Platform.OS === 'ios'
-          ? { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10 }
-          : { elevation: 2 },
+        contentStyle,
         style,
       ]}
     >
-      {/* Keycap face */}
-      <View
-        style={[
-          styles.face,
-          {
-            backgroundColor: faceColor,
-            borderRadius: radius - 1,
-          },
-          contentStyle,
-        ]}
-      >
-        {/* Top shine strip */}
-        <View
-          style={[
-            styles.shine,
-            {
-              backgroundColor: highlight,
-              borderTopLeftRadius: radius - 1,
-              borderTopRightRadius: radius - 1,
-            },
-          ]}
-          pointerEvents="none"
-        />
-        {children}
-      </View>
+      {children}
     </View>
   );
 }
@@ -92,10 +55,28 @@ interface KeycapButtonProps {
   children?: React.ReactNode;
 }
 
+const webTransition: ViewStyle = Platform.OS === 'web'
+  ? ({
+      // @ts-expect-error — react-native-web supports CSS transition props
+      transitionProperty: 'box-shadow, background-color',
+      transitionDuration: '180ms',
+      transitionTimingFunction: 'ease-out',
+    } as ViewStyle)
+  : {};
+
+const webShineTransition: ViewStyle = Platform.OS === 'web'
+  ? ({
+      // @ts-expect-error — react-native-web supports CSS transition props
+      transitionProperty: 'opacity',
+      transitionDuration: '180ms',
+      transitionTimingFunction: 'ease-out',
+    } as ViewStyle)
+  : {};
+
 /**
- * Pressable keycap button with tactile depth physics.
- * translateY(3) on press to simulate the key traveling down,
- * reducing the visible depth gap from 3px → 0px.
+ * Pressable 3D keycap button. At rest it shows shadow + depth ledge + shine.
+ * On press, all three 3D affordances vanish and the button reads as a flat
+ * 2D shape in the same physical position (no translate, no "press-into" feel).
  */
 export function KeycapButton({
   accent = false,
@@ -116,45 +97,38 @@ export function KeycapButton({
   const highlight = accent && !disabled ? Colors.keycapAccentHighlight : Colors.keycapHighlight;
   const borderColor = accent && !disabled ? Colors.amberBorder : Colors.border;
 
-  const pressAnim = useSharedValue(0);
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: pressAnim.value }],
-  }));
-
-  function handlePressIn() {
-    pressAnim.value = withTiming(3, { duration: 80 });
-  }
-
-  function handlePressOut() {
-    pressAnim.value = withSpring(0, { damping: 12, stiffness: 300 });
-  }
+  const [pressed, setPressed] = useState(false);
 
   return (
     <View
       style={[
         styles.depthWrapper,
         {
-          backgroundColor: depthColor,
+          // When pressed, the ledge collapses visually by matching the face color
+          backgroundColor: pressed ? faceColor : depthColor,
           borderRadius: radius,
           borderColor,
           borderWidth: 1,
+          // RN's shadow props — react-native-web compiles these to a single box-shadow
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: pressed ? 0 : 0.08,
+          shadowRadius: 10,
+          elevation: pressed ? 0 : 2,
         },
-        Platform.OS === 'ios'
-          ? { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10 }
-          : { elevation: 2 },
+        webTransition,
         style,
       ]}
     >
       <Pressable
         onPress={disabled ? undefined : onPress}
         onLongPress={disabled ? undefined : onLongPress}
-        onPressIn={disabled ? undefined : handlePressIn}
-        onPressOut={disabled ? undefined : handlePressOut}
+        onPressIn={disabled ? undefined : () => setPressed(true)}
+        onPressOut={disabled ? undefined : () => setPressed(false)}
         style={{ borderRadius: radius - 1 }}
         android_ripple={null}
       >
-        <Animated.View
+        <View
           style={[
             styles.face,
             {
@@ -162,10 +136,8 @@ export function KeycapButton({
               borderRadius: radius - 1,
             },
             contentStyle,
-            animStyle,
           ]}
         >
-          {/* Top shine strip */}
           <View
             style={[
               styles.shine,
@@ -173,12 +145,14 @@ export function KeycapButton({
                 backgroundColor: highlight,
                 borderTopLeftRadius: radius - 1,
                 borderTopRightRadius: radius - 1,
+                opacity: pressed ? 0 : 1,
+                pointerEvents: 'none',
               },
+              webShineTransition,
             ]}
-            pointerEvents="none"
           />
           {children}
-        </Animated.View>
+        </View>
       </Pressable>
     </View>
   );
@@ -186,8 +160,9 @@ export function KeycapButton({
 
 const styles = StyleSheet.create({
   depthWrapper: {
-    // paddingBottom: 3 creates the visible "key depth" — the darker wrapper
-    // shows 3px below the face, simulating a keycap stem
+    // paddingBottom: 3 creates the visible "key depth" ledge at rest.
+    // When pressed, the wrapper's background matches the face so the ledge
+    // is no longer visible — collapsing the 3D affordance.
     paddingBottom: 3,
   },
   face: {
