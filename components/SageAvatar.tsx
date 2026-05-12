@@ -11,7 +11,7 @@ import Animated, {
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { Colors } from '@/constants/theme';
 
-export type SageState = 'idle' | 'watching' | 'nudge' | 'alert' | 'celebrate';
+export type SageState = 'idle' | 'watching' | 'nudge' | 'alert' | 'celebrate' | 'excessive_celebration';
 export type SageForm = 'orb' | 'crystal' | 'flame' | 'constellation';
 
 interface SageAvatarProps {
@@ -26,6 +26,7 @@ const STATE_COLORS: Record<SageState, { ring: string; glow: string }> = {
   nudge:     { ring: 'rgba(251,191,36,0.5)',  glow: 'rgba(251,191,36,0.08)' },
   alert:     { ring: 'rgba(248,113,113,0.5)', glow: 'rgba(248,113,113,0.08)' },
   celebrate: { ring: 'rgba(74,222,128,0.5)',  glow: 'rgba(74,222,128,0.08)' },
+  excessive_celebration: { ring: 'rgba(74,222,128,0.8)', glow: 'rgba(74,222,128,0.2)' },
 };
 
 function OrbForm({ size, state }: { size: number; state: SageState }) {

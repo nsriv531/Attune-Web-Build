@@ -9,7 +9,9 @@
  */
 
 import type * as feedback from "../feedback.js";
+import type * as http from "../http.js";
 import type * as insights from "../insights.js";
+import type * as resources from "../resources.js";
 import type * as sessions from "../sessions.js";
 import type * as spotify from "../spotify.js";
 import type * as subscriptions from "../subscriptions.js";
@@ -23,7 +25,9 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   feedback: typeof feedback;
+  http: typeof http;
   insights: typeof insights;
+  resources: typeof resources;
   sessions: typeof sessions;
   spotify: typeof spotify;
   subscriptions: typeof subscriptions;
