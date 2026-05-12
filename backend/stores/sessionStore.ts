@@ -42,7 +42,7 @@ interface SessionState {
   distractionEvents: DistractionEvent[];
 
   sageMessage: string;
-  sageState: 'idle' | 'watching' | 'nudge' | 'alert' | 'celebrate';
+  sageState: 'idle' | 'watching' | 'nudge' | 'alert' | 'celebrate' | 'excessive_celebration';
   consecutiveDistractionSeconds: number;
 
   focusScore: number;
