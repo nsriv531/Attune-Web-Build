@@ -15,9 +15,9 @@ import { Typography, Spacing, Colors, Radius } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAvatarCustomizationStore, SHOP_ITEMS, type ShopItem } from '@/backend/stores/avatarCustomizationStore';
 import { useAuth } from '@clerk/clerk-expo';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-import { ShopService } from '@/backend/services/ShopService';
+import { useShopService } from '@/backend/services/useShopService';
 
 const RARITY_COLORS = {
   common: { bg: '#e8e8e8', text: '#4b5563', border: '#b0b0b0' },
@@ -57,9 +57,7 @@ export function AvatarCustomizationShop({ visible, onClose }: AvatarCustomizatio
   const { isSignedIn } = useAuth();
   
   const currentUser = useQuery(api.users.currentUser, isSignedIn ? {} : "skip");
-  const purchaseMutation = useMutation(api.users.purchaseAvatarItem);
-  const equipMutation = useMutation(api.users.equipAvatarItem);
-  const unequipMutation = useMutation(api.users.unequipAvatarItem);
+  const { purchaseItem, equipItem, unequipItem } = useShopService();
 
   const coins = isSignedIn ? (currentUser?.coins ?? 0) : localStore.coins;
   const ownedItems = isSignedIn ? (currentUser?.unlockedItems ?? []) : localStore.ownedItems;
@@ -83,12 +81,7 @@ export function AvatarCustomizationShop({ visible, onClose }: AvatarCustomizatio
       return;
     }
 
-    const result = await ShopService.purchaseItem({
-      itemId: item.id,
-      price: item.price,
-      isSignedIn: !!isSignedIn,
-      purchaseMutation
-    });
+    const result = await purchaseItem(item.id, item.price);
 
     if (result.success) {
       setJustPurchased(item.id);
@@ -102,18 +95,9 @@ export function AvatarCustomizationShop({ visible, onClose }: AvatarCustomizatio
   const handleEquip = async (item: ShopItem) => {
     const isEquipped = equippedItems[item.type] === item.id;
     if (isEquipped) {
-      await ShopService.unequipItem({
-        type: item.type,
-        isSignedIn: !!isSignedIn,
-        unequipMutation
-      });
+      await unequipItem(item.type);
     } else {
-      await ShopService.equipItem({
-        type: item.type,
-        itemId: item.id,
-        isSignedIn: !!isSignedIn,
-        equipMutation
-      });
+      await equipItem(item.type, item.id);
     }
   };
 

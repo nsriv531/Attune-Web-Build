@@ -1,15 +1,16 @@
+import { useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import { useAuth } from '@clerk/clerk-expo';
 import { useAvatarCustomizationStore, type ClothingItem } from '@/backend/stores/avatarCustomizationStore';
 import * as Haptics from 'expo-haptics';
 
-export class ShopService {
-  static async purchaseItem(params: {
-    itemId: string;
-    price: number;
-    isSignedIn: boolean;
-    purchaseMutation: any;
-  }) {
-    const { itemId, price, isSignedIn, purchaseMutation } = params;
+export function useShopService() {
+  const { isSignedIn } = useAuth();
+  const purchaseMutation = useMutation(api.users.purchaseAvatarItem);
+  const equipMutation = useMutation(api.users.equipAvatarItem);
+  const unequipMutation = useMutation(api.users.unequipAvatarItem);
+
+  const purchaseItem = async (itemId: string, price: number) => {
     const store = useAvatarCustomizationStore.getState();
 
     if (isSignedIn) {
@@ -29,15 +30,9 @@ export class ShopService {
       }
       return { success: result };
     }
-  }
+  };
 
-  static async equipItem(params: {
-    type: ClothingItem;
-    itemId: string;
-    isSignedIn: boolean;
-    equipMutation: any;
-  }) {
-    const { type, itemId, isSignedIn, equipMutation } = params;
+  const equipItem = async (type: ClothingItem, itemId: string) => {
     const store = useAvatarCustomizationStore.getState();
 
     if (isSignedIn) {
@@ -54,14 +49,9 @@ export class ShopService {
       Haptics.selectionAsync();
       return { success: true };
     }
-  }
+  };
 
-  static async unequipItem(params: {
-    type: ClothingItem;
-    isSignedIn: boolean;
-    unequipMutation: any;
-  }) {
-    const { type, isSignedIn, unequipMutation } = params;
+  const unequipItem = async (type: ClothingItem) => {
     const store = useAvatarCustomizationStore.getState();
 
     if (isSignedIn) {
@@ -78,5 +68,11 @@ export class ShopService {
       Haptics.selectionAsync();
       return { success: true };
     }
-  }
+  };
+
+  return {
+    purchaseItem,
+    equipItem,
+    unequipItem,
+  };
 }

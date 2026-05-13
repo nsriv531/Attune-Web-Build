@@ -69,7 +69,7 @@ function XPCard({
   );
 }
 
-import { SessionService } from '@/backend/services/SessionService';
+import { useSessionService } from '@/backend/services/useSessionService';
 
 export default function RewardScreen() {
   const C = useThemeColors();
@@ -83,7 +83,7 @@ export default function RewardScreen() {
     setFeeling,
     reset,
   } = useSessionStore();
-  const { streakDays, sessions, addSession, addXP, incrementStreak, setSuggestion, setLoadingInsights } = useUserStore();
+  const { setSuggestion, setLoadingInsights } = useUserStore();
 
   const distractionEvents = useSessionStore.getState().distractionEvents;
   const distractionCount = distractionEvents.length;
@@ -92,10 +92,9 @@ export default function RewardScreen() {
   const distSec = distractionDuration % 60;
   const distString = distMin > 0 ? `${distMin}m ${distSec}s` : `${distSec}s`;
 
-  const { isSignedIn } = useAuth();
-  const saveSessionMutation = useMutation(api.sessions.saveSession);
   const addFeedbackMutation = useMutation(api.feedback.addFeedback);
-  const updateInsights = useMutation(api.insights.updateInsights);
+  const { saveCompletedSession, generateLocalSuggestion } = useSessionService();
+
   const [savedSessionId, setSavedSessionId] = useState<string | null>(null);
   const [sessionResults, setSessionResults] = useState<{
     focusScore: number;
@@ -118,18 +117,13 @@ export default function RewardScreen() {
   async function handleSessionEnd() {
     setLoadingInsights(true);
     
-    const result = await SessionService.saveCompletedSession({
-      isSignedIn: !!isSignedIn,
-      saveSessionMutation,
-      updateInsightsMutation: updateInsights,
-    });
+    const result = await saveCompletedSession();
 
     if (result.success && result.results) {
       setSessionResults(result.results);
       setSavedSessionId(result.savedSessionId || null);
       
-      SessionService.generateLocalSuggestion({
-        isSignedIn: !!isSignedIn,
+      generateLocalSuggestion({
         durationMinutes,
         focusScore: result.results.focusScore,
       });
