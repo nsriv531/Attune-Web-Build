@@ -27,7 +27,11 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0e0e12"
       },
-      "package": "com.studyloop.app"
+      "package": "com.studyloop.app",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -44,6 +48,12 @@
     "scheme": "studyloop",
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e258775c-e971-4a33-8126-04b8b5295c46"
+      }
     }
   }
 }
