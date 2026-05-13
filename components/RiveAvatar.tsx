@@ -23,7 +23,7 @@ export function RiveAvatar({ size = 200, state = 'idle' }: RiveAvatarProps) {
   return (
     <RiveView
       ref={riveRef}
-      source={require('@/assets/mascot/tovi.riv')}
+      source={require('@/assets/rive/tovi.riv')}
       stateMachineName="AvatarState"
       style={[styles.riveContainer, { width: size, height: size }]}
       autoplay

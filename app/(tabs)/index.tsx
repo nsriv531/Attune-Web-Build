@@ -28,7 +28,7 @@ import { KeycapSurface, KeycapButton } from '@/components/KeycapSurface';
 import { useRitualAudio } from '@/hooks/useAudioPlayer';
 import { SoliAvatar } from '@/components/SoliAvatar';
 import { ProfileSidebar } from '@/components/ProfileSidebar';
-import { RiveSection } from '@/components/RiveSection';
+import { RiveSection, RiveIconSet } from '@/components/RiveSection';
 import { useFontStore } from '@/stores/fontStore';
 import type { RitualSound } from '@/types';
 
@@ -494,6 +494,21 @@ export default function HomeScreen() {
                 <Text style={styles.testSubtitle}>Click to trigger animation</Text>
               </View>
               {riveSection}
+            </KeycapSurface>
+          </View>
+        </FadeSlideUp>
+
+        {/* ── Flash Button Test ── */}
+        <FadeSlideUp delay={440}>
+          <View style={styles.cardPad}>
+            <KeycapSurface radius={20} contentStyle={styles.testFace}>
+              <View style={styles.testHeader}>
+                <Text style={styles.testTitle}>Flash Button</Text>
+                <Text style={styles.testSubtitle}>Tap the icon to trigger</Text>
+              </View>
+              <RiveBoundary>
+                <RiveIconSet size={180} artboardName="03_Flash" />
+              </RiveBoundary>
             </KeycapSurface>
           </View>
         </FadeSlideUp>

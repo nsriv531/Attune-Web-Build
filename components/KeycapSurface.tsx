@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Pressable, ViewStyle, StyleSheet, Platform } from 'react-native';
-import { Colors, Radius } from '@/constants/theme';
+import { Border, Colors, Radius } from '@/constants/theme';
 
 interface KeycapSurfaceProps {
   /** Use amber accent keycap instead of cream */
@@ -23,7 +23,7 @@ export function KeycapSurface({
   children,
 }: KeycapSurfaceProps) {
   const faceColor = accent ? Colors.amber : Colors.bgCard;
-  const borderColor = accent ? Colors.amberBorder : Colors.border;
+  const borderColor = Colors.border;
 
   return (
     <View
@@ -32,7 +32,7 @@ export function KeycapSurface({
           backgroundColor: faceColor,
           borderRadius: radius,
           borderColor,
-          borderWidth: 1,
+          borderWidth: Border.width,
         },
         contentStyle,
         style,
@@ -55,28 +55,23 @@ interface KeycapButtonProps {
   children?: React.ReactNode;
 }
 
-const webTransition: ViewStyle = Platform.OS === 'web'
-  ? ({
-      // @ts-expect-error — react-native-web supports CSS transition props
-      transitionProperty: 'box-shadow, background-color',
-      transitionDuration: '180ms',
-      transitionTimingFunction: 'ease-out',
-    } as ViewStyle)
-  : {};
+const DEPTH = 3;
 
-const webShineTransition: ViewStyle = Platform.OS === 'web'
+const webPressTransition: ViewStyle = Platform.OS === 'web'
   ? ({
       // @ts-expect-error — react-native-web supports CSS transition props
-      transitionProperty: 'opacity',
-      transitionDuration: '180ms',
+      transitionProperty: 'margin-top, padding-bottom, box-shadow, background-color',
+      transitionDuration: '110ms',
       transitionTimingFunction: 'ease-out',
     } as ViewStyle)
   : {};
 
 /**
- * Pressable 3D keycap button. At rest it shows shadow + depth ledge + shine.
- * On press, all three 3D affordances vanish and the button reads as a flat
- * 2D shape in the same physical position (no translate, no "press-into" feel).
+ * Pressable 3D keycap button. At rest it sits raised with a shadow + a depth
+ * ledge at the bottom. On press, the body's top edge slides down by DEPTH and
+ * the ledge collapses to zero — the key compresses in height (top moves down,
+ * bottom stays put) and reads as 2D. An outer wrapper reserves the resting
+ * height so surrounding layout doesn't shift.
  */
 export function KeycapButton({
   accent = false,
@@ -94,87 +89,59 @@ export function KeycapButton({
   const faceColor = accent
     ? disabled ? Colors.bgCardHigh : Colors.amber
     : Colors.bgCard;
-  const highlight = accent && !disabled ? Colors.keycapAccentHighlight : Colors.keycapHighlight;
-  const borderColor = accent && !disabled ? Colors.amberBorder : Colors.border;
+  const borderColor = Colors.border;
 
   const [pressed, setPressed] = useState(false);
 
   return (
-    <View
-      style={[
-        styles.depthWrapper,
-        {
-          // When pressed, the ledge collapses visually by matching the face color
-          backgroundColor: pressed ? faceColor : depthColor,
-          borderRadius: radius,
-          borderColor,
-          borderWidth: 1,
-          // RN's shadow props — react-native-web compiles these to a single box-shadow
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: pressed ? 0 : 0.08,
-          shadowRadius: 10,
-          elevation: pressed ? 0 : 2,
-        },
-        webTransition,
-        style,
-      ]}
-    >
-      <Pressable
-        onPress={disabled ? undefined : onPress}
-        onLongPress={disabled ? undefined : onLongPress}
-        onPressIn={disabled ? undefined : () => setPressed(true)}
-        onPressOut={disabled ? undefined : () => setPressed(false)}
-        style={{ borderRadius: radius - 1 }}
-        android_ripple={null}
+    <View style={style}>
+      <View
+        style={[
+          {
+            marginTop: pressed ? DEPTH : 0,
+            paddingBottom: pressed ? 0 : DEPTH,
+            backgroundColor: pressed ? faceColor : depthColor,
+            borderRadius: radius,
+            borderColor,
+            borderWidth: Border.width,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: pressed ? 0 : 4 },
+            shadowOpacity: pressed ? 0 : 0.08,
+            shadowRadius: 10,
+            elevation: pressed ? 0 : 2,
+          },
+          webPressTransition,
+        ]}
       >
-        <View
-          style={[
-            styles.face,
-            {
-              backgroundColor: faceColor,
-              borderRadius: radius - 1,
-            },
-            contentStyle,
-          ]}
+        <Pressable
+          onPress={disabled ? undefined : onPress}
+          onLongPress={disabled ? undefined : onLongPress}
+          onPressIn={disabled ? undefined : () => setPressed(true)}
+          onPressOut={disabled ? undefined : () => setPressed(false)}
+          style={{ borderRadius: radius - Border.width }}
+          android_ripple={null}
         >
           <View
             style={[
-              styles.shine,
+              styles.face,
               {
-                backgroundColor: highlight,
-                borderTopLeftRadius: radius - 1,
-                borderTopRightRadius: radius - 1,
-                opacity: pressed ? 0 : 1,
-                pointerEvents: 'none',
+                backgroundColor: faceColor,
+                borderRadius: radius - Border.width,
               },
-              webShineTransition,
+              contentStyle,
             ]}
-          />
-          {children}
-        </View>
-      </Pressable>
+          >
+            {children}
+          </View>
+        </Pressable>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  depthWrapper: {
-    // paddingBottom: 3 creates the visible "key depth" ledge at rest.
-    // When pressed, the wrapper's background matches the face so the ledge
-    // is no longer visible — collapsing the 3D affordance.
-    paddingBottom: 3,
-  },
   face: {
     overflow: 'hidden',
     position: 'relative',
-  },
-  shine: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 2,
-    zIndex: 10,
   },
 });
