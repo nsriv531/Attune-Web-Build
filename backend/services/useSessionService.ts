@@ -70,6 +70,7 @@ export function useSessionService() {
         _id: `session-${Date.now()}`,
         subject: state.subject,
         subjectId: state.subjectId,
+        plannedDuration: state.durationMinutes,
         timeOverall: state.durationMinutes * 60,
         compiledDistractionTime: distractionDuration,
         focusScore: state.focusScore,

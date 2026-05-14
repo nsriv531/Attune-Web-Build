@@ -25,6 +25,7 @@ export const saveSession = mutation({
   args: {
     subject: v.optional(v.string()),
     subjectId: v.optional(v.string()),
+    plannedDuration: v.optional(v.number()),
     timeOverall: v.number(),
     compiledDistractionTime: v.number(),
     categoryMusic: v.optional(v.string()),
@@ -58,6 +59,7 @@ export const saveSession = mutation({
       userId: user._id,
       subject: args.subject,
       subjectId: args.subjectId,
+      plannedDuration: args.plannedDuration,
       timeOverall: args.timeOverall,
       compiledDistractionTime: args.compiledDistractionTime,
       categoryMusic: args.categoryMusic,
@@ -246,5 +248,99 @@ export const deleteLastSession = mutation({
     await ctx.db.delete(lastSession._id);
 
     return { success: true, deletedSessionId: lastSession._id };
+  },
+});
+
+/**
+ * DEV ONLY: Generates a fake history of sessions for testing insights.
+ * Can be run from the Convex Dashboard.
+ */
+export const seedFakeHistory = mutation({
+  args: {
+    userId: v.optional(v.id("users")),
+  },
+  handler: async (ctx, args) => {
+    let user;
+
+    if (args.userId) {
+      user = await ctx.db.get(args.userId);
+    } else {
+      const identity = await ctx.auth.getUserIdentity();
+      if (!identity) throw new Error("Not authenticated. Please provide a userId argument.");
+
+      user = await ctx.db
+        .query("users")
+        .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+        .unique();
+    }
+
+    if (!user) throw new Error("User not found");
+
+    console.log("Seeding fake sessions for user:", user._id);
+
+    let totalXpGained = 0;
+    let sessionsAdded = 0;
+
+    const SUBJECTS = [
+      { id: "math-101", name: "Calculus III" },
+      { id: "cs-201", name: "Data Structures" },
+      { id: "bio-101", name: "Cell Biology" },
+      { id: "eng-101", name: "Creative Writing" },
+      { id: "phys-201", name: "Quantum Mechanics" },
+      { id: "work-1", name: "Deep Work" }
+    ];
+    
+    const MUSIC = ["lofi", "rain", "forest", "white-noise", "silence"];
+
+    // Generate 15 fake sessions spread over the last 14 days
+    for (let i = 0; i < 15; i++) {
+      // Random days ago (0 to 14)
+      const daysAgo = Math.floor(Math.random() * 14);
+      
+      // Random start hour (favoring 9am - 5pm)
+      const hour = Math.floor(Math.random() * 8) + 9;
+      
+      const date = new Date();
+      date.setDate(date.getDate() - daysAgo);
+      date.setHours(hour, 0, 0, 0);
+
+      // Random duration: 15, 25, or 45 mins
+      const durations = [15, 25, 45];
+      const plannedDuration = durations[Math.floor(Math.random() * durations.length)];
+      
+      // Focus score (mostly good, some bad)
+      const focusScore = Math.floor(Math.random() * 40) + 60; // 60 to 100
+      
+      const xpEarned = calculateXP(plannedDuration, focusScore);
+      totalXpGained += xpEarned;
+      sessionsAdded++;
+
+      const randomSubject = SUBJECTS[Math.floor(Math.random() * SUBJECTS.length)];
+      const randomMusic = MUSIC[Math.floor(Math.random() * MUSIC.length)];
+
+      await ctx.db.insert("sessions", {
+        userId: user._id,
+        subject: randomSubject.name,
+        subjectId: randomSubject.id,
+        plannedDuration: plannedDuration,
+        timeOverall: plannedDuration * 60, // Assume they stayed the whole time
+        compiledDistractionTime: (100 - focusScore) * 2, // Fake distraction time based on score
+        categoryMusic: randomMusic,
+        breakTime: 0,
+        resumeTime: 0,
+        focusScore: focusScore,
+        distractionLogs: [], // Too complex to fake realistically, leave empty for insights
+        startedAt: date.getTime(),
+      });
+    }
+
+    // Update user stats
+    await ctx.db.patch(user._id, {
+      xpScore: user.xpScore + totalXpGained,
+      coins: user.coins + Math.floor(totalXpGained / 2),
+      totalSessions: (user.totalSessions || 0) + sessionsAdded,
+    });
+
+    return `Successfully generated ${sessionsAdded} fake sessions!`;
   },
 });
