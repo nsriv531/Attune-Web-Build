@@ -14,7 +14,8 @@ import { useRouter } from 'expo-router';
 import { Typography, Spacing, Radius, Colors } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSessionStore } from '@/stores/sessionStore';
-import { SoliAvatar } from '@/components/SoliAvatar';
+import { SoliAvatar } from '@/components/Mascots';
+import { KeycapButton } from '@/components/KeycapSurface';
 import type { ReflectionReason } from '@/types';
 import * as Haptics from 'expo-haptics';
 
@@ -65,28 +66,32 @@ export default function ReflectionScreen() {
           </View>
 
           <View style={styles.reasonsGrid}>
-            {REASONS.map((r) => (
-              <TouchableOpacity
-                key={r.key}
-                style={[
-                  styles.reasonBtn,
-                  { backgroundColor: C.bgInput, borderColor: C.border },
-                  reason === r.key && { backgroundColor: C.purpleDim, borderColor: C.purpleBorder },
-                ]}
-                onPress={() => {
-                  setReason(r.key);
-                  Haptics.selectionAsync();
-                }}
-              >
-                <Text style={[
-                  styles.reasonText, 
-                  { color: C.textSecondary },
-                  reason === r.key && { color: C.purple, fontWeight: '600' }
-                ]}>
-                  {r.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {REASONS.map((r) => {
+              const isActive = reason === r.key;
+              return (
+                <KeycapButton
+                  key={r.key}
+                  radius={Radius.lg}
+                  style={styles.reasonBtnWrapper}
+                  contentStyle={styles.reasonBtnFace}
+                  faceColor={isActive ? C.purpleDim : C.bgInput}
+                  depthColor={isActive ? C.purpleBorder : C.borderMid}
+                  borderColor={isActive ? C.purpleBorder : C.border}
+                  onPress={() => {
+                    setReason(r.key);
+                    Haptics.selectionAsync();
+                  }}
+                >
+                  <Text style={[
+                    styles.reasonText,
+                    { color: C.textSecondary },
+                    isActive && { color: C.purple, fontWeight: '600' },
+                  ]}>
+                    {r.label}
+                  </Text>
+                </KeycapButton>
+              );
+            })}
           </View>
 
           <View style={[styles.sageCard, { backgroundColor: C.bgCard, borderColor: C.border }]}>
@@ -112,17 +117,18 @@ export default function ReflectionScreen() {
             />
           </View>
 
-          <TouchableOpacity
-            style={[
-              styles.saveBtn, 
-              { backgroundColor: C.purple },
-              !reason && { opacity: 0.5 }
-            ]}
+          <KeycapButton
+            radius={Radius.lg}
+            style={[styles.saveBtnWrapper, !reason && { opacity: 0.5 }]}
+            contentStyle={styles.saveBtnFace}
+            faceColor={C.purple}
+            depthColor={Colors.keycapAccentDepthColor}
+            borderColor={C.purpleBorder}
             onPress={handleSave}
             disabled={!reason}
           >
             <Text style={styles.saveBtnText}>Save & Continue</Text>
-          </TouchableOpacity>
+          </KeycapButton>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -153,11 +159,11 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: Spacing.md,
   },
-  reasonBtn: {
+  reasonBtnWrapper: {
     flexBasis: '47%',
+  },
+  reasonBtnFace: {
     paddingVertical: Spacing.md,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
     alignItems: 'center',
   },
   reasonText: {
@@ -205,12 +211,13 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     fontFamily: Typography.fontSans,
   },
-  saveBtn: {
+  saveBtnWrapper: {
     width: '100%',
-    paddingVertical: Spacing.lg,
-    borderRadius: Radius.lg,
-    alignItems: 'center',
     marginTop: Spacing.sm,
+  },
+  saveBtnFace: {
+    paddingVertical: Spacing.lg,
+    alignItems: 'center',
   },
   saveBtnText: {
     fontFamily: Typography.fontSans,

@@ -199,7 +199,14 @@ export default function TabsLayout() {
       })}
     >
       <Tabs.Screen name="index" options={{ title: 'Focus' }} />
-      <Tabs.Screen name="session" options={{ title: 'Sessions', href: null }} />
+      <Tabs.Screen
+        name="session"
+        options={{
+          title: 'Sessions',
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }}
+      />
       <Tabs.Screen name="insights" options={{ title: 'Insights' }} />
       <Tabs.Screen name="resources" options={{ title: 'Resources' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profile' }} />

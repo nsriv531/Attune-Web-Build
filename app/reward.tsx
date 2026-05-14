@@ -17,11 +17,12 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Typography, Spacing, Radius } from '@/constants/theme';
+import { Typography, Spacing, Radius, Colors } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useUserStore } from '@/stores/userStore';
-import { SoliAvatar } from '@/components/SoliAvatar';
+import { SoliAvatar } from '@/components/Mascots';
+import { KeycapButton } from '@/components/KeycapSurface';
 import { generateSageSuggestion } from '@/lib/claude';
 import type { FocusFeeling, Session } from '@/types';
 import { useMutation } from 'convex/react';
@@ -231,29 +232,33 @@ export default function RewardScreen() {
 
         <Text style={[styles.sectionLabel, { color: C.textTertiary }]}>{prompt}</Text>
         <View style={styles.feelRow}>
-          {FEELINGS.map((f) => (
-            <Pressable
-              key={f.key}
-              style={[
-                styles.feelBtn,
-                { backgroundColor: C.bgInput, borderColor: C.border },
-                feeling === f.key && { backgroundColor: C.purpleDim, borderColor: C.purpleBorder },
-              ]}
-              onPress={() => {
-                setFeeling(f.key);
-                if (savedSessionId) {
-                  updateSessionFeelingMutation({ sessionId: savedSessionId as any, feeling: f.key }).catch((e) => 
-                    console.error('Failed to update feeling in Convex', e)
-                  );
-                }
-                Haptics.selectionAsync();
-              }}
-            >
-              <Text style={[styles.feelText, { color: C.textTertiary }, feeling === f.key && { color: C.purple }]}>
-                {f.label}
-              </Text>
-            </Pressable>
-          ))}
+          {FEELINGS.map((f) => {
+            const isActive = feeling === f.key;
+            return (
+              <KeycapButton
+                key={f.key}
+                radius={Radius.md}
+                style={styles.feelBtnWrapper}
+                contentStyle={styles.feelBtnFace}
+                faceColor={isActive ? C.purpleDim : C.bgInput}
+                depthColor={isActive ? C.purpleBorder : C.borderMid}
+                borderColor={isActive ? C.purpleBorder : C.border}
+                onPress={() => {
+                  setFeeling(f.key);
+                  if (savedSessionId) {
+                    updateSessionFeelingMutation({ sessionId: savedSessionId as any, feeling: f.key }).catch((e) =>
+                      console.error('Failed to update feeling in Convex', e)
+                    );
+                  }
+                  Haptics.selectionAsync();
+                }}
+              >
+                <Text style={[styles.feelText, { color: C.textTertiary }, isActive && { color: C.purple }]}>
+                  {f.label}
+                </Text>
+              </KeycapButton>
+            );
+          })}
         </View>
 
         <View style={[styles.sageCard, { backgroundColor: C.bgCard, borderColor: C.border }]}>
@@ -270,13 +275,29 @@ export default function RewardScreen() {
           </Text>
         </View>
 
-        <Pressable style={[styles.primaryBtn, { backgroundColor: C.purple }]} onPress={handleViewInsights}>
+        <KeycapButton
+          radius={Radius.lg}
+          style={styles.primaryBtnWrapper}
+          contentStyle={styles.primaryBtnFace}
+          faceColor={C.purple}
+          depthColor={Colors.keycapAccentDepthColor}
+          borderColor={C.purpleBorder}
+          onPress={handleViewInsights}
+        >
           <Text style={styles.primaryBtnText}>See my insights</Text>
-        </Pressable>
+        </KeycapButton>
 
-        <Pressable style={[styles.secondaryBtn, { backgroundColor: C.bgInput, borderColor: C.border }]} onPress={handleDone}>
+        <KeycapButton
+          radius={Radius.lg}
+          style={styles.secondaryBtnWrapper}
+          contentStyle={styles.secondaryBtnFace}
+          faceColor={C.bgInput}
+          depthColor={C.borderMid}
+          borderColor={C.border}
+          onPress={handleDone}
+        >
           <Text style={[styles.secondaryBtnText, { color: C.textTertiary }]}>Back to setup</Text>
-        </Pressable>
+        </KeycapButton>
       </ScrollView>
     </SafeAreaView>
   );
@@ -367,10 +388,10 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: Spacing.sm,
   },
-  feelBtn: {
+  feelBtnWrapper: {
     flex: 1,
-    borderWidth: 0.5,
-    borderRadius: Radius.md,
+  },
+  feelBtnFace: {
     paddingVertical: Spacing.md,
     alignItems: 'center',
   },
@@ -402,12 +423,13 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  primaryBtn: {
+  primaryBtnWrapper: {
     width: '100%',
-    borderRadius: Radius.lg,
+    marginTop: Spacing.sm,
+  },
+  primaryBtnFace: {
     paddingVertical: Spacing.base,
     alignItems: 'center',
-    marginTop: Spacing.sm,
   },
   primaryBtnText: {
     fontFamily: Typography.fontSans,
@@ -415,10 +437,10 @@ const styles = StyleSheet.create({
     fontWeight: Typography.weight.semibold,
     color: '#fff',
   },
-  secondaryBtn: {
+  secondaryBtnWrapper: {
     width: '100%',
-    borderWidth: 0.5,
-    borderRadius: Radius.lg,
+  },
+  secondaryBtnFace: {
     paddingVertical: Spacing.base,
     alignItems: 'center',
   },

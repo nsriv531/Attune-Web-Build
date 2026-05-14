@@ -12,7 +12,7 @@ import {
 import { Typography, Spacing, Radius, Colors } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useUserStore } from '@/stores/userStore';
-import { SoliAvatar } from '@/components/SoliAvatar';
+import { SoliAvatar } from '@/components/Mascots';
 import { KeycapSurface } from '@/components/KeycapSurface';
 
 type InsightTagColor = 'purple' | 'green' | 'amber';

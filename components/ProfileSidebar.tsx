@@ -31,7 +31,7 @@ import { useSessionStore } from '@/stores/sessionStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useAvatarCustomizationStore } from '@/stores/avatarCustomizationStore';
 import { useOnboardingStore, ONBOARDING_STORAGE_KEY } from '@/stores/onboardingStore';
-import { SoliAvatar } from '@/components/SoliAvatar';
+import { SoliAvatar } from '@/components/Mascots';
 import { AvatarCustomizationShop } from '@/components/AvatarCustomizationShop';
 import { KeycapSurface, KeycapButton } from '@/components/KeycapSurface';
 

@@ -11,7 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { OnboardingLayout } from '@/components/OnboardingLayout';
-import { SoliAvatar } from '@/components/SoliAvatar';
+import { SoliAvatar } from '@/components/Mascots';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { Colors, Typography, Spacing } from '@/constants/theme';
 

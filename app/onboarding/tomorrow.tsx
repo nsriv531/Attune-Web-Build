@@ -10,7 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { SoliAvatar } from '@/components/SoliAvatar';
+import { SoliAvatar } from '@/components/Mascots';
 import { CTAButton } from '@/components/OnboardingLayout';
 import { KeycapSurface } from '@/components/KeycapSurface';
 import { useOnboardingStore } from '@/stores/onboardingStore';

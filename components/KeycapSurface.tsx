@@ -53,6 +53,10 @@ interface KeycapButtonProps {
   onLongPress?: () => void;
   disabled?: boolean;
   children?: React.ReactNode;
+  /** Optional color overrides — when set, take precedence over `accent` defaults */
+  faceColor?: string;
+  depthColor?: string;
+  borderColor?: string;
 }
 
 const DEPTH = 3;
@@ -82,14 +86,17 @@ export function KeycapButton({
   onLongPress,
   disabled = false,
   children,
+  faceColor: faceColorOverride,
+  depthColor: depthColorOverride,
+  borderColor: borderColorOverride,
 }: KeycapButtonProps) {
-  const depthColor = accent
+  const depthColor = depthColorOverride ?? (accent
     ? disabled ? Colors.keycapDepthColor : Colors.keycapAccentDepthColor
-    : Colors.keycapDepthColor;
-  const faceColor = accent
+    : Colors.keycapDepthColor);
+  const faceColor = faceColorOverride ?? (accent
     ? disabled ? Colors.bgCardHigh : Colors.amber
-    : Colors.bgCard;
-  const borderColor = Colors.border;
+    : Colors.bgCard);
+  const borderColor = borderColorOverride ?? Colors.border;
 
   const [pressed, setPressed] = useState(false);
 

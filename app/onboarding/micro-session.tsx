@@ -11,7 +11,7 @@ import Animated, {
 import { useRouter } from 'expo-router';
 import { TimerRing } from '@/components/TimerRing';
 import { KeycapButton, KeycapSurface } from '@/components/KeycapSurface';
-import { SoliAvatar, SoliState } from '@/components/SoliAvatar';
+import { SoliAvatar, SoliState } from '@/components/Mascots';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { Colors, Typography, Spacing } from '@/constants/theme';
 

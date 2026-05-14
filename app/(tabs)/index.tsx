@@ -7,28 +7,26 @@ import {
   Pressable,
   SafeAreaView,
   Platform,
+  Modal,
+  TextInput,
 } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withRepeat,
-  withSequence,
   withDelay,
   Easing,
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Colors, Typography, Spacing, Radius, RING_CIRCUMFERENCE, RING_SIZE, RING_RADIUS } from '@/constants/theme';
+import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useUserStore } from '@/stores/userStore';
 import TopAppBar from '@/components/TopAppBar';
-import { TimerRing } from '@/components/TimerRing';
 import { KeycapSurface, KeycapButton } from '@/components/KeycapSurface';
 import { useRitualAudio } from '@/hooks/useAudioPlayer';
-import { SoliAvatar } from '@/components/SoliAvatar';
+import { RiveIconSet, ToviAvatar } from '@/components/Mascots';
 import { ProfileSidebar } from '@/components/ProfileSidebar';
-import { RiveSection, RiveIconSet } from '@/components/RiveSection';
 import { useFontStore } from '@/stores/fontStore';
 import type { RitualSound } from '@/types';
 
@@ -104,44 +102,6 @@ function FadeSlideUp({ delay = 0, children }: { delay?: number; children: React.
   return <Animated.View style={style}>{children}</Animated.View>;
 }
 
-// ── Mascot idle animation ─────────────────────────────────────────────────
-function AnimatedMascot({ size = 74 }: { size?: number }) {
-  const rotate = useSharedValue(0);
-  const scale = useSharedValue(1);
-
-  useEffect(() => {
-    rotate.value = withRepeat(
-      withSequence(
-        withTiming(-1.5, { duration: 2100, easing: Easing.inOut(Easing.sin) }),
-        withTiming(1.5, { duration: 2100, easing: Easing.inOut(Easing.sin) })
-      ),
-      -1,
-      true
-    );
-    scale.value = withRepeat(
-      withSequence(
-        withTiming(1.01, { duration: 2100, easing: Easing.inOut(Easing.sin) }),
-        withTiming(1, { duration: 2100, easing: Easing.inOut(Easing.sin) })
-      ),
-      -1,
-      true
-    );
-  }, []);
-
-  const style = useAnimatedStyle(() => ({
-    transform: [
-      { rotate: `${rotate.value}deg` },
-      { scale: scale.value },
-    ],
-  }));
-
-  return (
-    <Animated.View style={style}>
-      <SoliAvatar size={size} state="idle" />
-    </Animated.View>
-  );
-}
-
 // ── Duration pill ─────────────────────────────────────────────────────────
 function DurationPill({ label, isActive, onPress, font }: {
   label: string;
@@ -157,7 +117,7 @@ function DurationPill({ label, isActive, onPress, font }: {
       contentStyle={styles.durationPillFace}
       onPress={onPress}
     >
-      <Text style={[styles.durationText, { color: isActive ? '#2C2000' : Colors.textTertiary, fontFamily: font }]}>
+      <Text style={[styles.durationText, { color: Colors.textSecondary, fontFamily: font }]}>
         {label}
       </Text>
     </KeycapButton>
@@ -187,7 +147,7 @@ function SoundPill({ sound, isActive, onPress, font }: {
       onPress={onPress}
     >
       <Text style={styles.soundIcon}>{icons[sound]}</Text>
-      <Text style={[styles.soundText, { color: isActive ? '#2C2000' : Colors.textTertiary, fontFamily: font }]}>
+      <Text style={[styles.soundText, { color: Colors.textSecondary, fontFamily: font }]}>
         {label}
       </Text>
     </KeycapButton>
@@ -205,11 +165,26 @@ export default function HomeScreen() {
   const styles = useMemo(() => makeStyles(font), [font]);
 
   const [showDurationPicker, setShowDurationPicker] = useState(false);
+  const [customMinutes, setCustomMinutes] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [boltKey, setBoltKey] = useState(0);
 
-  const riveSection = <RiveBoundary><RiveSection/></RiveBoundary>
+  const parsedCustomMinutes = parseInt(customMinutes, 10);
+  const isValidCustom = Number.isFinite(parsedCustomMinutes) && parsedCustomMinutes > 0 && parsedCustomMinutes <= 999;
 
-  // Preview progress bar
+  function openCustomPicker() {
+    setCustomMinutes(String(durationMinutes));
+    setShowDurationPicker(true);
+  }
+
+  function handleCustomSet() {
+    if (!isValidCustom) return;
+    setDuration(parsedCustomMinutes);
+    Haptics.selectionAsync();
+    setShowDurationPicker(false);
+  }
+
+  // Preview progress bar — reset on every new sound selection
   const previewProgress = useSharedValue(0);
   useEffect(() => {
     if (previewTimerActive) {
@@ -218,7 +193,7 @@ export default function HomeScreen() {
     } else {
       previewProgress.value = 0;
     }
-  }, [previewTimerActive]);
+  }, [previewTimerActive, ritualSound]);
   const previewBarStyle = useAnimatedStyle(() => ({
     width: `${previewProgress.value * 100}%` as any,
   }));
@@ -292,18 +267,11 @@ export default function HomeScreen() {
         <FadeSlideUp delay={120}>
           <View style={styles.heroCardWrapper}>
             <KeycapSurface radius={22} contentStyle={styles.heroCardFace}>
-              {/* Timer ring with mascot + time inside */}
+              {/* Tovi rive avatar + time display */}
               <View style={styles.timerRingWrap}>
-                <TimerRing
-                  secondsRemaining={durationMinutes * 60}
-                  totalSeconds={durationMinutes * 60}
-                  isRunning={false}
-                >
-                  {/* Mascot + time display inside the ring */}
-                  <AnimatedMascot size={70} />
-                  <Text style={styles.timeDisplay}>{timeDisplay}</Text>
-                  <Text style={styles.timeLabel}>remaining</Text>
-                </TimerRing>
+                <ToviAvatar size={600} />
+                <Text style={styles.timeDisplay}>{timeDisplay}</Text>
+                <Text style={styles.timeLabel}>start session</Text>
               </View>
 
               {/* Start button */}
@@ -332,7 +300,7 @@ export default function HomeScreen() {
                   radius={14}
                   style={styles.durationPillWrapper}
                   contentStyle={styles.durationPillFace}
-                  onPress={() => setShowDurationPicker(!showDurationPicker)}
+                  onPress={openCustomPicker}
                 >
                   <Text style={[styles.durationText, { color: Colors.textSecondary }]}>✎ Custom</Text>
                 </KeycapButton>
@@ -415,9 +383,14 @@ export default function HomeScreen() {
                 radius={14}
                 style={styles.boltBtnWrapper}
                 contentStyle={styles.boltBtnFace}
-                onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setBoltKey((k) => k + 1);
+                }}
               >
-                <Text style={styles.boltIcon}>⚡</Text>
+                <RiveBoundary>
+                  <RiveIconSet key={boltKey} artboardName="03_Flash" size={36} />
+                </RiveBoundary>
               </KeycapButton>
             </KeycapSurface>
           </View>
@@ -485,39 +458,61 @@ export default function HomeScreen() {
           </View>
         </FadeSlideUp>
 
-        {/* ── Rive Animation Test ── */}
-        <FadeSlideUp delay={400}>
-          <View style={styles.cardPad}>
-            <KeycapSurface radius={20} contentStyle={styles.testFace}>
-              <View style={styles.testHeader}>
-                <Text style={styles.testTitle}>Rive Test</Text>
-                <Text style={styles.testSubtitle}>Click to trigger animation</Text>
-              </View>
-              {riveSection}
-            </KeycapSurface>
-          </View>
-        </FadeSlideUp>
-
-        {/* ── Flash Button Test ── */}
-        <FadeSlideUp delay={440}>
-          <View style={styles.cardPad}>
-            <KeycapSurface radius={20} contentStyle={styles.testFace}>
-              <View style={styles.testHeader}>
-                <Text style={styles.testTitle}>Flash Button</Text>
-                <Text style={styles.testSubtitle}>Tap the icon to trigger</Text>
-              </View>
-              <RiveBoundary>
-                <RiveIconSet size={180} artboardName="03_Flash" />
-              </RiveBoundary>
-            </KeycapSurface>
-          </View>
-        </FadeSlideUp>
-
         <View style={{ height: 24 }} />
       </ScrollView>
       </SafeAreaView>
 
       <ProfileSidebar visible={menuOpen} onClose={() => setMenuOpen(false)} />
+
+      {/* ── Custom duration picker ── */}
+      <Modal
+        visible={showDurationPicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowDurationPicker(false)}
+      >
+        <Pressable style={styles.customBackdrop} onPress={() => setShowDurationPicker(false)}>
+          <Pressable style={styles.customCard} onPress={() => {}}>
+            <Text style={styles.customTitle}>Custom duration</Text>
+            <Text style={styles.customHint}>1–999 minutes</Text>
+            <View style={styles.customInputRow}>
+              <TextInput
+                style={styles.customInput}
+                value={customMinutes}
+                onChangeText={(v) => setCustomMinutes(v.replace(/[^0-9]/g, '').slice(0, 3))}
+                keyboardType="number-pad"
+                placeholder="25"
+                placeholderTextColor={Colors.textTertiary}
+                autoFocus
+                maxLength={3}
+                returnKeyType="done"
+                onSubmitEditing={handleCustomSet}
+              />
+              <Text style={styles.customUnit}>min</Text>
+            </View>
+            <View style={styles.customBtnRow}>
+              <KeycapButton
+                radius={14}
+                style={{ flex: 1 }}
+                contentStyle={styles.customBtnFace}
+                onPress={() => setShowDurationPicker(false)}
+              >
+                <Text style={[styles.customBtnText, { color: Colors.textSecondary }]}>Cancel</Text>
+              </KeycapButton>
+              <KeycapButton
+                accent
+                radius={14}
+                style={{ flex: 1 }}
+                contentStyle={styles.customBtnFace}
+                onPress={handleCustomSet}
+                disabled={!isValidCustom}
+              >
+                <Text style={[styles.customBtnText, { color: '#2C2000' }]}>Set</Text>
+              </KeycapButton>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </>
   );
 }
@@ -760,7 +755,6 @@ const makeStyles = (font: string) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  boltIcon: { fontSize: 18 },
 
   // Nudge card
   nudgeFace: {
@@ -927,6 +921,80 @@ const makeStyles = (font: string) => StyleSheet.create({
     fontWeight: '500',
     color: Colors.textTertiary,
     marginLeft: 4,
+  },
+
+  // Custom duration picker (modal)
+  customBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  customCard: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: Colors.bgCard,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    padding: 20,
+    gap: 10,
+  },
+  customTitle: {
+    fontFamily: font,
+    fontSize: 17,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    letterSpacing: -0.3,
+  },
+  customHint: {
+    fontFamily: font,
+    fontSize: 12,
+    color: Colors.textTertiary,
+    marginBottom: 4,
+  },
+  customInputRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: Colors.bgInput,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  customInput: {
+    flex: 1,
+    fontFamily: font,
+    fontSize: 28,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    letterSpacing: -0.5,
+    padding: 0,
+  },
+  customUnit: {
+    fontFamily: font,
+    fontSize: 14,
+    color: Colors.textTertiary,
+    fontWeight: '600',
+  },
+  customBtnRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 6,
+  },
+  customBtnFace: {
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  customBtnText: {
+    fontFamily: font,
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.2,
   },
 });
 

@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { CTAButton } from '@/components/OnboardingLayout';
 import { KeycapSurface } from '@/components/KeycapSurface';
-import { SoliAvatar } from '@/components/SoliAvatar';
+import { SoliAvatar } from '@/components/Mascots';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { useUserStore } from '@/stores/userStore';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
