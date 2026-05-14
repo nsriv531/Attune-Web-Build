@@ -271,8 +271,20 @@ export default function ProfileScreen() {
           </>
         )}
 
-        {/* ── Delete Account ── */}
+        {/* ── Account Actions ── */}
         <View style={styles.dangerZone}>
+          {isSignedIn && (
+            <TouchableOpacity
+              style={[styles.actionButton, { borderColor: C.border, backgroundColor: C.bgInput, marginBottom: Spacing.md }]}
+              onPress={async () => {
+                await signOut();
+                router.replace('/sign-in');
+              }}
+            >
+              <Text style={[styles.actionButtonText, { color: C.textPrimary }]}>Sign Out</Text>
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity
             style={[styles.deleteButton, { borderColor: C.red }]}
             onPress={handleDeleteAccount}
@@ -517,6 +529,18 @@ const styles = StyleSheet.create({
   dangerZone: {
     marginTop: Spacing.xl,
     paddingTop: Spacing.md,
+  },
+  actionButton: {
+    borderWidth: 1,
+    borderRadius: Radius.lg,
+    paddingVertical: Spacing.md,
+    alignItems: 'center',
+  },
+  actionButtonText: {
+    fontFamily: Typography.fontSans,
+    fontSize: Typography.size.sm,
+    fontWeight: Typography.weight.semibold,
+    letterSpacing: 0.5,
   },
   deleteButton: {
     borderWidth: 1,
