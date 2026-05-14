@@ -31,6 +31,7 @@ export type Session = {
   userId: string;
   subject?: string;
   subjectId?: string;
+  plannedDuration?: number;
   timeOverall: number;
   compiledDistractionTime: number;
   categoryMusic?: string;
