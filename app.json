@@ -27,7 +27,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0e0e12"
       },
-      "package": "com.attune.app",
+      "package": "com.attuneorg.app",
       "versionCode": 1,
       "permissions": [
         "android.permission.RECORD_AUDIO",
