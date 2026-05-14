@@ -88,6 +88,7 @@ export default defineSchema({
     userId: v.id("users"),
     subject: v.optional(v.string()), // Restored for UI
     subjectId: v.optional(v.string()), // Restored for UI
+    plannedDuration: v.optional(v.number()), // Minutes the user originally selected
     timeOverall: v.number(), // total duration
     compiledDistractionTime: v.number(),
     categoryMusic: v.optional(v.string()),
