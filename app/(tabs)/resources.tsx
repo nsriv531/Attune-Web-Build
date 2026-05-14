@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, SafeAreaView, StyleSheet, Pressable, ActivityIndicator, Linking } from 'react-native';
 import { Typography, Spacing, Radius } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useQuery, useMutation, useAction } from 'convex/react';
+import { useQuery, useAction } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { useAuth } from '@clerk/clerk-expo';
 import { useUserStore } from '@/backend/stores/userStore';
-import { ResourceService } from '@/backend/services/ResourceService';
+import { useResourceService } from '@/backend/services/useResourceService';
 
 export default function ResourcesScreen() {
   const C = useThemeColors();
@@ -15,8 +15,8 @@ export default function ResourcesScreen() {
   // Backend Hooks
   const resources = useQuery(api.resources.listAll, { limit: 50 });
   const cloudBookmarks = useQuery(api.resources.getBookmarks, isSignedIn ? {} : "skip");
-  const toggleBookmarkMutation = useMutation(api.resources.toggleBookmark);
   const syncResourcesAction = useAction(api.resources.syncExternalResources);
+  const { toggleBookmark } = useResourceService();
 
   // Local Hooks
   const localBookmarks = useUserStore((state) => state.bookmarkedResourceIds);
@@ -38,11 +38,7 @@ export default function ResourcesScreen() {
   };
 
   const handleToggleBookmark = async (resourceId: string) => {
-    await ResourceService.toggleBookmark({
-      resourceId,
-      isSignedIn: !!isSignedIn,
-      toggleBookmarkMutation,
-    });
+    await toggleBookmark(resourceId);
   };
 
   const handleOpenLink = (url: string) => {

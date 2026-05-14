@@ -1,22 +1,16 @@
+import { useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import { useAuth } from '@clerk/clerk-expo';
 import { useUserStore } from '@/backend/stores/userStore';
 
-export class ResourceService {
-  /**
-   * Toggles a bookmark for a given resource.
-   * If authenticated, it updates the backend via Convex.
-   * If guest, it updates the local Zustand store.
-   */
-  static async toggleBookmark(params: {
-    resourceId: string;
-    isSignedIn: boolean;
-    toggleBookmarkMutation: any;
-  }) {
-    const { resourceId, isSignedIn, toggleBookmarkMutation } = params;
+export function useResourceService() {
+  const { isSignedIn } = useAuth();
+  const toggleBookmarkMutation = useMutation(api.resources.toggleBookmark);
 
+  const toggleBookmark = async (resourceId: string) => {
     if (isSignedIn) {
       try {
-        const response = await toggleBookmarkMutation({ resourceId });
+        const response = await toggleBookmarkMutation({ resourceId: resourceId as any });
         return { success: true, status: response.status };
       } catch (error) {
         console.error('Failed to toggle bookmark in Convex', error);
@@ -29,5 +23,7 @@ export class ResourceService {
       const isNowBookmarked = useUserStore.getState().bookmarkedResourceIds.includes(resourceId);
       return { success: true, status: isNowBookmarked ? 'added' : 'removed' };
     }
-  }
+  };
+
+  return { toggleBookmark };
 }

@@ -1,25 +1,18 @@
+import { useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import { useAuth } from '@clerk/clerk-expo';
 import { useSessionStore } from '@/backend/stores/sessionStore';
 import { useUserStore } from '@/backend/stores/userStore';
 import { useAvatarCustomizationStore } from '@/backend/stores/avatarCustomizationStore';
 
-/**
- * Service to handle routing session data to either Convex (cloud) or local storage (guest).
- * The UI components should call this service instead of handling the logic themselves.
- */
-export class SessionService {
-  /**
-   * Saves a completed session.
-   * If the user is signed in, sends to Convex. If guest, saves locally.
-   */
-  static async saveCompletedSession(params: {
-    isSignedIn: boolean;
-    saveSessionMutation: any; // The Convex mutation passed from the component
-    updateInsightsMutation: any; // The Convex mutation passed from the component
-  }) {
-    const { isSignedIn, saveSessionMutation, updateInsightsMutation } = params;
-    
-    // 1. Gather all the data from the active session state
+export function useSessionService() {
+  const { isSignedIn } = useAuth();
+  const saveSessionMutation = useMutation(api.sessions.saveSession);
+  const updateInsightsMutation = useMutation(api.insights.updateInsights);
+  const deleteLastSessionMutation = useMutation(api.sessions.deleteLastSession);
+
+  const saveCompletedSession = async () => {
+    // Gather all the data from the active session state
     const state = useSessionStore.getState();
     const userState = useUserStore.getState();
     const shopState = useAvatarCustomizationStore.getState();
@@ -71,13 +64,13 @@ export class SessionService {
       }
     } else {
       // ─── LOCAL (GUEST) ROUTE ───
-      
       const coinsEarned = Math.floor(state.xpEarned / 2);
 
       const newSession: any = {
         _id: `session-${Date.now()}`,
         subject: state.subject,
         subjectId: state.subjectId,
+        plannedDuration: state.durationMinutes,
         timeOverall: state.durationMinutes * 60,
         compiledDistractionTime: distractionDuration,
         focusScore: state.focusScore,
@@ -107,19 +100,10 @@ export class SessionService {
     }
     
     return { success: false, error: new Error('Unknown routing failure') };
-  }
+  };
 
-  /**
-   * Generates a smart suggestion based on the last session.
-   * If authenticated, Convex handles insights automatically. 
-   * If guest, we generate a basic local suggestion.
-   */
-  static generateLocalSuggestion(params: {
-    isSignedIn: boolean;
-    durationMinutes: number;
-    focusScore: number;
-  }) {
-    const { isSignedIn, durationMinutes, focusScore } = params;
+  const generateLocalSuggestion = (params: { durationMinutes: number; focusScore: number }) => {
+    const { durationMinutes, focusScore } = params;
     
     if (isSignedIn) return; // Convex handles this via getSweetSpot
     
@@ -137,18 +121,9 @@ export class SessionService {
     }
 
     userState.setSuggestion({ message, pills });
-  }
+  };
 
-  /**
-   * Deletes the most recent session.
-   */
-  static async deleteLastSession(params: {
-    isSignedIn: boolean;
-    deleteLastSessionMutation: any;
-    updateInsightsMutation: any;
-  }) {
-    const { isSignedIn, deleteLastSessionMutation, updateInsightsMutation } = params;
-    
+  const deleteLastSession = async () => {
     if (isSignedIn) {
       try {
         const response = await deleteLastSessionMutation();
@@ -190,5 +165,11 @@ export class SessionService {
       
       return { success: true };
     }
-  }
+  };
+
+  return {
+    saveCompletedSession,
+    generateLocalSuggestion,
+    deleteLastSession,
+  };
 }
