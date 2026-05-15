@@ -10,6 +10,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { OnboardingLayout, CTAButton } from '@/components/OnboardingLayout';
+import { KeycapSurface } from '@/components/KeycapSurface';
+import { SoliAvatar } from '@/components/Mascots';
 import { SageAvatar } from '@/components/SageAvatar';
 import { useOnboardingStore } from '@/backend/stores/onboardingStore';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
@@ -48,7 +50,7 @@ function PlanRow({ icon, label, value, delay }: { icon: string; label: string; v
 
 export default function SagePlanScreen() {
   const router = useRouter();
-  const { subjects, timeOfDay, distractions, sessionDuration, sageForm, coachingStyle } =
+  const { subjects, timeOfDay, distractions, sessionDuration, soliForm, coachingStyle } =
     useOnboardingStore();
 
   const cardOpacity = useSharedValue(0);
@@ -73,34 +75,36 @@ export default function SagePlanScreen() {
     <OnboardingLayout step={11}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <SageAvatar size={44} state="watching" form={sageForm} />
+          <SoliAvatar size={44} state="watching" />
           <View style={styles.headerText}>
-            <Text style={styles.sageName}>Sage</Text>
-            <Text style={styles.headline}>Sage has a plan for you.</Text>
+            <Text style={styles.sageName}>Soli</Text>
+            <Text style={styles.headline}>Soli has a plan for you.</Text>
           </View>
         </View>
 
-        <Animated.View style={[styles.planCard, cardStyle]}>
-          <PlanRow
-            icon="⏱"
-            label="Starter session"
-            value={`${sessionDuration} min · ${topSubject}`}
-            delay={100}
-          />
-          <View style={styles.divider} />
-          <PlanRow
-            icon="☀"
-            label="Best time"
-            value={timeLabel}
-            delay={250}
-          />
-          <View style={styles.divider} />
-          <PlanRow
-            icon="👁"
-            label="Sage will watch for"
-            value={watchFor}
-            delay={400}
-          />
+        <Animated.View style={cardStyle}>
+          <KeycapSurface radius={Radius.xl} contentStyle={styles.planCardFace}>
+            <PlanRow
+              icon="⏱"
+              label="Starter session"
+              value={`${sessionDuration} min · ${topSubject}`}
+              delay={100}
+            />
+            <View style={styles.divider} />
+            <PlanRow
+              icon="☀"
+              label="Best time"
+              value={timeLabel}
+              delay={250}
+            />
+            <View style={styles.divider} />
+            <PlanRow
+              icon="👁"
+              label="Soli will watch for"
+              value={watchFor}
+              delay={400}
+            />
+          </KeycapSurface>
         </Animated.View>
 
         <View style={styles.ctaWrap}>
@@ -144,16 +148,11 @@ const styles = StyleSheet.create({
   headline: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.xl,
-    fontWeight: Typography.weight.semibold,
+    fontWeight: '600',
     color: Colors.textPrimary,
   },
-  planCard: {
-    backgroundColor: Colors.bgCard,
-    borderWidth: 0.5,
-    borderColor: Colors.border,
-    borderRadius: Radius.xl,
+  planCardFace: {
     paddingVertical: Spacing.sm,
-    overflow: 'hidden',
   },
   planRow: {
     flexDirection: 'row',
@@ -181,7 +180,7 @@ const styles = StyleSheet.create({
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.md,
     color: Colors.textPrimary,
-    fontWeight: Typography.weight.medium,
+    fontWeight: '500',
   },
   divider: {
     height: 0.5,

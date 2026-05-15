@@ -11,12 +11,14 @@ import Animated, {
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { CTAButton } from '@/components/OnboardingLayout';
+import { KeycapSurface } from '@/components/KeycapSurface';
+import { SoliAvatar } from '@/components/Mascots';
 import { SageAvatar } from '@/components/SageAvatar';
 import { useOnboardingStore } from '@/backend/stores/onboardingStore';
 import { useUserStore } from '@/backend/stores/userStore';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 
-const SAGE_MESSAGES: Record<string, string> = {
+const SOLI_MESSAGES: Record<string, string> = {
   gentle: 'That was a good start. I noticed you stayed with it.',
   steady: 'Solid first session. Tomorrow, we go deeper.',
   direct: 'One down. Same time tomorrow.',
@@ -47,34 +49,36 @@ function RewardCard({
   }));
 
   return (
-    <Animated.View style={[styles.rewardCard, style]}>
-      <Text style={[styles.rewardNum, { color }]}>{value}</Text>
-      <Text style={[styles.rewardLabel, { color: `${color}99` }]}>{label}</Text>
+    <Animated.View style={style}>
+      <KeycapSurface radius={Radius.lg} contentStyle={styles.rewardFace}>
+        <Text style={[styles.rewardNum, { color }]}>{value}</Text>
+        <Text style={[styles.rewardLabel, { color: `${color}99` }]}>{label}</Text>
+      </KeycapSurface>
     </Animated.View>
   );
 }
 
 export default function FirstRewardScreen() {
   const router = useRouter();
-  const { sageForm, coachingStyle } = useOnboardingStore();
+  const { coachingStyle } = useOnboardingStore();
 
-  const sageScale = useSharedValue(0.5);
-  const sageOpacity = useSharedValue(0);
+  const soliScale = useSharedValue(0.5);
+  const soliOpacity = useSharedValue(0);
   const titleOpacity = useSharedValue(0);
   const titleY = useSharedValue(12);
 
   useEffect(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    sageScale.value = withSpring(1, { damping: 12, stiffness: 160 });
-    sageOpacity.value = withTiming(1, { duration: 400 });
+    soliScale.value = withSpring(1, { damping: 12, stiffness: 160 });
+    soliOpacity.value = withTiming(1, { duration: 400 });
     titleOpacity.value = withDelay(200, withTiming(1, { duration: 400 }));
     titleY.value = withDelay(200, withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) }));
   }, []);
 
-  const sageStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: sageScale.value }],
-    opacity: sageOpacity.value,
+  const soliStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: soliScale.value }],
+    opacity: soliOpacity.value,
   }));
 
   const titleStyle = useAnimatedStyle(() => ({
@@ -82,15 +86,15 @@ export default function FirstRewardScreen() {
     transform: [{ translateY: titleY.value }],
   }));
 
-  const message = SAGE_MESSAGES[coachingStyle] ?? SAGE_MESSAGES.steady;
+  const message = SOLI_MESSAGES[coachingStyle] ?? SOLI_MESSAGES.steady;
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.glow} pointerEvents="none" />
 
       <View style={styles.container}>
-        <Animated.View style={sageStyle}>
-          <SageAvatar size={80} state="celebrate" form={sageForm} />
+        <Animated.View style={soliStyle}>
+          <SoliAvatar size={80} state="celebrate" />
         </Animated.View>
 
         <Animated.View style={[styles.titleWrap, titleStyle]}>
@@ -104,13 +108,13 @@ export default function FirstRewardScreen() {
           <RewardCard value="100" label="Focus" color={Colors.green} delay={600} />
         </View>
 
-        <View style={styles.sageCard}>
+        <KeycapSurface radius={Radius.xl} style={styles.sageCardOuter} contentStyle={styles.sageCardFace}>
           <View style={styles.sageCardTop}>
-            <SageAvatar size={28} state="watching" form={sageForm} />
-            <Text style={styles.sageName}>Sage</Text>
+            <SoliAvatar size={28} state="watching" />
+            <Text style={styles.sageName}>Soli</Text>
           </View>
           <Text style={styles.sageMsg}>{message}</Text>
-        </View>
+        </KeycapSurface>
 
         <View style={styles.ctaWrap}>
           <CTAButton
@@ -152,7 +156,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size['2xl'],
-    fontWeight: Typography.weight.semibold,
+    fontWeight: '700',
     color: Colors.textPrimary,
     textAlign: 'center',
   },
@@ -166,11 +170,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.md,
   },
-  rewardCard: {
-    backgroundColor: Colors.bgCard,
-    borderWidth: 0.5,
-    borderColor: Colors.border,
-    borderRadius: Radius.lg,
+  rewardFace: {
     paddingVertical: Spacing.base,
     paddingHorizontal: Spacing.lg,
     alignItems: 'center',
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   rewardNum: {
     fontFamily: Typography.fontMono,
     fontSize: Typography.size['2xl'],
-    fontWeight: Typography.weight.semibold,
+    fontWeight: '600',
   },
   rewardLabel: {
     fontFamily: Typography.fontMono,
@@ -188,12 +188,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginTop: 3,
   },
-  sageCard: {
+  sageCardOuter: {
     width: '100%',
-    backgroundColor: Colors.bgCard,
-    borderWidth: 0.5,
-    borderColor: Colors.border,
-    borderRadius: Radius.xl,
+  },
+  sageCardFace: {
     padding: Spacing.base,
     gap: Spacing.sm,
   },
