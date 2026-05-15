@@ -4,16 +4,16 @@ import {
   Text,
   StyleSheet,
   SafeAreaView,
-  TouchableOpacity,
   TextInput,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Typography, Spacing, Radius, Colors } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useSessionStore } from '@/stores/sessionStore';
+import { useSessionStore } from '@/backend/stores/sessionStore';
 import { SoliAvatar } from '@/components/Mascots';
 import { KeycapButton } from '@/components/KeycapSurface';
 import type { ReflectionReason } from '@/types';
@@ -27,8 +27,8 @@ const REASONS: { key: ReflectionReason; label: string }[] = [
 ];
 
 const SAGE_SUGGESTIONS: Record<ReflectionReason, string> = {
-  distraction: "Try putting your phone in another room or using a site blocker next time.",
-  tired: "A 10-minute power nap or a quick stretch can reset your focus levels.",
+  distraction: 'Try putting your phone in another room or using a site blocker next time.',
+  tired: 'A 10-minute power nap or a quick stretch can reset your focus levels.',
   busy: "That happens! Let's schedule a shorter, more intense block for later.",
   other: "Every session is a learning experience. We'll find your rhythm.",
 };
@@ -36,38 +36,49 @@ const SAGE_SUGGESTIONS: Record<ReflectionReason, string> = {
 export default function ReflectionScreen() {
   const C = useThemeColors();
   const router = useRouter();
-  const { setReflection } = useSessionStore();
-  
+
   const [reason, setReason] = useState<ReflectionReason | null>(null);
   const [note, setNote] = useState('');
 
   function handleSave() {
     if (!reason) return;
-    setReflection(reason, note);
+
+    useSessionStore.setState({
+      reflectionReason: reason,
+      reflectionNote: note,
+    });
+
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    router.push('/reward');
+    router.push('/reward' as never);
   }
 
-  const suggestion = reason ? SAGE_SUGGESTIONS[reason] : "Reflection helps you build a more sustainable habit. Why are we stopping today?";
+  const suggestion = reason
+    ? SAGE_SUGGESTIONS[reason]
+    : 'Reflection helps you build a more sustainable habit. Why are we stopping today?';
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.header}>
-            <Text style={[styles.title, { color: C.textPrimary }]}>End Session Early?</Text>
-            <Text style={[styles.subtitle, { color: C.textTertiary }]}>Why are you stopping?</Text>
+            <Text style={[styles.title, { color: C.textPrimary }]}>
+              End Session Early?
+            </Text>
+            <Text style={[styles.subtitle, { color: C.textTertiary }]}>
+              Why are you stopping?
+            </Text>
           </View>
 
           <View style={styles.reasonsGrid}>
             {REASONS.map((r) => {
               const isActive = reason === r.key;
+
               return (
                 <KeycapButton
                   key={r.key}
@@ -82,11 +93,13 @@ export default function ReflectionScreen() {
                     Haptics.selectionAsync();
                   }}
                 >
-                  <Text style={[
-                    styles.reasonText,
-                    { color: C.textSecondary },
-                    isActive && { color: C.purple, fontWeight: '600' },
-                  ]}>
+                  <Text
+                    style={[
+                      styles.reasonText,
+                      { color: C.textSecondary },
+                      isActive && { color: C.purple, fontWeight: '600' },
+                    ]}
+                  >
                     {r.label}
                   </Text>
                 </KeycapButton>
@@ -94,10 +107,17 @@ export default function ReflectionScreen() {
             })}
           </View>
 
-          <View style={[styles.sageCard, { backgroundColor: C.bgCard, borderColor: C.border }]}>
+          <View
+            style={[
+              styles.sageCard,
+              { backgroundColor: C.bgCard, borderColor: C.border },
+            ]}
+          >
             <View style={styles.sageHeader}>
               <SoliAvatar size={32} state={reason ? 'watching' : 'idle'} />
-              <Text style={[styles.sageTitle, { color: C.purple }]}>Soli's Tip</Text>
+              <Text style={[styles.sageTitle, { color: C.purple }]}>
+                Soli&apos;s Tip
+              </Text>
             </View>
             <Text style={[styles.sageBody, { color: C.textSecondary }]}>
               {suggestion}
@@ -105,9 +125,18 @@ export default function ReflectionScreen() {
           </View>
 
           <View style={styles.inputSection}>
-            <Text style={[styles.inputLabel, { color: C.textTertiary }]}>ADD A QUICK NOTE (OPTIONAL)</Text>
+            <Text style={[styles.inputLabel, { color: C.textTertiary }]}>
+              ADD A QUICK NOTE (OPTIONAL)
+            </Text>
             <TextInput
-              style={[styles.input, { backgroundColor: C.bgInput, borderColor: C.border, color: C.textPrimary }]}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: C.bgInput,
+                  borderColor: C.border,
+                  color: C.textPrimary,
+                },
+              ]}
               placeholder="e.g., Neighbors were loud, couldn't get into flow..."
               placeholderTextColor={C.textTertiary}
               multiline
@@ -117,18 +146,20 @@ export default function ReflectionScreen() {
             />
           </View>
 
-          <KeycapButton
-            radius={Radius.lg}
-            style={[styles.saveBtnWrapper, !reason && { opacity: 0.5 }]}
-            contentStyle={styles.saveBtnFace}
-            faceColor={C.purple}
-            depthColor={Colors.keycapAccentDepthColor}
-            borderColor={C.purpleBorder}
+          <Pressable
+            style={[
+              styles.saveBtn,
+              {
+                backgroundColor: C.purple,
+                borderColor: C.purpleBorder,
+                opacity: reason ? 1 : 0.5,
+              },
+            ]}
             onPress={handleSave}
             disabled={!reason}
           >
             <Text style={styles.saveBtnText}>Save & Continue</Text>
-          </KeycapButton>
+          </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -211,13 +242,13 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     fontFamily: Typography.fontSans,
   },
-  saveBtnWrapper: {
+  saveBtn: {
     width: '100%',
     marginTop: Spacing.sm,
-  },
-  saveBtnFace: {
     paddingVertical: Spacing.lg,
     alignItems: 'center',
+    borderRadius: Radius.lg,
+    borderWidth: 1,
   },
   saveBtnText: {
     fontFamily: Typography.fontSans,

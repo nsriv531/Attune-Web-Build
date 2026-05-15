@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { DistractionEvent, FocusFeeling, SessionDuration, RitualSound, ReflectionReason, SoliState } from '@/types';
+import type { DistractionEvent, FocusFeeling, SessionDuration, RitualSound } from '@/types';
 
 // ─── Focus score algorithm ───────────────────────────────────────────────────
 export function calculateFocusScore(events: DistractionEvent[], durationSeconds: number): number {
@@ -41,22 +41,13 @@ interface SessionState {
   startedAt: number | null;
   distractionEvents: DistractionEvent[];
 
-<<<<<<< HEAD:stores/sessionStore.ts
-  // Soli
-  soliMessage: string;
-  soliState: SoliState;
-=======
   sageMessage: string;
   sageState: 'idle' | 'watching' | 'nudge' | 'alert' | 'celebrate' | 'excessive_celebration';
->>>>>>> dev:backend/stores/sessionStore.ts
   consecutiveDistractionSeconds: number;
 
   focusScore: number;
   xpEarned: number;
   feeling: FocusFeeling | null;
-  wasEndedEarly: boolean;
-  reflectionReason: ReflectionReason | null;
-  reflectionNote: string;
 
   setSubject: (subject: string, id: string) => void;
   setDuration: (duration: SessionDuration) => void;
@@ -70,11 +61,10 @@ interface SessionState {
   clearDistraction: () => void;
   endSession: () => void;
   setFeeling: (feeling: FocusFeeling) => void;
-  setReflection: (reason: ReflectionReason, note: string) => void;
   reset: () => void;
 }
 
-const SOLI_MESSAGES = {
+const SAGE_MESSAGES = {
   watching: [
     "You're doing great — keep going.",
     "Stay with it, you're in the zone.",
@@ -93,7 +83,7 @@ const SOLI_MESSAGES = {
 };
 
 function pickMessage(state: 'watching' | 'nudge' | 'alert'): string {
-  const msgs = SOLI_MESSAGES[state];
+  const msgs = SAGE_MESSAGES[state];
   return msgs[Math.floor(Math.random() * msgs.length)];
 }
 
@@ -113,16 +103,13 @@ export const useSessionStore = create<SessionState>()(
       startedAt: null,
       distractionEvents: [],
 
-      soliMessage: pickMessage('watching'),
-      soliState: 'watching',
+      sageMessage: pickMessage('watching'),
+      sageState: 'watching',
       consecutiveDistractionSeconds: 0,
 
       focusScore: 0,
       xpEarned: 0,
       feeling: null,
-      wasEndedEarly: false,
-      reflectionReason: null,
-      reflectionNote: '',
 
       setSubject: (subject, id) => set({ subject, subjectId: id }),
       setDuration: (duration) => set({ durationMinutes: duration, secondsRemaining: duration * 60 }),
@@ -136,15 +123,12 @@ export const useSessionStore = create<SessionState>()(
           secondsElapsed: 0,
           startedAt: Date.now(),
           distractionEvents: [],
-          soliState: 'watching',
-          soliMessage: pickMessage('watching'),
+          sageState: 'watching',
+          sageMessage: pickMessage('watching'),
           consecutiveDistractionSeconds: 0,
           focusScore: 0,
           xpEarned: 0,
           feeling: null,
-          wasEndedEarly: false,
-          reflectionReason: null,
-          reflectionNote: '',
         })),
 
       tick: () =>
@@ -158,7 +142,7 @@ export const useSessionStore = create<SessionState>()(
           return {
             secondsRemaining: Math.max(0, secondsRemaining),
             secondsElapsed,
-            soliMessage: shouldRefreshMsg ? pickMessage('watching') : s.soliMessage,
+            sageMessage: shouldRefreshMsg ? pickMessage('watching') : s.sageMessage,
           };
         }),
 
@@ -173,7 +157,7 @@ export const useSessionStore = create<SessionState>()(
           return {
             secondsRemaining,
             secondsElapsed,
-            soliMessage: shouldRefreshMsg ? pickMessage('watching') : s.soliMessage,
+            sageMessage: shouldRefreshMsg ? pickMessage('watching') : s.sageMessage,
           };
         }),
 
@@ -185,31 +169,25 @@ export const useSessionStore = create<SessionState>()(
           const events = [...s.distractionEvents, event];
           const consecutive = s.consecutiveDistractionSeconds + event.durationSeconds;
 
-<<<<<<< HEAD:stores/sessionStore.ts
-          // Escalate Sage state based on consecutive distraction time
-          let soliState = s.soliState;
-          let soliMessage = s.soliMessage;
-=======
           let sageState = s.sageState;
           let sageMessage = s.sageMessage;
->>>>>>> dev:backend/stores/sessionStore.ts
 
           if (consecutive >= 60) {
-            soliState = 'alert';
-            soliMessage = pickMessage('alert');
+            sageState = 'alert';
+            sageMessage = pickMessage('alert');
           } else if (consecutive >= 30) {
-            soliState = 'nudge';
-            soliMessage = pickMessage('nudge');
+            sageState = 'nudge';
+            sageMessage = pickMessage('nudge');
           }
 
-          return { distractionEvents: events, consecutiveDistractionSeconds: consecutive, soliState, soliMessage };
+          return { distractionEvents: events, consecutiveDistractionSeconds: consecutive, sageState, sageMessage };
         }),
 
       clearDistraction: () =>
         set({
           consecutiveDistractionSeconds: 0,
-          soliState: 'watching',
-          soliMessage: pickMessage('watching'),
+          sageState: 'watching',
+          sageMessage: pickMessage('watching'),
         }),
 
       endSession: () =>
@@ -220,14 +198,11 @@ export const useSessionStore = create<SessionState>()(
             isActive: false,
             focusScore,
             xpEarned,
-            soliState: 'celebrate',
-            wasEndedEarly: s.secondsRemaining > 0,
+            sageState: 'celebrate',
           };
         }),
 
       setFeeling: (feeling) => set({ feeling }),
-
-      setReflection: (reason, note) => set({ reflectionReason: reason, reflectionNote: note }),
 
       reset: () =>
         set((s) => ({
@@ -237,15 +212,12 @@ export const useSessionStore = create<SessionState>()(
           secondsElapsed: 0,
           startedAt: null,
           distractionEvents: [],
-          soliState: 'watching',
-          soliMessage: pickMessage('watching'),
+          sageState: 'watching',
+          sageMessage: pickMessage('watching'),
           consecutiveDistractionSeconds: 0,
           focusScore: 0,
           xpEarned: 0,
           feeling: null,
-          wasEndedEarly: false,
-          reflectionReason: null,
-          reflectionNote: '',
         })),
     }),
     {
