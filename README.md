@@ -40,8 +40,8 @@ Scan the QR code with **Expo Go** (iOS App Store / Google Play Store) and you're
 After running setup, open `.env.local` and fill in your Convex credentials:
 
 ```env
-EXPO_PUBLIC_CONVEX_URL=https://tacit-tortoise-399.convex.cloud
-EXPO_PUBLIC_CONVEX_SITE_URL=https://tacit-tortoise-399.convex.site
+EXPO_PUBLIC_CONVEX_URL=n/a
+EXPO_PUBLIC_CONVEX_SITE_URL=n/a
 ```
 
 Get these from [supabase.com](https://supabase.com) → your project → Settings → API.
