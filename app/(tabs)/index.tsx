@@ -38,6 +38,9 @@ class RiveBoundary extends React.Component<{ children: React.ReactNode }, { cras
 
 const DURATIONS: number[] = [15, 18, 25, 45];
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+// Strips the default browser focus outline on react-native-web TextInputs.
+const webNoOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null;
 const BAR_HEIGHTS = [40, 62, 48, 85, 32, 54, 22];
 const TODAY_IDX = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
 
@@ -166,6 +169,7 @@ export default function HomeScreen() {
 
   const [showDurationPicker, setShowDurationPicker] = useState(false);
   const [customMinutes, setCustomMinutes] = useState('');
+  const [inputFocused, setInputFocused] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [boltKey, setBoltKey] = useState(0);
 
@@ -475,17 +479,21 @@ export default function HomeScreen() {
           <Pressable style={styles.customCard} onPress={() => {}}>
             <Text style={styles.customTitle}>Custom duration</Text>
             <Text style={styles.customHint}>1–999 minutes</Text>
-            <View style={styles.customInputRow}>
+            <View style={[styles.customInputRow, inputFocused && styles.customInputRowFocused]}>
               <TextInput
-                style={styles.customInput}
+                style={[styles.customInput, webNoOutline]}
                 value={customMinutes}
                 onChangeText={(v) => setCustomMinutes(v.replace(/[^0-9]/g, '').slice(0, 3))}
                 keyboardType="number-pad"
                 placeholder="25"
                 placeholderTextColor={Colors.textTertiary}
+                selectionColor={Colors.amber}
+                underlineColorAndroid="transparent"
                 autoFocus
                 maxLength={3}
                 returnKeyType="done"
+                onFocus={() => setInputFocused(true)}
+                onBlur={() => setInputFocused(false)}
                 onSubmitEditing={handleCustomSet}
               />
               <Text style={styles.customUnit}>min</Text>
@@ -962,8 +970,12 @@ const makeStyles = (font: string) => StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: Colors.bgInput,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderWidth: 2,
+    borderColor: Colors.borderMid,
+  },
+  customInputRowFocused: {
+    borderColor: Colors.amber,
+    backgroundColor: Colors.amberDim,
   },
   customInput: {
     flex: 1,

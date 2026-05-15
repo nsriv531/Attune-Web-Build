@@ -23,7 +23,7 @@ export function KeycapSurface({
   children,
 }: KeycapSurfaceProps) {
   const faceColor = accent ? Colors.amber : Colors.bgCard;
-  const borderColor = Colors.border;
+  const borderColor = accent ? Colors.amberDark : Colors.border;
 
   return (
     <View
@@ -96,7 +96,7 @@ export function KeycapButton({
   const faceColor = faceColorOverride ?? (accent
     ? disabled ? Colors.bgCardHigh : Colors.amber
     : Colors.bgCard);
-  const borderColor = borderColorOverride ?? Colors.border;
+  const borderColor = borderColorOverride ?? (accent && !disabled ? Colors.amberDark : Colors.border);
 
   const [pressed, setPressed] = useState(false);
 

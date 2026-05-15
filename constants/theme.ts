@@ -99,7 +99,7 @@ export const Colors = {
   // Keycap depth system — the "stem" color visible below the keycap face
   // Used by KeycapSurface as the outer wrapper background
   keycapDepthColor: 'rgba(180,175,165,0.55)',
-  keycapAccentDepthColor: 'rgba(130,72,0,0.45)',
+  keycapAccentDepthColor: '#C2871A',
   keycapPressedDepthColor: 'rgba(175,158,128,0.30)',
 
   // Keycap highlight — top shine stripe on each key
