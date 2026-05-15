@@ -6,11 +6,13 @@ import {
   SafeAreaView,
   Pressable,
   ViewStyle,
+  Platform,
 } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withSpring,
   Easing,
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
@@ -51,6 +53,7 @@ export function OnboardingLayout({
 
   return (
     <SafeAreaView style={styles.safe}>
+      {/* Progress track */}
       <View style={styles.progressTrack}>
         <Animated.View style={[styles.progressFill, barStyle]} />
       </View>
@@ -82,24 +85,74 @@ interface CTAButtonProps {
   label: string;
   onPress: () => void;
   disabled?: boolean;
+  variant?: 'accent' | 'secondary';
 }
 
-export function CTAButton({ label, onPress, disabled = false }: CTAButtonProps) {
+export function CTAButton({ label, onPress, disabled = false, variant = 'accent' }: CTAButtonProps) {
+  const pressAnim = useSharedValue(0);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: pressAnim.value }],
+  }));
+
+  function handlePressIn() {
+    if (!disabled) pressAnim.value = withTiming(3, { duration: 80 });
+  }
+
+  function handlePressOut() {
+    pressAnim.value = withSpring(0, { damping: 12, stiffness: 300 });
+  }
+
+  const isAccent = variant === 'accent' && !disabled;
+  const depthColor = isAccent ? Colors.keycapAccentDepthColor : Colors.keycapDepthColor;
+  const faceColor = isAccent ? Colors.amber : Colors.bgCardHigh;
+  const highlight = isAccent ? Colors.keycapAccentHighlight : Colors.keycapHighlight;
+  const borderColor = isAccent ? Colors.amberBorder : Colors.border;
+  const textColor = isAccent ? '#2C2000' : Colors.textTertiary;
+
   return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      style={[styles.cta, disabled && styles.ctaDisabled]}
+    <View
+      style={[
+        styles.ctaDepth,
+        {
+          backgroundColor: depthColor,
+          borderColor,
+        },
+        Platform.OS === 'ios'
+          ? { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.10, shadowRadius: 10 }
+          : { elevation: 3 },
+      ]}
     >
-      <Text style={[styles.ctaText, disabled && styles.ctaTextDisabled]}>{label}</Text>
-    </Pressable>
+      <Pressable
+        onPress={disabled ? undefined : onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        style={styles.ctaPressable}
+        android_ripple={null}
+      >
+        <Animated.View
+          style={[
+            styles.ctaFace,
+            { backgroundColor: faceColor },
+            animStyle,
+          ]}
+        >
+          {/* Top shine */}
+          <View
+            style={[styles.ctaShine, { backgroundColor: highlight }]}
+            pointerEvents="none"
+          />
+          <Text style={[styles.ctaText, { color: textColor }]}>{label}</Text>
+        </Animated.View>
+      </Pressable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: Colors.bgSession,
+    backgroundColor: Colors.bg,
   },
   progressTrack: {
     height: 2,
@@ -139,25 +192,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
   },
 
-  cta: {
+  // Keycap CTA button
+  ctaDepth: {
     width: '100%',
-    backgroundColor: Colors.purple,
-    borderRadius: Radius.lg,
+    borderRadius: Radius.lg + 2,
+    borderWidth: 1,
+    paddingBottom: 3,
+  },
+  ctaPressable: {
+    borderRadius: Radius.lg + 1,
+  },
+  ctaFace: {
+    borderRadius: Radius.lg + 1,
     paddingVertical: Spacing.base,
     alignItems: 'center',
+    overflow: 'hidden',
+    position: 'relative',
   },
-  ctaDisabled: {
-    backgroundColor: Colors.bgInput,
-    borderWidth: 0.5,
-    borderColor: Colors.border,
+  ctaShine: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+    borderTopLeftRadius: Radius.lg + 1,
+    borderTopRightRadius: Radius.lg + 1,
+    zIndex: 1,
   },
   ctaText: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.md,
-    fontWeight: Typography.weight.semibold,
-    color: '#fff',
-  },
-  ctaTextDisabled: {
-    color: Colors.textTertiary,
+    fontWeight: '700',
   },
 });

@@ -12,6 +12,7 @@ export type RitualSound = 'lofi' | 'rain' | 'forest' | 'white-noise' | 'silence'
 export type SessionDuration = number;
 
 export type FocusFeeling = 'solid' | 'good' | 'rough';
+export type ReflectionReason = 'distraction' | 'tired' | 'busy' | 'other';
 
 export type DistractionLog = {
   timeLeft: number;
@@ -41,6 +42,9 @@ export type Session = {
   distractionLogs: DistractionLog[];
   startedAt: number;
 };
+
+
+export type SoliState = 'idle' | 'watching' | 'nudge' | 'alert' | 'celebrate';
 
 export type Avatar = {
   userId: string;

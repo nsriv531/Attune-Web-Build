@@ -7,7 +7,10 @@ import {
   SafeAreaView,
   Pressable,
   Alert,
+  Platform,
+  BackHandler,
 } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Typography, Spacing, Radius, Colors } from '@/constants/theme';
@@ -16,7 +19,7 @@ import { useSessionStore } from '@/backend/stores/sessionStore';
 import { useUserStore } from '@/backend/stores/userStore';
 import { useRitualAudio } from '@/hooks/useAudioPlayer';
 import { TimerRing } from '@/components/TimerRing';
-import { SageOverlay } from '@/components/SageOverlay';
+import { SoliOverlay } from '@/components/Mascots';
 import { StatCard } from '@/components/StatCard';
 import { MediaPlayer } from '@/components/MediaPlayer';
 import { useQuery } from 'convex/react';
@@ -30,12 +33,13 @@ export default function SessionScreen() {
   
   const {
     isActive,
+    isPaused,
     setupComplete,
     subject,
     durationMinutes,
     secondsRemaining,
-    sageState,
-    sageMessage,
+    soliState,
+    soliMessage,
     ritualSound,
     endSession,
     clearDistraction,
@@ -51,31 +55,56 @@ export default function SessionScreen() {
   // Handle Ritual Audio
   const { player, currentTrack, nextTrack, prevTrack, loading } = useRitualAudio();
 
+  // Block Android hardware back while a session is active — only exit is the end button
+  useFocusEffect(
+    React.useCallback(() => {
+      if (Platform.OS !== 'android') return;
+      const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+        if (useSessionStore.getState().isActive) {
+          handleEndEarly();
+          return true; // swallow the event
+        }
+        return false;
+      });
+      return () => sub.remove();
+    }, [])
+  );
+
   function handleEndEarly() {
+    const confirmEnd = () => {
+      endSession();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      router.replace('/reflection' as never);
+    };
+
+    if (Platform.OS === 'web') {
+      // Alert.alert is a no-op on web — fall back to the browser dialog
+      const ok = typeof window !== 'undefined'
+        ? window.confirm('End session? Your progress so far will be saved and counted toward your streak.')
+        : true;
+      if (ok) confirmEnd();
+      return;
+    }
+
     Alert.alert(
       'End session?',
       'Your progress so far will be saved and counted toward your streak.',
       [
         { text: 'Keep going', style: 'cancel' },
-        {
-          text: 'End session',
-          style: 'destructive',
-          onPress: () => {
-            endSession();
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            router.push('/reward');
-          },
-        },
+        { text: 'End session', style: 'destructive', onPress: confirmEnd },
       ]
     );
   }
 
   const totalSeconds = durationMinutes * 60;
+  const mins = Math.floor(secondsRemaining / 60);
+  const secs = secondsRemaining % 60;
+  const timeDisplay = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 
   const focusBadgeColor =
-    sageState === 'alert'
+    soliState === 'alert'
       ? C.red
-      : sageState === 'nudge'
+      : soliState === 'nudge'
       ? C.amber
       : C.green;
 
@@ -85,14 +114,21 @@ export default function SessionScreen() {
 
         <Text style={[styles.subject, { color: C.textTertiary }]}>{subject}</Text>
 
-        <TimerRing secondsRemaining={secondsRemaining} totalSeconds={totalSeconds} />
+        <TimerRing
+          secondsRemaining={secondsRemaining}
+          totalSeconds={totalSeconds}
+          isRunning={isActive && !isPaused}
+        >
+          <Text style={[styles.timeDisplay, { color: C.textPrimary }]}>{timeDisplay}</Text>
+          <Text style={[styles.timeLabel, { color: C.textTertiary }]}>remaining</Text>
+        </TimerRing>
 
         <View style={[styles.focusBadge, { borderColor: `${focusBadgeColor}44`, backgroundColor: `${focusBadgeColor}12` }]}>
           <View style={[styles.focusDot, { backgroundColor: focusBadgeColor }]} />
           <Text style={[styles.focusText, { color: focusBadgeColor }]}>
-            {sageState === 'alert'
+            {soliState === 'alert'
               ? 'Come back'
-              : sageState === 'nudge'
+              : soliState === 'nudge'
               ? 'Drifting...'
               : 'In flow'}
           </Text>
@@ -107,11 +143,11 @@ export default function SessionScreen() {
           loading={loading}
         />
 
-        {/* ── Sage overlay ── */}
-        <SageOverlay
-          sageState={sageState}
-          message={sageMessage}
-          onDismiss={sageState === 'nudge' || sageState === 'alert' ? clearDistraction : undefined}
+        {/* ── Soli overlay ── */}
+        <SoliOverlay
+          soliState={soliState}
+          message={soliMessage}
+          onDismiss={soliState === 'nudge' || soliState === 'alert' ? clearDistraction : undefined}
         />
 
         <View style={styles.statsRow}>
@@ -145,6 +181,21 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textTransform: 'uppercase',
     marginTop: Spacing.lg,
+  },
+  timeDisplay: {
+    fontFamily: Typography.fontSans,
+    fontSize: 38,
+    fontWeight: '800',
+    letterSpacing: -1.5,
+    lineHeight: 40,
+    marginTop: 2,
+  },
+  timeLabel: {
+    fontFamily: Typography.fontSans,
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 2.5,
+    textTransform: 'uppercase',
   },
   focusBadge: {
     flexDirection: 'row',

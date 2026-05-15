@@ -1,101 +1,143 @@
 // components/TimerRing.tsx
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedProps,
+  useAnimatedStyle,
   withTiming,
+  withRepeat,
+  withSequence,
   Easing,
-  interpolateColor,
 } from 'react-native-reanimated';
-import Svg, { Path } from 'react-native-svg';
-import { Typography, RING_RADIUS, RING_SIZE } from '@/constants/theme';
-import { useThemeColors } from '@/hooks/useThemeColors';
+import Svg, { Circle, Path } from 'react-native-svg';
+import { RING_RADIUS, RING_SIZE, Colors } from '@/constants/theme';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
+
+// M3 Expressive wavy progress tuning
+const WAVE_CYCLES = 18;        // sine cycles around the full ring
+const SAMPLES_PER_CYCLE = 10;  // path resolution per cycle
+const WAVE_AMPLITUDE = 4.5;    // peak radial offset in px when running
+const EDGE_FADE = 0.05;        // wave flattens over this much of progress at each end
 
 interface TimerRingProps {
   secondsRemaining: number;
   totalSeconds: number;
+  isRunning?: boolean;
+  children?: React.ReactNode;
 }
 
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
-
-export function TimerRing({ secondsRemaining, totalSeconds }: TimerRingProps) {
-  const C = useThemeColors();
+export function TimerRing({ secondsRemaining, totalSeconds, isRunning = false, children }: TimerRingProps) {
+  const cx = RING_SIZE / 2;
   const progress = useSharedValue(1);
 
-  // Calculate Arc Path (135 degrees to 45 degrees, clockwise)
-  const cx = RING_SIZE / 2;
-  const cy = RING_SIZE / 2;
-  const r = RING_RADIUS;
-  
-  // Starting at -225 degrees (which is 135) to 45 degrees
-  const startAngle = 135;
-  const endAngle = 45;
-  const startRad = (startAngle * Math.PI) / 180;
-  const endRad = (endAngle * Math.PI) / 180;
-  
-  const startX = cx + r * Math.cos(startRad);
-  const startY = cy + r * Math.sin(startRad);
-  const endX = cx + r * Math.cos(endRad);
-  const endY = cy + r * Math.sin(endRad);
-
-  const d = `M ${startX} ${startY} A ${r} ${r} 0 1 1 ${endX} ${endY}`;
-  const arcLength = (270 / 360) * 2 * Math.PI * r;
-
+  // Animate progress when time changes
   useEffect(() => {
     const pct = totalSeconds > 0 ? secondsRemaining / totalSeconds : 1;
     progress.value = withTiming(pct, {
-      duration: 900,
-      easing: Easing.out(Easing.cubic),
+      duration: 550,
+      easing: Easing.out(Easing.quad),
     });
   }, [secondsRemaining, totalSeconds]);
 
-  const animatedProps = useAnimatedProps(() => {
-    // Offset from arcLength (empty) to 0 (full)
-    const offset = arcLength * (1 - progress.value);
-    return {
-      strokeDashoffset: offset,
-      stroke: interpolateColor(
-        progress.value,
-        [0, 0.5, 1],
-        [C.amber, C.amber, C.amber]
-      ),
-    };
+  // Timer pulse — subtle scale breathe while running
+  const pulseScale = useSharedValue(1);
+  useEffect(() => {
+    if (isRunning) {
+      pulseScale.value = withRepeat(
+        withSequence(
+          withTiming(1.012, { duration: 1000, easing: Easing.inOut(Easing.sin) }),
+          withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.sin) })
+        ),
+        -1,
+        true
+      );
+    } else {
+      pulseScale.value = withTiming(1, { duration: 300 });
+    }
+  }, [isRunning]);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseScale.value }],
+  }));
+
+  // Wave phase scroll + amplitude — only animates while running
+  const phase = useSharedValue(0);
+  const waveAmp = useSharedValue(0);
+  useEffect(() => {
+    if (isRunning) {
+      phase.value = withRepeat(
+        withTiming(Math.PI * 2, { duration: 5500, easing: Easing.linear }),
+        -1,
+        false
+      );
+      waveAmp.value = withTiming(WAVE_AMPLITUDE, { duration: 600, easing: Easing.out(Easing.quad) });
+    } else {
+      waveAmp.value = withTiming(0, { duration: 500, easing: Easing.out(Easing.quad) });
+    }
+  }, [isRunning]);
+
+  // Build the wavy active arc as an SVG path on the UI thread
+  const wavePathProps = useAnimatedProps(() => {
+    const p = progress.value;
+    if (p <= 0.001) return { d: '' };
+
+    const totalSamples = Math.max(2, Math.floor(p * WAVE_CYCLES * SAMPLES_PER_CYCLE));
+    const startAngle = -Math.PI / 2; // 12 o'clock
+    const amp = waveAmp.value;
+    const ph = phase.value;
+    let d = '';
+    for (let i = 0; i <= totalSamples; i++) {
+      const t = (i / totalSamples) * p; // 0..p
+      const headFade = Math.min(1, (p - t) / EDGE_FADE);
+      const tailFade = Math.min(1, t / EDGE_FADE);
+      const localAmp = amp * Math.max(0, Math.min(headFade, tailFade));
+      const angle = startAngle + t * 2 * Math.PI;
+      const r = RING_RADIUS + localAmp * Math.sin(t * WAVE_CYCLES * 2 * Math.PI + ph);
+      const x = cx + r * Math.cos(angle);
+      const y = cx + r * Math.sin(angle);
+      d += (i === 0 ? 'M' : 'L') + x.toFixed(2) + ' ' + y.toFixed(2) + ' ';
+    }
+    return { d };
   });
 
-  const timeString = formatTime(secondsRemaining);
-
   return (
-    <View style={styles.wrap}>
-      <Svg width={RING_SIZE} height={RING_SIZE} viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}>
-        <Path
-          d={d}
+    <Animated.View style={[styles.wrap, pulseStyle]}>
+      <Svg width={RING_SIZE} height={RING_SIZE} style={styles.svg}>
+        {/* M3 inactive track — same shape & weight as the active arc, muted amber */}
+        <Circle
+          cx={cx}
+          cy={cx}
+          r={RING_RADIUS}
           fill="none"
-          stroke="#F5EFE9" // Soft background track
-          strokeWidth={8}
+          stroke={Colors.amberDim}
+          strokeWidth={11}
           strokeLinecap="round"
         />
+        {/* M3 stop indicator — small dot at the resting position (12 o'clock) */}
+        <Circle
+          cx={cx}
+          cy={cx - RING_RADIUS}
+          r={3.5}
+          fill={Colors.amber}
+        />
+        {/* Wavy amber active arc — M3 Expressive */}
         <AnimatedPath
-          d={d}
           fill="none"
-          strokeWidth={8}
+          stroke={Colors.amber}
+          strokeWidth={11}
           strokeLinecap="round"
-          strokeDasharray={arcLength}
-          animatedProps={animatedProps}
+          strokeLinejoin="round"
+          animatedProps={wavePathProps}
         />
       </Svg>
 
-      <View style={[styles.timeOverlay, { pointerEvents: 'none' }]}>
-        <Text style={[styles.timeNum, { color: C.textPrimary }]}>{timeString}</Text>
-        <Text style={[styles.timeLbl, { color: C.textTertiary }]}>MINUTES LEFT</Text>
+      {/* Center content — mascot + time display passed as children */}
+      <View style={styles.center} pointerEvents="none">
+        {children}
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -103,28 +145,17 @@ const styles = StyleSheet.create({
   wrap: {
     width: RING_SIZE,
     height: RING_SIZE,
-    position: 'relative',
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  timeOverlay: {
+  svg: {
     position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  center: {
     alignItems: 'center',
     justifyContent: 'center',
-    top: '35%',
-  },
-  timeNum: {
-    fontFamily: Typography.fontSans,
-    fontSize: 48,
-    fontWeight: Typography.weight.semibold,
-    letterSpacing: -1,
-    marginBottom: 4,
-  },
-  timeLbl: {
-    fontFamily: Typography.fontSans,
-    fontSize: 10,
-    fontWeight: Typography.weight.medium,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
+    gap: 4,
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,32 +6,162 @@ import {
   ScrollView,
   Pressable,
   SafeAreaView,
+  Platform,
+  Modal,
+  TextInput,
 } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withDelay,
   Easing,
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Typography, Spacing, Radius } from '@/constants/theme';
-import { useThemeColors } from '@/hooks/useThemeColors';
+import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 import { useSessionStore } from '@/backend/stores/sessionStore';
 import { useUserStore } from '@/backend/stores/userStore';
 import TopAppBar from '@/components/TopAppBar';
-import { TimerRing } from '@/components/TimerRing';
+import { KeycapSurface, KeycapButton } from '@/components/KeycapSurface';
 import { useRitualAudio } from '@/hooks/useAudioPlayer';
+import { RiveIconSet, ToviAvatar } from '@/components/Mascots';
+import { ProfileSidebar } from '@/components/ProfileSidebar';
+import { useFontStore } from '@/backend/stores/fontStore';
 import type { RitualSound } from '@/types';
 import { useUser } from '@clerk/clerk-expo';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-import { SageOtter } from '@/components/SageOtter';
+
+class RiveBoundary extends React.Component<{ children: React.ReactNode }, { crashed: boolean }> {
+  state = { crashed: false };
+  static getDerivedStateFromError() { return { crashed: true }; }
+  render() { return this.state.crashed ? null : this.props.children; }
+}
 
 const DURATIONS: number[] = [15, 18, 25, 45];
+const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
+// Strips the default browser focus outline on react-native-web TextInputs.
+const webNoOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null;
+const BAR_HEIGHTS = [40, 62, 48, 85, 32, 54, 22];
+const TODAY_IDX = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+
+// ── Animated bar for the weekly chart ─────────────────────────────────────
+function AnimatedBar({ targetHeight, idx, isToday, accent }: {
+  targetHeight: number;
+  idx: number;
+  isToday: boolean;
+  accent: string;
+}) {
+  const anim = useSharedValue(0);
+
+  useEffect(() => {
+    anim.value = withDelay(
+      idx * 60,
+      withTiming(1, { duration: 500 + idx * 50, easing: Easing.out(Easing.cubic) })
+    );
+  }, []);
+
+  const barStyle = useAnimatedStyle(() => ({
+    height: `${targetHeight * anim.value}%` as any,
+  }));
+
+  return (
+    <View style={styles.barCol}>
+      <View style={styles.barOuter}>
+        {/* Keycap depth backing */}
+        <View style={[styles.barDepth, {
+          backgroundColor: isToday
+            ? Colors.keycapAccentDepthColor
+            : Colors.keycapDepthColor,
+        }]}>
+          <Animated.View style={[styles.barFace, {
+            backgroundColor: isToday ? accent : Colors.bgCard,
+          }, barStyle]}>
+            {/* Shine strip on active bar */}
+            {isToday && (
+              <View style={styles.barShine} />
+            )}
+          </Animated.View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+// ── Fade-slide-up entry animation wrapper ─────────────────────────────────
+function FadeSlideUp({ delay = 0, children }: { delay?: number; children: React.ReactNode }) {
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(14);
+
+  useEffect(() => {
+    opacity.value = withDelay(delay, withTiming(1, { duration: 450, easing: Easing.out(Easing.cubic) }));
+    translateY.value = withDelay(delay, withTiming(0, { duration: 450, easing: Easing.out(Easing.cubic) }));
+  }, []);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  return <Animated.View style={style}>{children}</Animated.View>;
+}
+
+// ── Duration pill ─────────────────────────────────────────────────────────
+function DurationPill({ label, isActive, onPress, font }: {
+  label: string;
+  isActive: boolean;
+  onPress: () => void;
+  font: string;
+}) {
+  return (
+    <KeycapButton
+      accent={isActive}
+      radius={14}
+      style={styles.durationPillWrapper}
+      contentStyle={styles.durationPillFace}
+      onPress={onPress}
+    >
+      <Text style={[styles.durationText, { color: Colors.textSecondary, fontFamily: font }]}>
+        {label}
+      </Text>
+    </KeycapButton>
+  );
+}
+
+// ── Sound pill ────────────────────────────────────────────────────────────
+function SoundPill({ sound, isActive, onPress, font }: {
+  sound: RitualSound;
+  isActive: boolean;
+  onPress: () => void;
+  font: string;
+}) {
+  const icons: Record<string, string> = {
+    'silence': '🔇', 'lofi': '🎧', 'rain': '🌧',
+    'forest': '🌲', 'white-noise': '📻',
+  };
+  const label = sound === 'white-noise' ? 'White Noise'
+    : sound.charAt(0).toUpperCase() + sound.slice(1);
+
+  return (
+    <KeycapButton
+      accent={isActive}
+      radius={Radius.full}
+      style={{ marginRight: Spacing.sm }}
+      contentStyle={styles.soundPillFace}
+      onPress={onPress}
+    >
+      <Text style={styles.soundIcon}>{icons[sound]}</Text>
+      <Text style={[styles.soundText, { color: Colors.textSecondary, fontFamily: font }]}>
+        {label}
+      </Text>
+    </KeycapButton>
+  );
+}
+
+// ── Main home screen ──────────────────────────────────────────────────────
 export default function HomeScreen() {
-  const C = useThemeColors();
   const router = useRouter();
 
   const { isSignedIn } = useUser();
@@ -50,10 +180,33 @@ export default function HomeScreen() {
     }
   }, [isSignedIn, enforceStreakMutation]);
   const { durationMinutes, setDuration, startSession, ritualSound, setRitualSound } = useSessionStore();
+  const { previewTimerActive } = useRitualAudio(true);
+  const { current: currentFont, cycle: cycleFont } = useFontStore();
+  const font = currentFont.regular;
+  const styles = useMemo(() => makeStyles(font), [font]);
 
-  const { previewTimerActive } = useRitualAudio(true); // Enable audio previews on this screen
+  const [showDurationPicker, setShowDurationPicker] = useState(false);
+  const [customMinutes, setCustomMinutes] = useState('');
+  const [inputFocused, setInputFocused] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [boltKey, setBoltKey] = useState(0);
 
-  // Animation for audio preview slider
+  const parsedCustomMinutes = parseInt(customMinutes, 10);
+  const isValidCustom = Number.isFinite(parsedCustomMinutes) && parsedCustomMinutes > 0 && parsedCustomMinutes <= 999;
+
+  function openCustomPicker() {
+    setCustomMinutes(String(durationMinutes));
+    setShowDurationPicker(true);
+  }
+
+  function handleCustomSet() {
+    if (!isValidCustom) return;
+    setDuration(parsedCustomMinutes);
+    Haptics.selectionAsync();
+    setShowDurationPicker(false);
+  }
+
+  // Preview progress bar — reset on every new sound selection
   const previewProgress = useSharedValue(0);
 
   useEffect(() => {
@@ -63,60 +216,46 @@ export default function HomeScreen() {
     } else {
       previewProgress.value = 0;
     }
-  }, [previewTimerActive]);
-
+  }, [previewTimerActive, ritualSound]);
   const previewBarStyle = useAnimatedStyle(() => ({
-    width: `${previewProgress.value * 100}%`,
+    width: `${previewProgress.value * 100}%` as any,
   }));
 
-  const [showDurationPicker, setShowDurationPicker] = useState(false);
-  const [customDuration, setCustomDuration] = useState('');
-
-  // Calculate today's focused minutes
-  const todayMinutes = React.useMemo(() => {
+  // Today's focused minutes
+  const todayMinutes = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    return sessions.reduce((total, session) => {
+    return sessions.reduce((total: number, session: any) => {
       if (!session.startedAt) return total;
+
       const sessionDate = new Date(session.startedAt);
       sessionDate.setHours(0, 0, 0, 0);
 
-      if (sessionDate.getTime() === today.getTime()) {
-        const minutes = ('durationMinutes' in session ? session.durationMinutes : (session as any).plannedDuration) || 0;
-        return total + minutes;
+      if (sessionDate.getTime() !== today.getTime()) {
+        return total;
       }
-      return total;
+
+      let minutes = 0;
+
+      if (typeof session.durationMinutes === 'number') {
+        minutes = session.durationMinutes;
+      } else if (typeof session.plannedDuration === 'number') {
+        minutes = session.plannedDuration;
+      } else if (typeof session.timeOverall === 'number') {
+        minutes = session.timeOverall / 60;
+      }
+
+      return total + Math.round(minutes);
     }, 0);
-  }, [sessions]);
-
-  // Calculate Weekly Equilibrium Data (Mon-Sun)
-  const weeklyData = React.useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const data = [0, 0, 0, 0, 0, 0, 0];
-
-    sessions.forEach((session) => {
-      if (!session.startedAt) return;
-      const sDate = new Date(session.startedAt);
-      sDate.setHours(0, 0, 0, 0);
-
-      const diffTime = today.getTime() - sDate.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-      if (diffDays <= 7 && diffDays >= 0) {
-        let idx = sDate.getDay() - 1;
-        if (idx === -1) idx = 6;
-        data[idx] += ('durationMinutes' in session ? session.durationMinutes : (session as any).plannedDuration) || 0;
-      }
-    });
-
-    const max = Math.max(...data, 60); // Base minimum max to prevent empty looking charts
-    return data.map(val => Math.min((val / max) * 100, 100));
   }, [sessions]);
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+  const mins = durationMinutes;
+  const secs = 0;
+  const timeDisplay = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 
   function handleStart() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -129,449 +268,437 @@ export default function HomeScreen() {
     Haptics.selectionAsync();
   }
 
-  // Animation for today's focus column
-  const highlightScale = useSharedValue(1);
-  const highlightStyle = useAnimatedStyle(() => ({
-    transform: [{ scaleY: highlightScale.value }],
-  }));
-
-  useEffect(() => {
-    highlightScale.value = withTiming(1.1, { duration: 1500, easing: Easing.inOut(Easing.ease) });
-  }, []);
-
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+    <>
+      <SafeAreaView style={styles.safe}>
+        <TopAppBar userName={name} onMenuPress={() => setMenuOpen(!menuOpen)} />
+
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* TopAppBar */}
-        <TopAppBar userName={name} />
-
-        {/* ── Greeting Section ── */}
-        <View style={styles.greeting}>
-          <Text style={[styles.greetingText, { color: C.textPrimary }]}>
-            {greeting}, {name}
-          </Text>
-          <Text style={[styles.greetingSubtitle, { color: C.textSecondary }]}>
-            The light is perfect for deep work today.
-          </Text>
-        </View>
-
-        {/* ── Focus Hero Section ── */}
-        <View style={styles.heroSection}>
-          {/* Circular Timer Ring */}
-          <View style={styles.timerContainer}>
-            <TimerRing secondsRemaining={durationMinutes * 60} totalSeconds={durationMinutes * 60} />
+        {/* ── Greeting ── */}
+        <FadeSlideUp delay={50}>
+          <View style={styles.greeting}>
+            <Text style={styles.greetingText}>{greeting}, {name}</Text>
+            <Text style={styles.greetingSubtitle}>The light is perfect for deep work today.</Text>
           </View>
+        </FadeSlideUp>
 
-          {/* Mascot */}
-          <View style={styles.mascot}>
-            <SageOtter size={170} state="watching" />
-          </View>
 
-          {/* Start CTA */}
-          <Pressable
-            style={[styles.startBtn, { backgroundColor: C.amber }]}
-            onPress={handleStart}
-          >
-            <Text style={[styles.startBtnText, { color: C.textPrimary }]}>Start Focus Session</Text>
-          </Pressable>
-
-          {/* Duration Pills */}
-          <View style={styles.durationRow}>
-            {DURATIONS.map((d) => (
-              <Pressable
-                key={d}
-                style={[
-                  styles.durationPill,
-                  {
-                    backgroundColor: durationMinutes === d ? C.amberDim : '#FFFFFF',
-                    borderColor: durationMinutes === d ? C.amber : C.border,
-                  },
-                ]}
-                onPress={() => handleDurationSelect(d)}
-              >
-                <Text
-                  style={[
-                    styles.durationText,
-                    {
-                      color: durationMinutes === d ? C.amber : C.textTertiary,
-                    },
-                  ]}
-                >
-                  {d}
-                </Text>
-              </Pressable>
-            ))}
-
-            <Pressable
-              style={[
-                styles.durationPill,
-                styles.customPill,
-                {
-                  backgroundColor: '#FFFFFF',
-                  borderColor: C.border,
-                },
-              ]}
-              onPress={() => setShowDurationPicker(!showDurationPicker)}
+        {/* ── Font Tester ── */}
+        <FadeSlideUp delay={70}>
+          <View style={styles.fontTesterRow}>
+            <KeycapButton
+              radius={Radius.full}
+              contentStyle={styles.fontTesterFace}
+              onPress={cycleFont}
             >
-              <Text style={[styles.durationText, { color: C.textSecondary }]}>✎ Custom</Text>
-            </Pressable>
+              <Text style={[styles.fontTesterLabel, { fontFamily: font }]}>Aa</Text>
+              <Text style={[styles.fontTesterText, { fontFamily: font }]}>
+                Font: {currentFont.label}
+              </Text>
+              <Text style={[styles.fontTesterHint, { fontFamily: font }]}>tap to cycle</Text>
+            </KeycapButton>
           </View>
-        </View>
+        </FadeSlideUp>
 
-        {/* Custom Duration Input */}
-        {showDurationPicker && (
-          <View style={styles.customDurationSection}>
-            <Text style={[styles.label, { color: C.textSecondary }]}>Enter minutes:</Text>
-            <View style={styles.customInputRow}>
-              <Pressable
-                style={[styles.customBtn, { backgroundColor: C.bgCard }]}
-                onPress={() => {
-                  const val = parseInt(customDuration || '0');
-                  if (val > 0) {
-                    handleDurationSelect(val);
-                    setShowDurationPicker(false);
-                    setCustomDuration('');
-                  }
-                }}
+        {/* ── Timer Hero Card ── */}
+        <FadeSlideUp delay={120}>
+          <View style={styles.heroCardWrapper}>
+            <KeycapSurface radius={22} contentStyle={styles.heroCardFace}>
+              {/* Tovi rive avatar + time display */}
+              <View style={styles.timerRingWrap}>
+                <ToviAvatar size={600} />
+                <Text style={styles.timeDisplay}>{timeDisplay}</Text>
+                <Text style={styles.timeLabel}>start session</Text>
+              </View>
+
+              {/* Start button */}
+              <KeycapButton
+                accent
+                radius={18}
+                style={styles.startBtnWrapper}
+                contentStyle={styles.startBtnFace}
+                onPress={handleStart}
               >
-                <Text style={[styles.customBtnText, { color: C.textPrimary }]}>Set</Text>
-              </Pressable>
-            </View>
+                <Text style={styles.startBtnText}>▶  Start Focus Session</Text>
+              </KeycapButton>
+
+              {/* Duration pills */}
+              <View style={styles.durationRow}>
+                {DURATIONS.map(d => (
+                  <DurationPill
+                    key={d}
+                    label={String(d)}
+                    isActive={durationMinutes === d}
+                    onPress={() => handleDurationSelect(d)}
+                    font={font}
+                  />
+                ))}
+                <KeycapButton
+                  radius={14}
+                  style={styles.durationPillWrapper}
+                  contentStyle={styles.durationPillFace}
+                  onPress={openCustomPicker}
+                >
+                  <Text style={[styles.durationText, { color: Colors.textSecondary }]}>✎ Custom</Text>
+                </KeycapButton>
+              </View>
+            </KeycapSurface>
           </View>
-        )}
+        </FadeSlideUp>
 
         {/* ── Sound Selection ── */}
-        <View style={styles.soundSection}>
-          <Text style={[styles.soundSectionTitle, { color: C.textSecondary }]}>Ritual Sound</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.soundScroll}>
-            {(['silence', 'lofi', 'rain', 'forest', 'white-noise'] as RitualSound[]).map((sound) => {
-              const icons: Record<string, string> = {
-                'silence': '🔇',
-                'lofi': '🎧',
-                'rain': '🌧',
-                'forest': '🌲',
-                'white-noise': '📻'
-              };
-
-              return (
-                <Pressable
+        <FadeSlideUp delay={180}>
+          <View style={styles.soundSection}>
+            <Text style={styles.soundSectionTitle}>Ritual Sound</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.soundScroll}>
+              {(['silence', 'lofi', 'rain', 'forest', 'white-noise'] as RitualSound[]).map((sound) => (
+                <SoundPill
                   key={sound}
-                  style={[
-                    styles.soundPill,
-                    {
-                      backgroundColor: ritualSound === sound ? C.amberDim : '#FFFFFF',
-                      borderColor: ritualSound === sound ? C.amber : C.border,
-                    },
-                  ]}
+                  sound={sound}
+                  isActive={ritualSound === sound}
                   onPress={() => {
                     Haptics.selectionAsync();
                     setRitualSound(sound);
                   }}
-                >
-                  <Text style={styles.soundIcon}>{icons[sound]}</Text>
+                  font={font}
+                />
+              ))}
+            </ScrollView>
+            {previewTimerActive && (
+              <View style={styles.previewBarContainer}>
+                <Animated.View style={[styles.previewBar, previewBarStyle]} />
+              </View>
+            )}
+          </View>
+        </FadeSlideUp>
+
+        {/* ── Stats Grid ── */}
+        <FadeSlideUp delay={240}>
+          <View style={styles.statsGrid}>
+            {/* Today card */}
+            <KeycapSurface radius={20} style={styles.statsCardWrapper} contentStyle={styles.statsCardFace}>
+              <View style={styles.statsCardInner}>
+                <View style={styles.statsCardHeader}>
+                  <Text style={[styles.statsIcon, { color: Colors.amber }]}>⏱</Text>
+                  <Text style={[styles.statsLabel, { color: Colors.amber }]}>TODAY</Text>
+                </View>
+                <View style={styles.statsValueRow}>
+                  <Text style={styles.statsValue}>{todayMinutes}</Text>
+                  <Text style={styles.statsUnit}>min</Text>
+                </View>
+                <Text style={styles.statsCaption}>Focused time</Text>
+              </View>
+            </KeycapSurface>
+
+            {/* Streak card */}
+            <KeycapSurface radius={20} style={styles.statsCardWrapper} contentStyle={styles.statsCardFace}>
+              <View style={styles.statsCardInner}>
+                <View style={styles.statsCardHeader}>
+                  <Text style={[styles.statsIcon, { color: '#F97316' }]}>🔥</Text>
+                  <Text style={[styles.statsLabel, { color: '#F97316' }]}>STREAK</Text>
+                </View>
+                <View style={styles.statsValueRow}>
+                  <Text style={styles.statsValue}>{streakDays}</Text>
+                  <Text style={styles.statsUnit}>days</Text>
+                </View>
+                <Text style={styles.statsCaption}>In flow state</Text>
+              </View>
+            </KeycapSurface>
+          </View>
+        </FadeSlideUp>
+
+        {/* ── Performance Mode Card ── */}
+        <FadeSlideUp delay={290}>
+          <View style={styles.cardPad}>
+            <KeycapSurface radius={20} contentStyle={styles.performanceFace}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.perfTitle}>Performance Mode</Text>
+                <Text style={styles.perfSubtitle}>Enhanced focus for critical milestones.</Text>
+              </View>
+              <KeycapButton
+                accent
+                radius={14}
+                style={styles.boltBtnWrapper}
+                contentStyle={styles.boltBtnFace}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setBoltKey((k) => k + 1);
+                }}
+              >
+                <RiveBoundary>
+                  <RiveIconSet key={boltKey} artboardName="03_Flash" size={36} />
+                </RiveBoundary>
+              </KeycapButton>
+            </KeycapSurface>
+          </View>
+        </FadeSlideUp>
+
+        {/* ── Motivation Nudge ── */}
+        <FadeSlideUp delay={320}>
+          <View style={styles.cardPad}>
+            <KeycapSurface radius={20} contentStyle={styles.nudgeFace}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.nudgeTitle}>Feeling low on motivation?</Text>
+                <Text style={styles.nudgeSubtitle}>Try a 5-min micro-session. It's the easiest way to start.</Text>
+              </View>
+              <KeycapButton
+                accent
+                radius={Radius.lg}
+                style={styles.nudgeBtnWrapper}
+                contentStyle={styles.nudgeBtnFace}
+                onPress={() => { handleDurationSelect(5); handleStart(); }}
+              >
+                <Text style={styles.nudgeBtnText}>Start</Text>
+              </KeycapButton>
+            </KeycapSurface>
+          </View>
+        </FadeSlideUp>
+
+        {/* ── Weekly Equilibrium Chart ── */}
+        <FadeSlideUp delay={360}>
+          <View style={styles.cardPad}>
+            <KeycapSurface radius={22} contentStyle={styles.chartFace}>
+              <View style={styles.chartHeader}>
+                <Text style={styles.chartTitle}>Weekly Equilibrium</Text>
+                <Text style={styles.moreIcon}>⋯</Text>
+              </View>
+
+              <View style={styles.barChart}>
+                {BAR_HEIGHTS.map((h, idx) => (
+                  <AnimatedBar
+                    key={idx}
+                    targetHeight={h}
+                    idx={idx}
+                    isToday={idx === TODAY_IDX}
+                    accent={Colors.amber}
+                  />
+                ))}
+              </View>
+
+              <View style={styles.daysLabel}>
+                {DAYS.map((day, idx) => (
                   <Text
+                    key={idx}
                     style={[
-                      styles.soundText,
+                      styles.dayText,
                       {
-                        color: ritualSound === sound ? C.amber : C.textTertiary,
+                        color: idx === TODAY_IDX ? Colors.amber : Colors.textTertiary,
+                        fontWeight: idx === TODAY_IDX ? '800' : '500',
                       },
                     ]}
                   >
-                    {sound === 'white-noise' ? 'White Noise' : sound.charAt(0).toUpperCase() + sound.slice(1)}
+                    {day}
                   </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-          {previewTimerActive && (
-            <View style={styles.previewBarContainer}>
-              <Animated.View style={[styles.previewBar, { backgroundColor: C.amber }, previewBarStyle]} />
-            </View>
-          )}
-        </View>
-
-        {/* ── Stats Grid ── */}
-        <View style={styles.statsGrid}>
-          <View
-            style={[
-              styles.statsCard,
-              {
-                backgroundColor: C.bgCard,
-                borderColor: '#F2EBE5',
-              },
-            ]}
-          >
-            <View style={styles.statsCardHeader}>
-              <Text style={[styles.statsIcon, { color: C.amber }]}>⏱</Text>
-              <Text style={[styles.statsLabel, { color: C.amber }]}>TODAY</Text>
-            </View>
-            <View style={styles.statsValueRow}>
-              <Text style={[styles.statsValue, { color: C.textPrimary }]}>{todayMinutes}</Text>
-              <Text style={[styles.statsUnit, { color: C.textSecondary }]}>min</Text>
-            </View>
-            <Text style={[styles.statsCaption, { color: C.textTertiary }]}>Focused time</Text>
+                ))}
+              </View>
+            </KeycapSurface>
           </View>
+        </FadeSlideUp>
 
-          <View
-            style={[
-              styles.statsCard,
-              {
-                backgroundColor: C.bgCard,
-                borderColor: '#F2EBE5',
-              },
-            ]}
-          >
-            <View style={styles.statsCardHeader}>
-              <Text style={[styles.statsIcon, { color: '#F97316' }]}>🔥</Text>
-              <Text style={[styles.statsLabel, { color: '#F97316' }]}>STREAK</Text>
-            </View>
-            <View style={styles.statsValueRow}>
-              <Text style={[styles.statsValue, { color: C.textPrimary }]}>{streakDays}</Text>
-              <Text style={[styles.statsUnit, { color: C.textSecondary }]}>days</Text>
-            </View>
-            <Text style={[styles.statsCaption, { color: C.textTertiary }]}>In flow state</Text>
-          </View>
-        </View>
-
-        {/* ── Performance Mode Glass Card ── */}
-        <View
-          style={[
-            styles.performanceCard,
-            {
-              backgroundColor: '#FEF8F2',
-            },
-          ]}
-        >
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.perfTitle, { color: C.textPrimary }]}>Performance Mode</Text>
-            <Text style={[styles.perfSubtitle, { color: C.textSecondary }]}>
-              Enhanced focus for critical milestones.
-            </Text>
-          </View>
-          <Pressable
-            style={[
-              styles.perfButton,
-              {
-                backgroundColor: '#292524',
-              },
-            ]}
-            onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
-          >
-            <Text style={{ fontSize: 18, color: '#fff' }}>⚡</Text>
-          </Pressable>
-        </View>
-
-        {/* ── Weekly Equilibrium Chart ── */}
-        <View
-          style={[
-            styles.chartCard,
-            {
-              backgroundColor: C.bgCard,
-              borderColor: C.border,
-            },
-          ]}
-        >
-          <View style={styles.chartHeader}>
-            <Text style={[styles.chartTitle, { color: C.textPrimary }]}>Weekly Equilibrium</Text>
-            <Text style={[styles.moreIcon, { color: C.textTertiary }]}>⋯</Text>
-          </View>
-
-          {/* Bar Chart */}
-          <View style={styles.barChart}>
-            {weeklyData.map((height, idx) => (
-              <Animated.View
-                key={idx}
-                style={[
-                  styles.barContainer,
-                  idx === 3 ? highlightStyle : {},
-                ]}
-              >
-                <View
-                  style={[
-                    styles.bar,
-                    {
-                      height: `${height}%`,
-                      backgroundColor: idx === 3 ? '#FFE0B2' : '#F9F6F4',
-                    },
-                  ]}
-                />
-              </Animated.View>
-            ))}
-          </View>
-
-          {/* Days Label */}
-          <View style={styles.daysLabel}>
-            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, idx) => (
-              <Text
-                key={idx}
-                style={[
-                  styles.dayText,
-                  {
-                    color: idx === 3 ? C.amber : C.textTertiary,
-                  },
-                ]}
-              >
-                {day}
-              </Text>
-            ))}
-          </View>
-        </View>
+        <View style={{ height: 24 }} />
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+
+      <ProfileSidebar visible={menuOpen} onClose={() => setMenuOpen(false)} />
+
+      {/* ── Custom duration picker ── */}
+      <Modal
+        visible={showDurationPicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowDurationPicker(false)}
+      >
+        <Pressable style={styles.customBackdrop} onPress={() => setShowDurationPicker(false)}>
+          <Pressable style={styles.customCard} onPress={() => {}}>
+            <Text style={styles.customTitle}>Custom duration</Text>
+            <Text style={styles.customHint}>1–999 minutes</Text>
+            <View style={[styles.customInputRow, inputFocused && styles.customInputRowFocused]}>
+              <TextInput
+                style={[styles.customInput, webNoOutline]}
+                value={customMinutes}
+                onChangeText={(v) => setCustomMinutes(v.replace(/[^0-9]/g, '').slice(0, 3))}
+                keyboardType="number-pad"
+                placeholder="25"
+                placeholderTextColor={Colors.textTertiary}
+                selectionColor={Colors.amber}
+                underlineColorAndroid="transparent"
+                autoFocus
+                maxLength={3}
+                returnKeyType="done"
+                onFocus={() => setInputFocused(true)}
+                onBlur={() => setInputFocused(false)}
+                onSubmitEditing={handleCustomSet}
+              />
+              <Text style={styles.customUnit}>min</Text>
+            </View>
+            <View style={styles.customBtnRow}>
+              <KeycapButton
+                radius={14}
+                style={{ flex: 1 }}
+                contentStyle={styles.customBtnFace}
+                onPress={() => setShowDurationPicker(false)}
+              >
+                <Text style={[styles.customBtnText, { color: Colors.textSecondary }]}>Cancel</Text>
+              </KeycapButton>
+              <KeycapButton
+                accent
+                radius={14}
+                style={{ flex: 1 }}
+                contentStyle={styles.customBtnFace}
+                onPress={handleCustomSet}
+                disabled={!isValidCustom}
+              >
+                <Text style={[styles.customBtnText, { color: '#2C2000' }]}>Set</Text>
+              </KeycapButton>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </>
   );
 }
 
-const styles = StyleSheet.create({
+
+const makeStyles = (font: string) => StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: Colors.bg,
+  },
+
   content: { paddingBottom: 60 },
 
+  // Greeting
   greeting: {
     paddingHorizontal: Spacing.xl,
-    marginBottom: Spacing.lg,
-    marginTop: Spacing.md,
+    paddingBottom: 16,
+    paddingTop: 4,
   },
   greetingText: {
-    fontFamily: Typography.fontSans,
-    fontSize: Typography.size['2xl'],
-    fontWeight: Typography.weight.semibold,
-    marginBottom: Spacing.xs,
+    fontFamily: font,
+    fontSize: 22,
+    fontWeight: '700',
+    letterSpacing: -0.4,
+    color: Colors.textPrimary,
+    lineHeight: 28,
+    marginBottom: 4,
   },
   greetingSubtitle: {
-    fontFamily: Typography.fontSans,
-    fontSize: Typography.size.base,
+    fontFamily: font,
+    fontSize: 13,
+    color: Colors.textSecondary,
+    lineHeight: 20,
   },
 
-  heroSection: {
+  // Timer hero card
+  heroCardWrapper: {
+    paddingHorizontal: 16,
+    marginBottom: 10,
+  },
+  heroCardFace: {
+    padding: 20,
+    paddingBottom: 16,
     alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
-    marginBottom: Spacing.xl,
   },
-
-  timerContainer: {
-    marginBottom: Spacing.lg,
-  },
-
-  mascot: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    backgroundColor: '#EBE7DD',
-    justifyContent: 'center',
+  timerRingWrap: {
+    marginBottom: 14,
     alignItems: 'center',
-    marginBottom: Spacing.xl,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 5,
   },
 
-  startBtn: {
+  // Time display (inside ring, as children)
+  timeDisplay: {
+    fontFamily: font,
+    fontSize: 34,
+    fontWeight: '800',
+    letterSpacing: -1.5,
+    color: Colors.textPrimary,
+    lineHeight: 34,
+    marginTop: -2,
+  },
+  timeLabel: {
+    fontFamily: font,
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 2.5,
+    color: Colors.textTertiary,
+    textTransform: 'uppercase',
+  },
+
+  // Start button
+  startBtnWrapper: {
     width: '100%',
-    borderRadius: 30,
-    paddingVertical: 18,
+    marginBottom: 12,
+  },
+  startBtnFace: {
+    paddingVertical: 15,
     alignItems: 'center',
-    marginBottom: Spacing.xl,
-    shadowColor: '#FDBA31',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 4,
+    justifyContent: 'center',
   },
   startBtnText: {
-    fontFamily: Typography.fontSans,
-    fontSize: 16,
-    fontWeight: '500',
+    fontFamily: font,
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#2C2000',
+    letterSpacing: 0.3,
   },
 
+  // Duration pills
   durationRow: {
     flexDirection: 'row',
-    gap: Spacing.sm,
-    width: '100%',
+    gap: 7,
     justifyContent: 'center',
     flexWrap: 'wrap',
   },
-  durationPill: {
-    borderRadius: 24,
-    borderWidth: 1,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: 10,
-    minWidth: 54,
+  durationPillWrapper: {},
+  durationPillFace: {
+    paddingHorizontal: 17,
+    paddingVertical: 8,
     alignItems: 'center',
-  },
-  customPill: {
-    paddingHorizontal: Spacing.xl,
+    justifyContent: 'center',
   },
   durationText: {
-    fontFamily: Typography.fontSans,
-    fontSize: 15,
-    fontWeight: '500',
+    fontFamily: font,
+    fontSize: 13,
+    fontWeight: '600',
   },
 
-  customDurationSection: {
-    paddingHorizontal: Spacing.xl,
-    marginBottom: Spacing.xl,
-  },
-  label: {
-    fontFamily: Typography.fontSans,
-    fontSize: Typography.size.sm,
-    marginBottom: Spacing.sm,
-  },
-  customInputRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  customBtn: {
-    flex: 1,
-    borderRadius: Radius.md,
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
-    borderWidth: 0.5,
-  },
-  customBtnText: {
-    fontFamily: Typography.fontSans,
-    fontWeight: Typography.weight.medium,
-  },
-
+  // Sound section
   soundSection: {
     marginBottom: Spacing.xl,
   },
   soundSectionTitle: {
-    fontFamily: Typography.fontSans,
-    fontSize: 14,
-    fontWeight: '500',
+    fontFamily: font,
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.textSecondary,
     paddingHorizontal: Spacing.xl,
     marginBottom: Spacing.sm,
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
   soundScroll: {
     paddingHorizontal: Spacing.xl,
-    gap: Spacing.sm,
     alignItems: 'center',
-    paddingVertical: 4,
   },
-  soundPill: {
+  soundPillFace: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 24,
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
     gap: 6,
   },
-  soundIcon: {
-    fontSize: 14,
-  },
+  soundIcon: { fontSize: 14 },
   soundText: {
-    fontFamily: Typography.fontSans,
-    fontSize: 14,
-    fontWeight: '500',
+    fontFamily: font,
+    fontSize: 13,
+    fontWeight: '600',
   },
   previewBarContainer: {
     height: 3,
-    backgroundColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: Colors.border,
     marginHorizontal: Spacing.xl,
     marginTop: Spacing.md,
     borderRadius: Radius.full,
@@ -579,151 +706,345 @@ const styles = StyleSheet.create({
   },
   previewBar: {
     height: '100%',
+    backgroundColor: Colors.amber,
     borderRadius: Radius.full,
   },
 
+  // Stats grid
   statsGrid: {
     flexDirection: 'row',
-    gap: Spacing.md,
-    paddingHorizontal: Spacing.xl,
-    marginBottom: Spacing.xl,
+    gap: 8,
+    paddingHorizontal: 16,
+    marginBottom: 10,
   },
-  statsCard: {
-    flex: 1,
-    borderRadius: 24,
-    borderWidth: 1,
-    padding: Spacing.xl,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 2,
+  statsCardWrapper: { flex: 1 },
+  statsCardFace: {},
+  statsCardInner: {
+    padding: 14,
   },
   statsCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Spacing.sm,
-    gap: 6,
+    gap: 5,
+    marginBottom: 8,
   },
-  statsIcon: {
-    fontSize: 14,
-  },
+  statsIcon: { fontSize: 13 },
   statsLabel: {
-    fontFamily: Typography.fontSans,
-    fontSize: 12,
-    letterSpacing: 0.5,
+    fontFamily: font,
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1.5,
     textTransform: 'uppercase',
-    fontWeight: '600',
   },
   statsValueRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    gap: 4,
+    gap: 3,
   },
   statsValue: {
-    fontFamily: Typography.fontSans,
+    fontFamily: font,
     fontSize: 28,
-    fontWeight: '600',
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    letterSpacing: -0.5,
+    lineHeight: 32,
   },
   statsUnit: {
-    fontFamily: Typography.fontSans,
-    fontSize: 14,
-    fontWeight: '400',
+    fontFamily: font,
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.textTertiary,
   },
   statsCaption: {
-    fontFamily: Typography.fontSans,
-    fontSize: 12,
+    fontFamily: font,
+    fontSize: 10,
+    color: Colors.textTertiary,
     marginTop: 4,
+    fontWeight: '500',
   },
 
-  performanceCard: {
-    marginHorizontal: Spacing.xl,
-    borderRadius: 24,
-    padding: Spacing.xl,
+  // General card padding wrapper
+  cardPad: {
+    paddingHorizontal: 16,
+    marginBottom: 10,
+  },
+
+  // Performance mode card
+  performanceFace: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.xl,
+    justifyContent: 'space-between',
+    padding: 14,
+    paddingHorizontal: 16,
   },
   perfTitle: {
-    fontFamily: Typography.fontSans,
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 4,
+    fontFamily: font,
+    fontSize: 14,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    marginBottom: 2,
   },
   perfSubtitle: {
-    fontFamily: Typography.fontSans,
-    fontSize: 14,
-    lineHeight: 20,
-    paddingRight: Spacing.md,
+    fontFamily: font,
+    fontSize: 11,
+    color: Colors.textSecondary,
+    lineHeight: 16,
   },
-  perfButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
+  boltBtnWrapper: { flexShrink: 0 },
+  boltBtnFace: {
+    width: 40,
+    height: 40,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    justifyContent: 'center',
   },
 
-  chartCard: {
-    marginHorizontal: Spacing.xl,
-    borderRadius: 24,
-    borderWidth: 1,
-    padding: Spacing.xl,
-    paddingBottom: Spacing.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 2,
+  // Nudge card
+  nudgeFace: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    paddingHorizontal: 16,
+    gap: Spacing.md,
+  },
+  nudgeTitle: {
+    fontFamily: font,
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    marginBottom: 3,
+  },
+  nudgeSubtitle: {
+    fontFamily: font,
+    fontSize: 12,
+    color: Colors.textSecondary,
+    lineHeight: 17,
+  },
+  nudgeBtnWrapper: { flexShrink: 0 },
+  nudgeBtnFace: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nudgeBtnText: {
+    fontFamily: font,
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#2C2000',
+  },
+
+  // Weekly chart
+  chartFace: {
+    padding: 16,
+    paddingBottom: 14,
   },
   chartHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.xl,
+    marginBottom: 13,
   },
   chartTitle: {
-    fontFamily: Typography.fontSans,
-    fontSize: 16,
-    fontWeight: '500',
+    fontFamily: font,
+    fontSize: 14,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    letterSpacing: -0.2,
   },
   moreIcon: {
-    fontSize: 24,
-    lineHeight: 24,
+    color: Colors.textTertiary,
+    fontSize: 17,
+    letterSpacing: 1,
   },
 
+  // Bar chart
   barChart: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    height: 140,
-    gap: Spacing.sm,
-    marginBottom: Spacing.lg,
+    height: 76,
+    marginBottom: 9,
+    gap: 5,
   },
-  barContainer: {
+  barCol: {
     flex: 1,
     height: '100%',
     justifyContent: 'flex-end',
-    alignItems: 'center',
   },
-  bar: {
-    width: '60%',
-    borderRadius: 16,
+  barOuter: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'flex-end',
   },
-
+  barDepth: {
+    borderRadius: 6,
+    paddingBottom: 2,
+  },
+  barFace: {
+    borderRadius: 5,
+    minHeight: 4,
+    overflow: 'hidden',
+  },
+  barShine: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+    backgroundColor: 'rgba(255,245,160,0.55)',
+    borderTopLeftRadius: 5,
+    borderTopRightRadius: 5,
+  },
   daysLabel: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.sm,
   },
   dayText: {
-    fontFamily: Typography.fontSans,
-    fontSize: 13,
+    flex: 1,
+    textAlign: 'center',
+    fontFamily: font,
+    fontSize: 11,
     fontWeight: '500',
   },
+
+  // Rive test section
+  testFace: {
+    padding: 16,
+    alignItems: 'center',
+  },
+  testHeader: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  testTitle: {
+    fontFamily: font,
+    fontSize: 14,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    marginBottom: 4,
+  },
+  testSubtitle: {
+    fontFamily: font,
+    fontSize: 12,
+    color: Colors.textSecondary,
+  },
+  testIconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Font tester
+  fontTesterRow: {
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    alignItems: 'flex-start',
+  },
+  fontTesterFace: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    gap: 8,
+  },
+  fontTesterLabel: {
+    fontFamily: font,
+    fontSize: 18,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    letterSpacing: -0.5,
+  },
+  fontTesterText: {
+    fontFamily: font,
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  fontTesterHint: {
+    fontFamily: font,
+    fontSize: 11,
+    fontWeight: '500',
+    color: Colors.textTertiary,
+    marginLeft: 4,
+  },
+
+  // Custom duration picker (modal)
+  customBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  customCard: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: Colors.bgCard,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    padding: 20,
+    gap: 10,
+  },
+  customTitle: {
+    fontFamily: font,
+    fontSize: 17,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    letterSpacing: -0.3,
+  },
+  customHint: {
+    fontFamily: font,
+    fontSize: 12,
+    color: Colors.textTertiary,
+    marginBottom: 4,
+  },
+  customInputRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: Colors.bgInput,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: Colors.borderMid,
+  },
+  customInputRowFocused: {
+    borderColor: Colors.amber,
+    backgroundColor: Colors.amberDim,
+  },
+  customInput: {
+    flex: 1,
+    fontFamily: font,
+    fontSize: 28,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    letterSpacing: -0.5,
+    padding: 0,
+  },
+  customUnit: {
+    fontFamily: font,
+    fontSize: 14,
+    color: Colors.textTertiary,
+    fontWeight: '600',
+  },
+  customBtnRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 6,
+  },
+  customBtnFace: {
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  customBtnText: {
+    fontFamily: font,
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
 });
+
+// Default static stylesheet — used by sub-components defined outside HomeScreen.
+// HomeScreen itself shadows this with a useMemo'd dynamic stylesheet so the
+// active font flows through. Sub-components override fontFamily inline via a `font` prop.
+const styles = makeStyles(Typography.fontSans);
