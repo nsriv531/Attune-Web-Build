@@ -12,7 +12,8 @@ import { useRouter } from 'expo-router';
 import { OnboardingLayout, CTAButton } from '@/components/OnboardingLayout';
 import { KeycapSurface } from '@/components/KeycapSurface';
 import { SoliAvatar } from '@/components/Mascots';
-import { useOnboardingStore } from '@/stores/onboardingStore';
+import { SageAvatar } from '@/components/SageAvatar';
+import { useOnboardingStore } from '@/backend/stores/onboardingStore';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 
 const TIME_LABELS: Record<string, string> = {

@@ -13,8 +13,9 @@ import * as Haptics from 'expo-haptics';
 import { CTAButton } from '@/components/OnboardingLayout';
 import { KeycapSurface } from '@/components/KeycapSurface';
 import { SoliAvatar } from '@/components/Mascots';
-import { useOnboardingStore } from '@/stores/onboardingStore';
-import { useUserStore } from '@/stores/userStore';
+import { SageAvatar } from '@/components/SageAvatar';
+import { useOnboardingStore } from '@/backend/stores/onboardingStore';
+import { useUserStore } from '@/backend/stores/userStore';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 
 const SOLI_MESSAGES: Record<string, string> = {
@@ -59,8 +60,7 @@ function RewardCard({
 
 export default function FirstRewardScreen() {
   const router = useRouter();
-  const { soliForm, coachingStyle } = useOnboardingStore();
-  const { addXP, incrementStreak } = useUserStore();
+  const { coachingStyle } = useOnboardingStore();
 
   const soliScale = useSharedValue(0.5);
   const soliOpacity = useSharedValue(0);
@@ -74,9 +74,6 @@ export default function FirstRewardScreen() {
     soliOpacity.value = withTiming(1, { duration: 400 });
     titleOpacity.value = withDelay(200, withTiming(1, { duration: 400 }));
     titleY.value = withDelay(200, withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) }));
-
-    addXP(10);
-    incrementStreak();
   }, []);
 
   const soliStyle = useAnimatedStyle(() => ({

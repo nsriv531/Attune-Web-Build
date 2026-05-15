@@ -13,8 +13,8 @@ import * as Haptics from 'expo-haptics';
 import { SoliAvatar } from '@/components/Mascots';
 import { CTAButton } from '@/components/OnboardingLayout';
 import { KeycapSurface } from '@/components/KeycapSurface';
-import { useOnboardingStore } from '@/stores/onboardingStore';
-import { useSessionStore } from '@/stores/sessionStore';
+import { useOnboardingStore } from '@/backend/stores/onboardingStore';
+import { useSessionStore } from '@/backend/stores/sessionStore';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 import type { SessionDuration } from '@/types';
 

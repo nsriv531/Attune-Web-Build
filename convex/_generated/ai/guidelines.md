@@ -312,7 +312,7 @@ export default crons;
 
 - Use `convex-test` with `vitest` and `@edge-runtime/vm` to test Convex functions. Always install the latest versions of these packages. Configure vitest with `environment: "edge-runtime"` in `vitest.config.ts`.
 
-Test files go inside the `convex/` directory. You must pass a module map from `import.meta.glob` to `convexTest`:
+Test files go inside the `convex/` directory. You must pass a module map from `process.glob` to `convexTest`:
 
 ```typescript
 /// <reference types="vite/client" />
@@ -321,7 +321,7 @@ import { expect, test } from "vitest";
 import { api } from "./_generated/api";
 import schema from "./schema";
 
-const modules = import.meta.glob("./**/*.ts");
+const modules = process.glob("./**/*.ts");
 
 test("some behavior", async () => {
   const t = convexTest(schema, modules);
@@ -331,7 +331,7 @@ test("some behavior", async () => {
 });
 ```
 
-The `modules` argument is required so convex-test can discover and load function files. The `/// <reference types="vite/client" />` directive is needed for TypeScript to recognize `import.meta.glob`.
+The `modules` argument is required so convex-test can discover and load function files. The `/// <reference types="vite/client" />` directive is needed for TypeScript to recognize `process.glob`.
 
 ## File storage guidelines
 

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Attune - Consistency &amp; Progress</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#ffddb4",
+                        "on-surface": "#071e27",
+                        "on-primary-fixed-variant": "#633f00",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed": "#1e1c0e",
+                        "on-surface-variant": "#514536",
+                        "on-tertiary-container": "#465359",
+                        "error": "#ba1a1a",
+                        "secondary-fixed-dim": "#ccc6b1",
+                        "surface-variant": "#cfe6f2",
+                        "on-secondary-fixed-variant": "#4a4737",
+                        "on-secondary-container": "#676351",
+                        "secondary": "#625f4d",
+                        "primary-container": "#ffb74d",
+                        "error-container": "#ffdad6",
+                        "surface-container-highest": "#cfe6f2",
+                        "outline": "#837564",
+                        "tertiary-container": "#b9c7ce",
+                        "surface-container-low": "#e6f6ff",
+                        "background": "#f3faff",
+                        "tertiary-fixed-dim": "#bbc9d0",
+                        "on-secondary": "#ffffff",
+                        "inverse-primary": "#ffb954",
+                        "tertiary-fixed": "#d7e5ec",
+                        "on-primary-fixed": "#291800",
+                        "surface-dim": "#c7dde9",
+                        "primary": "#835500",
+                        "on-primary-container": "#714900",
+                        "on-error-container": "#93000a",
+                        "surface-bright": "#f3faff",
+                        "surface": "#f3faff",
+                        "surface-container": "#dbf1fe",
+                        "outline-variant": "#d6c4b0",
+                        "primary-fixed-dim": "#ffb954",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-background": "#071e27",
+                        "secondary-fixed": "#e9e2cc",
+                        "on-tertiary-fixed-variant": "#3c494f",
+                        "on-tertiary-fixed": "#101d23",
+                        "inverse-surface": "#1e333c",
+                        "secondary-container": "#e6e0c9",
+                        "surface-container-high": "#d5ecf8",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#835500",
+                        "inverse-on-surface": "#dff4ff",
+                        "tertiary": "#536067"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "48px",
+                        "unit": "8px",
+                        "sm": "12px",
+                        "xs": "4px",
+                        "xl": "80px",
+                        "md": "24px",
+                        "margin": "32px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                        "body-md": ["16px", {"lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400"}],
+                        "headline-lg": ["40px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-md": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-md": ["28px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .pebble-shape {
+            border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%;
+        }
+        .pebble-shape-alt {
+            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#FFFBF5] text-on-surface font-body-md min-h-screen">
+<header class="bg-[#FFFBF5] dark:bg-stone-950 flex justify-between items-center px-6 py-4 w-full docked full-width top-0 shadow-[0_4px_20px_-2px_rgba(255,183,77,0.1)] z-50">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
+<img alt="Profile" data-alt="A professional woman with a calm and focused expression, sitting in a sun-drenched workspace with soft amber lighting. The scene is minimalist and airy, with warm wooden textures and delicate indoor plants in the background, evoking a sense of flow and productivity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAc0vHjzLSE13Izx5_r1wmlbVtSdYWGzUm9Aj1QjyN84672XWl7uSJQycK1pdA8kH44RyGLTYRxc7y66dO2W3pBiz3SyRso_Z_ut7U-kUYnHINiotyiE_9S2dUsD-H5RpPL9cm4intuub3lrKiXLR7fHEACWfnkusKedk8Kl7Yiiewp_YGYP3GFcHffUdgb8E_u-7c9ZwkAa10ixG2sIkQ3gmp-dnrOOX2WRW2vkuATKSJiqkeZpmLZ_oXo_8MpWhoGcXakmRmTag"/>
+</div>
+<span class="font-['Plus_Jakarta_Sans'] font-extrabold text-2xl text-stone-800 dark:text-stone-100 tracking-tighter">Attune</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#FFB74D] dark:text-[#FFCC80] text-2xl hover:opacity-80 transition-opacity cursor-pointer">notifications</span>
+</div>
+</header>
+<main class="max-w-md mx-auto px-margin pt-md pb-xl">
+<section class="mb-lg">
+<h1 class="font-headline-md text-headline-md text-on-surface mb-xs">Your Progress</h1>
+<p class="font-body-md text-label-md text-on-surface-variant">Consistency is the secret to focus.</p>
+</section>
+<section class="mb-lg space-y-md">
+<div class="bg-surface-container-lowest p-md rounded-[32px] shadow-[0_10px_40px_-10px_rgba(131,85,0,0.08)]">
+<div class="flex justify-between items-end mb-sm">
+<div>
+<span class="font-label-sm text-primary uppercase tracking-widest">Weekly Goal</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">4 / 7 <span class="text-label-md text-on-surface-variant">days</span></h2>
+</div>
+<span class="font-label-md text-primary-container">57% Complete</span>
+</div>
+<div class="h-3 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary-container w-[57%] rounded-full shadow-[0_0_12px_rgba(255,183,77,0.4)]"></div>
+</div>
+</div>
+<div class="flex justify-between items-center px-xs">
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-14 bg-primary-container text-on-primary pebble-shape flex items-center justify-center shadow-md">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<span class="font-label-sm text-on-surface-variant">Mon</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-14 bg-primary-container text-on-primary pebble-shape-alt flex items-center justify-center shadow-md">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<span class="font-label-sm text-on-surface-variant">Tue</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-14 bg-surface-container text-primary-container pebble-shape flex items-center justify-center">
+<span class="material-symbols-outlined">circle</span>
+</div>
+<span class="font-label-sm text-on-surface-variant">Wed</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-14 bg-primary-container text-on-primary pebble-shape-alt flex items-center justify-center shadow-md">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<span class="font-label-sm text-on-surface-variant">Thu</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-14 bg-primary-container text-on-primary pebble-shape flex items-center justify-center shadow-md">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<span class="font-label-sm text-on-surface-variant">Fri</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<div class="w-12 h-14 border-2 border-dashed border-outline-variant text-outline-variant pebble-shape-alt flex items-center justify-center">
+<span class="material-symbols-outlined">add</span>
+</div>
+<span class="font-label-sm text-on-surface-variant">Sat</span>
+</div>
+</div>
+</section>
+<section class="grid grid-cols-2 gap-gutter mb-lg">
+<div class="bg-primary-fixed p-md rounded-3xl flex flex-col justify-between aspect-square shadow-sm">
+<span class="material-symbols-outlined text-on-primary-fixed-variant text-3xl">local_fire_department</span>
+<div>
+<h3 class="font-headline-md text-headline-md text-on-primary-fixed">3</h3>
+<p class="font-label-sm text-on-primary-fixed-variant">Current Streak</p>
+</div>
+</div>
+<div class="bg-secondary-fixed p-md rounded-3xl flex flex-col justify-between aspect-square shadow-sm">
+<span class="material-symbols-outlined text-on-secondary-fixed-variant text-3xl">workspace_premium</span>
+<div>
+<h3 class="font-headline-md text-headline-md text-on-secondary-fixed">7</h3>
+<p class="font-label-sm text-on-secondary-fixed-variant">Best Streak</p>
+</div>
+</div>
+</section>
+<section class="mb-lg">
+<div class="relative overflow-hidden bg-on-surface p-md rounded-3xl text-surface">
+<div class="absolute top-[-20px] right-[-20px] w-32 h-32 bg-primary-container opacity-20 rounded-full blur-2xl"></div>
+<div class="relative z-10 flex items-start gap-md">
+<div class="bg-primary-container/20 p-sm rounded-2xl">
+<span class="material-symbols-outlined text-primary-container">lightbulb</span>
+</div>
+<div>
+<h4 class="font-label-md text-primary-container mb-xs uppercase">Focus Insight</h4>
+<p class="font-body-md text-surface-variant">You're most consistent between <span class="text-primary-container font-semibold">10-11 AM</span>. Your deep work sessions are 25% longer during this window.</p>
+</div>
+</div>
+</div>
+</section>
+<section class="mb-lg">
+<div class="bg-surface-container-high rounded-[32px] p-md flex items-center justify-between">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-primary">calendar_add_on</span>
+</div>
+<div>
+<h4 class="font-label-md text-on-surface">Finish the week strong</h4>
+<p class="font-label-sm text-on-surface-variant">Schedule 2 more focus days</p>
+</div>
+</div>
+<button class="bg-primary text-on-primary h-12 px-6 rounded-full font-label-md hover:opacity-90 active:scale-95 transition-all shadow-md">
+                    Plan
+                </button>
+</div>
+</section>
+<section class="mb-md">
+<h3 class="font-label-md text-on-surface mb-sm px-xs">Past Highlights</h3>
+<div class="overflow-x-auto flex gap-md pb-md">
+<div class="flex-shrink-0 w-64 h-40 rounded-3xl overflow-hidden relative group">
+<img class="w-full h-full object-cover" data-alt="A warm, atmospheric shot of a minimalist wooden desk at sunset. A clean notebook, a refined ceramic mug, and a single pen sit in the glow of the golden hour light coming through a window. The aesthetic is serene, organized, and deeply focused, representing a perfect deep work environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2xctGarAs_pryyKry1inw8ZcuYTRZbVcGHKRwHjI4K_i2MQrn7_4_1Ido2llqyo6FqZc3AwEQZ8CLPJO7QmL4ufj1hX1foFme6EqO79HYrmFGa1w7SmtuevYLKK3c1lZy1AkuhknNlcqV0bU4LwtjF2H9Lqaf0i4FSXVHAh_Van1WPiYugmeU3O23DSpAYDYWJiueLQzCttwi6euE6ENpMg8pFldZ38hC4nFLOQYu9l9RrZ2fppQXfZUc6DLieP7MkTUPT55OcQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-md">
+<span class="font-label-sm text-white/80">Last Tuesday</span>
+<span class="font-label-md text-white">90m Deep Focus</span>
+</div>
+</div>
+<div class="flex-shrink-0 w-64 h-40 rounded-3xl overflow-hidden relative group">
+<img class="w-full h-full object-cover" data-alt="A serene morning scene featuring a steaming cup of tea and an open book on a light-colored linen surface. Soft, diffused daylight fills the space, creating a peaceful and quiet mood. The visual style is minimalist and restorative, emphasizing a calm start to a productive day." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAHA4uHex1ul9BN5LFfCEK6nxTJ6hpW9-GzuG_aV7dO_AJ6BtpmQbnXdkvHihdtvDo6nKDeILQ3djBjM_O6jREcLAV5e8VvNbjkDSH2B4vrxPF1XsNOxNlcCwDZWqncdEJgRs6T_zWhjmhPz9JomS_8nQAZWjIR073Qx2F5apCzyLcms7Dw1w07s2LG63YSj28FKdwBm5e2ON8imA5jAV9uPabC8eSPcqboMG_Q1rj6__o5zbb-Wqt-bfKU660YeZidlOhDb44hTQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-md">
+<span class="font-label-sm text-white/80">Yesterday</span>
+<span class="font-label-md text-white">Restorative Break</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-white/80 dark:bg-stone-900/80 backdrop-blur-md rounded-t-[32px] shadow-[0_-10px_40px_-10px_rgba(69,90,100,0.08)]">
+<a class="flex flex-col items-center justify-center text-[#455A64]/60 dark:text-stone-400 px-4 py-2 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors" href="#">
+<span class="material-symbols-outlined mb-1">home</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[11px] font-medium">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#455A64]/60 dark:text-stone-400 px-4 py-2 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors" href="#">
+<span class="material-symbols-outlined mb-1">timer</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[11px] font-medium">Sessions</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#FFB74D]/10 text-[#FFB74D] rounded-2xl px-4 py-2 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">bar_chart</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[11px] font-medium">Progress</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#455A64]/60 dark:text-stone-400 px-4 py-2 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors" href="#">
+<span class="material-symbols-outlined mb-1">library_books</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[11px] font-medium">Resources</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#455A64]/60 dark:text-stone-400 px-4 py-2 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors" href="#">
+<span class="material-symbols-outlined mb-1">settings</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[11px] font-medium">Settings</span>
+</a>
+</nav>
+</body></html>

@@ -5,9 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { DistractionEvent, FocusFeeling, SessionDuration, RitualSound, ReflectionReason, SoliState } from '@/types';
 
 // ─── Focus score algorithm ───────────────────────────────────────────────────
-// Score starts at 100. Each distraction event deducts points based on severity.
-// Idle < 30s = -2, app switch = -5, idle > 60s = -8, scroll burst = -3
-function calculateFocusScore(events: DistractionEvent[], durationSeconds: number): number {
+export function calculateFocusScore(events: DistractionEvent[], durationSeconds: number): number {
   let penalty = 0;
   for (const e of events) {
     if (e.type === 'app-switch') penalty += 5;
@@ -16,30 +14,26 @@ function calculateFocusScore(events: DistractionEvent[], durationSeconds: number
       penalty += e.durationSeconds > 60 ? 8 : 2;
     }
   }
-  // Normalise: more distractions per minute = higher penalty weight
   const minutes = durationSeconds / 60;
-  const densityMultiplier = Math.min(1 + (events.length / (minutes * 2)), 2);
+  const densityMultiplier = Math.min(1 + (events.length / (Math.max(minutes, 1) * 2)), 2);
   return Math.max(0, Math.round(100 - penalty * densityMultiplier));
 }
 
 // ─── XP formula ─────────────────────────────────────────────────────────────
-// Base XP = duration in minutes. Bonus for high focus scores.
-function calculateXP(durationMinutes: number, focusScore: number): number {
-  const base = durationMinutes;
+export function calculateXP(durationMinutes: number, focusScore: number): number {
+  const base = Math.floor(durationMinutes);
   const bonus = focusScore >= 90 ? 20 : focusScore >= 75 ? 10 : focusScore >= 60 ? 5 : 0;
   return base + bonus;
 }
 
 // ─── Store shape ─────────────────────────────────────────────────────────────
 interface SessionState {
-  // Config (set before session starts)
   subject: string;
   subjectId: string;
   durationMinutes: SessionDuration;
   ritualSound: RitualSound;
   setupComplete: boolean;
 
-  // Runtime
   isActive: boolean;
   isPaused: boolean;
   secondsRemaining: number;
@@ -47,12 +41,16 @@ interface SessionState {
   startedAt: number | null;
   distractionEvents: DistractionEvent[];
 
+<<<<<<< HEAD:stores/sessionStore.ts
   // Soli
   soliMessage: string;
   soliState: SoliState;
+=======
+  sageMessage: string;
+  sageState: 'idle' | 'watching' | 'nudge' | 'alert' | 'celebrate' | 'excessive_celebration';
+>>>>>>> dev:backend/stores/sessionStore.ts
   consecutiveDistractionSeconds: number;
 
-  // Computed after end
   focusScore: number;
   xpEarned: number;
   feeling: FocusFeeling | null;
@@ -60,7 +58,6 @@ interface SessionState {
   reflectionReason: ReflectionReason | null;
   reflectionNote: string;
 
-  // Actions
   setSubject: (subject: string, id: string) => void;
   setDuration: (duration: SessionDuration) => void;
   setRitualSound: (sound: RitualSound) => void;
@@ -127,12 +124,10 @@ export const useSessionStore = create<SessionState>()(
       reflectionReason: null,
       reflectionNote: '',
 
-      // ─ Config setters ──────────────────────────────────────────────────────────
       setSubject: (subject, id) => set({ subject, subjectId: id }),
       setDuration: (duration) => set({ durationMinutes: duration, secondsRemaining: duration * 60 }),
       setRitualSound: (ritualSound) => set({ ritualSound }),
 
-      // ─ Session lifecycle ───────────────────────────────────────────────────────
       startSession: () =>
         set((s) => ({
           isActive: true,
@@ -158,7 +153,6 @@ export const useSessionStore = create<SessionState>()(
           const secondsRemaining = s.secondsRemaining - 1;
           const secondsElapsed = s.secondsElapsed + 1;
 
-          // Rotate Sage's message every 5 minutes
           const shouldRefreshMsg = secondsElapsed % 300 === 0;
 
           return {
@@ -191,9 +185,14 @@ export const useSessionStore = create<SessionState>()(
           const events = [...s.distractionEvents, event];
           const consecutive = s.consecutiveDistractionSeconds + event.durationSeconds;
 
+<<<<<<< HEAD:stores/sessionStore.ts
           // Escalate Sage state based on consecutive distraction time
           let soliState = s.soliState;
           let soliMessage = s.soliMessage;
+=======
+          let sageState = s.sageState;
+          let sageMessage = s.sageMessage;
+>>>>>>> dev:backend/stores/sessionStore.ts
 
           if (consecutive >= 60) {
             soliState = 'alert';
@@ -257,7 +256,7 @@ export const useSessionStore = create<SessionState>()(
         subjectId: state.subjectId,
         durationMinutes: state.durationMinutes,
         ritualSound: state.ritualSound,
-      }), // only persist config settings, not active run state
+      }),
     }
   )
 );

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { createAudioPlayer } from 'expo-audio';
-import { useSessionStore } from '@/stores/sessionStore';
+import { useSessionStore } from '@/backend/stores/sessionStore';
 import { fetchTracksByCategory, FreeToUseTrack } from '@/lib/freetouse';
 import { useConvex } from 'convex/react';
 
@@ -20,7 +20,7 @@ export function useRitualAudio(isPreview = false) {
   
   // Track if preview should be playing (15s limit)
   const [previewTimerActive, setPreviewActive] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Use a ref to track the last sound to avoid auto-triggering on mount
   const lastSoundRef = useRef<string>(ritualSound);
@@ -93,13 +93,19 @@ export function useRitualAudio(isPreview = false) {
     }
 
     if (ritualSound === 'lofi') {
-      if (!currentTrack?.url) return;
+      if (!currentTrack?.url) {
+        setPlayer(null);
+        return;
+      }
       source = currentTrack.url;
     } else {
       source = LOCAL_SOUNDS[ritualSound];
     }
 
-    if (!source) return;
+    if (!source) {
+      setPlayer(null);
+      return;
+    }
 
     let newPlayer: any = null;
     let subscription: any = null;
@@ -131,6 +137,7 @@ export function useRitualAudio(isPreview = false) {
       if (newPlayer) {
         try {
           newPlayer.pause();
+          newPlayer.release();
         } catch (e) {}
       }
     };

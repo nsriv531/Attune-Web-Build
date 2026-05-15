@@ -10,7 +10,7 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { OnboardingLayout, CTAButton } from '@/components/OnboardingLayout';
 import { KeycapButton } from '@/components/KeycapSurface';
-import { useOnboardingStore } from '@/stores/onboardingStore';
+import { useOnboardingStore } from '@/backend/stores/onboardingStore';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 
 const DISTRACTIONS = [

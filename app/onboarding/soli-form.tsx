@@ -11,7 +11,8 @@ import * as Haptics from 'expo-haptics';
 import { OnboardingLayout, CTAButton } from '@/components/OnboardingLayout';
 import { KeycapButton } from '@/components/KeycapSurface';
 import { SoliAvatar } from '@/components/Mascots';
-import { useOnboardingStore } from '@/stores/onboardingStore';
+import { SageAvatar } from '@/components/SageAvatar';
+import { useOnboardingStore} from '@/backend/stores/onboardingStore';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 
 const VIBES: { key: string; label: string; hint: string }[] = [

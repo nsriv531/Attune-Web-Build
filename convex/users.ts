@@ -8,7 +8,8 @@ import { v } from "convex/values";
 export const store = mutation({
   args: {
     name: v.string(),
-    email: v.optional(v.string()),
+    email: v.string(),
+    age: v.number(),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -23,36 +24,123 @@ export const store = mutation({
       .unique();
 
     if (user !== null) {
-      // If we do, maybe update their name/email if they changed
-      if (user.name !== args.name || user.email !== args.email) {
-        await ctx.db.patch(user._id, { name: args.name, email: args.email });
+      // If we do, maybe update their name/email/age if they changed
+      if (user.name !== args.name || user.email !== args.email || user.age !== args.age) {
+        await ctx.db.patch(user._id, { name: args.name, email: args.email, age: args.age });
       }
       return user._id;
     }
 
     // If not, create a new user
-    return await ctx.db.insert("users", {
+    const userId = await ctx.db.insert("users", {
       tokenIdentifier: identity.tokenIdentifier,
       name: args.name,
       email: args.email,
-      xp: 0,
+      age: args.age,
+      xpScore: 0,
+      coins: 500, // Starting currency
+      unlockedItems: [],
+      equippedItems: {},
       streakDays: 0,
       totalSessions: 0,
-      isPremium: false,
+    });
+
+    // Initialize default avatar for the new user
+    await ctx.db.insert("avatars", {
+      userId,
+      animalType: "cat",
+      hairColor: "brown",
+      skinColor: "fair",
+      hat: "none",
+      clothing: "none",
+      accessory: "none",
+    });
+
+    return userId;
+  },
+});
+
+export const purchaseAvatarItem = mutation({
+  args: {
+    itemId: v.string(),
+    price: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+
+    if (!user) throw new Error("User not found");
+
+    if (user.unlockedItems.includes(args.itemId)) {
+      throw new Error("Item already owned");
+    }
+
+    if (user.coins < args.price) {
+      throw new Error("Not enough coins");
+    }
+
+    await ctx.db.patch(user._id, {
+      coins: user.coins - args.price,
+      unlockedItems: [...user.unlockedItems, args.itemId],
     });
   },
 });
 
-export const currentUser = query({
-  args: {},
-  handler: async (ctx) => {
+export const equipAvatarItem = mutation({
+  args: {
+    type: v.string(),
+    itemId: v.string(),
+  },
+  handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return null;
+    if (!identity) throw new Error("Not authenticated");
 
-    return await ctx.db
+    const user = await ctx.db
       .query("users")
       .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
       .unique();
+
+    if (!user) throw new Error("User not found");
+
+    if (!user.unlockedItems.includes(args.itemId)) {
+      throw new Error("Item not owned");
+    }
+
+    await ctx.db.patch(user._id, {
+      equippedItems: {
+        ...user.equippedItems,
+        [args.type]: args.itemId,
+      },
+    });
+  },
+});
+
+export const unequipAvatarItem = mutation({
+  args: {
+    type: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+
+    if (!user) throw new Error("User not found");
+
+    const newEquipped = { ...user.equippedItems };
+    delete newEquipped[args.type];
+
+    await ctx.db.patch(user._id, {
+      equippedItems: newEquipped,
+    });
   },
 });
 
@@ -81,6 +169,69 @@ export const updateSpotifyTokens = mutation({
   },
 });
 
+export const currentUser = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+    
+    if (!user) return null;
+
+    const avatar = await ctx.db
+      .query("avatars")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .unique();
+
+    const subscription = await ctx.db
+      .query("subscriptions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .filter(q => q.eq(q.field("status"), "active"))
+      .first();
+
+    return {
+      ...user,
+      avatar,
+      isPremium: !!subscription,
+    };
+  },
+});
+
+export const updateAvatar = mutation({
+  args: {
+    animalType: v.optional(v.union(v.literal("cat"), v.literal("dog"), v.literal("fox"), v.literal("bear"), v.literal("rabbit"), v.literal("koala"))),
+    hairColor: v.optional(v.union(v.literal("black"), v.literal("brown"), v.literal("blonde"), v.literal("red"), v.literal("blue"), v.literal("pink"), v.literal("white"))),
+    skinColor: v.optional(v.union(v.literal("fair"), v.literal("tan"), v.literal("brown"), v.literal("dark"))),
+    hat: v.optional(v.union(v.literal("none"), v.literal("cap"), v.literal("beanie"), v.literal("crown"), v.literal("wizard"))),
+    clothing: v.optional(v.union(v.literal("none"), v.literal("shirt"), v.literal("hoodie"), v.literal("scarf"))),
+    accessory: v.optional(v.union(v.literal("none"), v.literal("glasses"), v.literal("sunglasses"), v.literal("monocle"))),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+
+    if (!user) throw new Error("User not found");
+
+    const avatar = await ctx.db
+      .query("avatars")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .unique();
+
+    if (!avatar) throw new Error("Avatar not found");
+
+    await ctx.db.patch(avatar._id, args);
+  },
+});
+
 export const deleteAccount = mutation({
   args: {},
   handler: async (ctx) => {
@@ -92,37 +243,47 @@ export const deleteAccount = mutation({
       .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
       .unique();
 
-    if (!user) return; // User already deleted or doesn't exist
+    if (!user) return;
 
-    // Delete related sessions
+    // Delete related records
     const sessions = await ctx.db
       .query("sessions")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
 
     for (const session of sessions) {
-      // Delete distractions related to each session
-      const distractions = await ctx.db
-        .query("distractions")
+      const feedbacks = await ctx.db
+        .query("feedback")
         .withIndex("by_session", (q) => q.eq("sessionId", session._id))
         .collect();
-      for (const d of distractions) {
-        await ctx.db.delete(d._id);
-      }
+      for (const f of feedbacks) await ctx.db.delete(f._id);
       await ctx.db.delete(session._id);
     }
 
-    // Delete recommendations
-    const recommendations = await ctx.db
-      .query("recommendations")
+    const avatar = await ctx.db
+      .query("avatars")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .unique();
+    if (avatar) await ctx.db.delete(avatar._id);
+
+    const subscriptions = await ctx.db
+      .query("subscriptions")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
-    
-    for (const rec of recommendations) {
-      await ctx.db.delete(rec._id);
-    }
+    for (const s of subscriptions) await ctx.db.delete(s._id);
 
-    // Finally, delete the user
+    const sweetSpot = await ctx.db
+      .query("insightsSweetSpot")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .unique();
+    if (sweetSpot) await ctx.db.delete(sweetSpot._id);
+
+    const peak = await ctx.db
+      .query("insightsPeakDaysHours")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .unique();
+    if (peak) await ctx.db.delete(peak._id);
+
     await ctx.db.delete(user._id);
   },
 });

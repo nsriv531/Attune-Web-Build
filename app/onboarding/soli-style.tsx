@@ -11,7 +11,7 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { OnboardingLayout, CTAButton } from '@/components/OnboardingLayout';
 import { KeycapButton } from '@/components/KeycapSurface';
-import { useOnboardingStore, type CoachingStyle } from '@/stores/onboardingStore';
+import { useOnboardingStore, type CoachingStyle } from '@/backend/stores/onboardingStore';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 
 const STYLES: { key: CoachingStyle; label: string; description: string }[] = [

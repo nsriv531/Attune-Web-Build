@@ -2,7 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { useSessionStore } from '@/stores/sessionStore';
+import { useSessionStore } from '@/backend/stores/sessionStore';
 import { useRouter } from 'expo-router';
 
 export function useTimer() {

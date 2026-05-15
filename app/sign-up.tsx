@@ -13,7 +13,8 @@ import { useSignUp } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import { KeycapButton } from "@/components/KeycapSurface";
 import { Colors, Typography, Spacing, Radius } from "@/constants/theme";
-import { useAuthStore } from '@/stores/authStore';
+
+import { useAuthStore } from '@/backend/stores/authStore';
 
 export default function SignUpScreen() {
   const { signUp, setActive, isLoaded } = useSignUp();

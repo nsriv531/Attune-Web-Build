@@ -11,9 +11,14 @@ import {
 } from 'react-native';
 import { Typography, Spacing, Radius, Colors } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useUserStore } from '@/stores/userStore';
 import { SoliAvatar } from '@/components/Mascots';
 import { KeycapSurface } from '@/components/KeycapSurface';
+import { useUserStore } from '@/backend/stores/userStore';
+import { SageAvatar } from '@/components/SageAvatar';
+import { useUser } from '@clerk/clerk-expo';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+
 
 type InsightTagColor = 'purple' | 'green' | 'amber';
 
@@ -138,30 +143,84 @@ function InsightCard({ insight }: { insight: AIInsight }) {
   );
 }
 
+function buildHeatmap(sessions: any[]) {
+  const grid: number[][] = Array.from({ length: 4 }, () => new Array(7).fill(0));
+  const counts: number[][] = Array.from({ length: 4 }, () => new Array(7).fill(0));
+
+  for (const session of sessions) {
+    if (!session.startedAt) continue;
+    const date = new Date(session.startedAt);
+    const dayIndex = (date.getDay() + 6) % 7; // Mon=0 … Sun=6
+    const hour = date.getHours();
+    const slotIndex = hour < 10 ? 0 : hour < 14 ? 1 : hour < 18 ? 2 : 3;
+
+    grid[slotIndex][dayIndex] += session.focusScore;
+    counts[slotIndex][dayIndex] += 1;
+  }
+
+  let max = 0;
+  for (let r = 0; r < 4; r++)
+    for (let c = 0; c < 7; c++)
+      if (counts[r][c] > 0) {
+        grid[r][c] = grid[r][c] / counts[r][c];
+        if (grid[r][c] > max) max = grid[r][c];
+      }
+
+  if (max > 0)
+    for (let r = 0; r < 4; r++)
+      for (let c = 0; c < 7; c++)
+        grid[r][c] = grid[r][c] / max;
+
+  return grid;
+}
+
 export default function InsightsScreen() {
   const C = useThemeColors();
-  const sessions          = useUserStore((st) => st.sessions);
-  const insights          = useUserStore((st) => st.insights);
-  const suggestion        = useUserStore((st) => st.suggestion);
-  const isLoadingInsights = useUserStore((st) => st.isLoadingInsights);
-  const totalSessions     = useUserStore((st) => st.totalSessions);
-  const streakDays        = useUserStore((st) => st.streakDays);
-  const totalXp           = useUserStore((st) => st.totalXp);
-  const getHeatmap        = useUserStore((st) => st.getHeatmap);
+  const { isSignedIn } = useUser();
+  const convexSessions = useQuery(api.sessions.list, isSignedIn ? { limit: 50 } : "skip");
+  const convexStats = useQuery(api.sessions.getStats, isSignedIn ? {} : "skip");
+  const sweetSpot = useQuery(api.insights.getSweetSpot, isSignedIn ? {} : "skip");
+  const peakDaysHours = useQuery(api.insights.getPeakDaysHours, isSignedIn ? {} : "skip");
+
+  const localSessions     = useUserStore((st) => st.sessions);
+  const localInsights     = useUserStore((st) => st.insights);
+  const localIsLoading    = useUserStore((st) => st.isLoadingInsights);
+  const localTotalSessions= useUserStore((st) => st.totalSessions);
+  const localStreakDays   = useUserStore((st) => st.streakDays);
+  const localTotalXp      = useUserStore((st) => st.totalXp);
+
+  const sessions = isSignedIn ? (convexSessions ?? []) : localSessions;
+  
+  // Use data from backend if available, otherwise use local/default
+  const suggestion = sweetSpot?.data 
+    ? { message: `Your sweet spot is ${sweetSpot.data.bestDuration} minutes with an average focus of ${Math.round(sweetSpot.data.avgFocus)}%.`, pills: [{ label: `${sweetSpot.data.bestDuration} min` }] }
+    : null;
+    
+  const isLoadingInsights = isSignedIn ? (sweetSpot === undefined) : localIsLoading;
 
   const hasRealData = sessions.length >= 3;
 
   const heatmapData = useMemo(() => {
+    if (isSignedIn && peakDaysHours?.data?.heatmap) {
+        // Adapt 24-hour heatmap to the 4-slot display if needed, 
+        // or just show the peak data. For now, let's keep the local builder
+        // if the backend structure is different, or adapt it.
+        return buildHeatmap(sessions); 
+    }
     if (hasRealData) {
-      try { return getHeatmap(); } catch { return SEED_HEATMAP; }
+      try { return buildHeatmap(sessions); } catch { return SEED_HEATMAP; }
     }
     return SEED_HEATMAP;
-  }, [sessions.length, hasRealData]);
+  }, [sessions, hasRealData, isSignedIn, peakDaysHours]);
 
-  const displayInsights = insights.length > 0 ? insights : SEED_INSIGHTS;
+  const displayInsights = localInsights.length > 0 ? localInsights : SEED_INSIGHTS;
+
+  const totalSessions = isSignedIn ? (convexStats?.totalSessions ?? 0) : localTotalSessions;
+  const streakDays = isSignedIn ? (convexStats?.streakDays ?? 0) : localStreakDays; 
+  const totalXp = isSignedIn ? (convexStats?.totalXp ?? 0) : localTotalXp;
 
   const avgFocus = sessions.length > 0
-    ? Math.round(sessions.reduce((a, x) => a + x.focusScore, 0) / sessions.length)
+    ? Math.round(sessions.reduce((a: number, x: any) => a + x.focusScore, 0) / sessions.length)
     : 0;
 
   return (
@@ -215,7 +274,7 @@ export default function InsightsScreen() {
             <Text style={[s.suggestionBody, { color: C.textSecondary }]}>{suggestion.message}</Text>
             {suggestion.pills && suggestion.pills.length > 0 && (
               <View style={s.pillRow}>
-                {suggestion.pills.map((p, i) => (
+                {suggestion.pills.map((p: any, i: number) => (
                   <View key={i} style={[s.pill, { backgroundColor: C.purpleDim, borderColor: C.purpleBorder }]}>
                     <Text style={[s.pillText, { color: C.purple }]}>{p.label}</Text>
                   </View>

@@ -1,7 +1,7 @@
 // hooks/useThemeColors.ts
 import { Colors } from '@/constants/theme';
 import { PALETTES } from '@/constants/palettes';
-import { useThemeStore } from '@/stores/themeStore';
+import { useThemeStore } from '@/backend/stores/themeStore';
 
 export type ThemeColors = typeof Colors;
 

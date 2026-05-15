@@ -10,7 +10,8 @@ import Animated, {
 import { useRouter } from 'expo-router';
 import { OnboardingLayout, CTAButton } from '@/components/OnboardingLayout';
 import { SoliAvatar } from '@/components/Mascots';
-import { useOnboardingStore } from '@/stores/onboardingStore';
+import { SageAvatar } from '@/components/SageAvatar';
+import { useOnboardingStore } from '@/backend/stores/onboardingStore';
 import { Colors, Typography, Spacing } from '@/constants/theme';
 
 export default function PreSessionScreen() {

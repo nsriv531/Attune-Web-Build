@@ -13,7 +13,9 @@ import { useSignIn } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import { KeycapButton } from "@/components/KeycapSurface";
 import { Colors, Typography, Spacing, Radius } from "@/constants/theme";
-import { useAuthStore } from '@/stores/authStore';
+
+
+import { useAuthStore } from '@/backend/stores/authStore';
 
 export default function SignInScreen() {
   const { signIn, setActive, isLoaded } = useSignIn();
@@ -73,6 +75,7 @@ export default function SignInScreen() {
     }
   };
 
+
   const handleVerify2FA = async () => {
     if (loading) return;
     setLoading(true);
@@ -92,6 +95,7 @@ export default function SignInScreen() {
     } finally {
       setLoading(false);
     }
+
   };
 
   return (

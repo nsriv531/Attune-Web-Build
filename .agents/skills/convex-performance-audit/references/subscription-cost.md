@@ -70,7 +70,7 @@ function TeamPresence() {
 // Point-in-time read when explicit refresh is acceptable
 import { ConvexHttpClient } from "convex/browser";
 
-const client = new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL);
+const client = new ConvexHttpClient(process.env.VITE_CONVEX_URL);
 
 function SnapshotView() {
   const [items, setItems] = useState<Item[]>([]);

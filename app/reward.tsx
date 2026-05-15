@@ -19,12 +19,14 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Typography, Spacing, Radius, Colors } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useSessionStore } from '@/stores/sessionStore';
-import { useUserStore } from '@/stores/userStore';
+
 import { SoliAvatar } from '@/components/Mascots';
 import { KeycapButton } from '@/components/KeycapSurface';
 import { generateSageSuggestion } from '@/lib/claude';
 import type { FocusFeeling, Session } from '@/types';
+import { useSessionStore } from '@/backend/stores/sessionStore';
+import { useUserStore } from '@/backend/stores/userStore';
+import { SageAvatar } from '@/components/SageAvatar';
 import { useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { useAuth } from '@clerk/clerk-expo';
@@ -79,6 +81,8 @@ function XPCard({
   );
 }
 
+import { useSessionService } from '@/backend/services/useSessionService';
+
 export default function RewardScreen() {
   const C = useThemeColors();
   const router = useRouter();
@@ -91,8 +95,7 @@ export default function RewardScreen() {
     setFeeling,
     reset,
   } = useSessionStore();
-  const { streakDays, sessions, name, addSession, addXP, incrementStreak, setSuggestion, setLoadingInsights } =
-    useUserStore();
+  const { setSuggestion, setLoadingInsights } = useUserStore();
 
   const distractionEvents = useSessionStore.getState().distractionEvents;
   const distractionCount = distractionEvents.length;
@@ -101,10 +104,16 @@ export default function RewardScreen() {
   const distSec = distractionDuration % 60;
   const distString = distMin > 0 ? `${distMin}m ${distSec}s` : `${distSec}s`;
 
-  const { isSignedIn } = useAuth();
-  const saveSessionMutation = useMutation(api.sessions.saveSession);
-  const updateSessionFeelingMutation = useMutation(api.sessions.updateSessionFeeling);
+  const addFeedbackMutation = useMutation(api.feedback.addFeedback);
+  const { saveCompletedSession, generateLocalSuggestion } = useSessionService();
+
   const [savedSessionId, setSavedSessionId] = useState<string | null>(null);
+  const [sessionResults, setSessionResults] = useState<{
+    focusScore: number;
+    xpEarned: number;
+    newStreak: number;
+    coinsEarned?: number;
+  } | null>(null);
 
   const sageBounce = useSharedValue(0.5);
   const sageOpacity = useSharedValue(0);
@@ -114,69 +123,35 @@ export default function RewardScreen() {
     sageOpacity.value = withTiming(1, { duration: 400 });
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    const newSession: Session = {
-      id: `session-${Date.now()}`,
-      subject,
-      subjectId: 'bio-1',
-      durationMinutes,
-      startedAt: Date.now() - durationMinutes * 60 * 1000,
-      endedAt: Date.now(),
-      focusScore,
-      distractionEvents: useSessionStore.getState().distractionEvents,
-      feeling: undefined,
-      xpEarned,
-      completed: true,
-    };
-
-    addSession(newSession);
-    addXP(xpEarned);
-    if (streakDays > 0) incrementStreak();
-    fetchSuggestion([newSession, ...sessions]);
-    saveToBackend();
+    handleSessionEnd();
   }, []);
 
-  async function saveToBackend() {
-    if (!isSignedIn) return;
-    
-    const state = useSessionStore.getState();
-    try {
-      const response = await saveSessionMutation({
-        subject: state.subject,
-        subjectId: state.subjectId,
-        plannedDuration: state.durationMinutes,
-        actualDuration: state.secondsElapsed,
-        focusScore: state.focusScore,
-        xpEarned: state.xpEarned,
-        status: state.wasEndedEarly ? 'abandoned' : 'completed',
-        feeling: state.feeling || undefined,
-        tags: state.reflectionReason ? [state.reflectionReason] : [],
-        note: state.reflectionNote || undefined,
-        startedAt: Date.now() - state.secondsElapsed * 1000,
-        distractions: state.distractionEvents.map((d) => ({
-          type: d.type,
-          durationSeconds: d.durationSeconds,
-          timestamp: d.timestamp,
-        })),
-      });
-      if (response && response.sessionId) {
-        setSavedSessionId(response.sessionId);
-      }
-    } catch (error) {
-      console.error('Failed to save session to Convex', error);
-    }
-  }
+async function handleSessionEnd() {
+  setLoadingInsights(true);
 
-  async function fetchSuggestion(allSessions: Session[]) {
-    try {
-      setLoadingInsights(true);
-      const suggestion = await generateSageSuggestion(allSessions.slice(0, 30), name);
-      setSuggestion(suggestion);
-    } catch (e) {
-      // Fail silently
-    } finally {
-      setLoadingInsights(false);
+  try {
+    const result = await saveCompletedSession();
+
+    if (result.success && result.results) {
+      setSessionResults(result.results);
+      setSavedSessionId(result.savedSessionId || null);
+
+      generateLocalSuggestion({
+        durationMinutes,
+        focusScore: result.results.focusScore,
+      });
     }
+  } catch (e) {
+    console.error('Failed to save completed session', e);
+  } finally {
+    setLoadingInsights(false);
   }
+}
+
+  // Fallback values while loading or offline
+  const displayFocusScore = sessionResults?.focusScore ?? 0;
+  const displayXpEarned = sessionResults?.xpEarned ?? 0;
+  const displayStreak = sessionResults?.newStreak ?? 0;
 
   const sageStyle = useAnimatedStyle(() => ({
     transform: [{ scale: sageBounce.value }],
@@ -188,17 +163,18 @@ export default function RewardScreen() {
     router.replace('/(tabs)');
   }
 
-  function handleViewInsights() {
-    reset();
-    router.replace('/(tabs)/insights');
-  }
+function handleViewInsights() {
+  reset();
+  router.replace('/(tabs)/insights');
+}
 
-  const newStreak = streakDays + 1;
-  const prompt = React.useMemo(() => REFLECTION_PROMPTS[Math.floor(Math.random() * REFLECTION_PROMPTS.length)], []);
+const prompt = React.useMemo(
+  () => REFLECTION_PROMPTS[Math.floor(Math.random() * REFLECTION_PROMPTS.length)],
+  []
+);
 
   return (
-    <SafeAreaView style={styles.safe}>
-      {/* Glow bg element */}
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
       <View style={[styles.glow, { pointerEvents: 'none' }]} />
 
       <ScrollView
@@ -225,40 +201,40 @@ export default function RewardScreen() {
         )}
 
         <View style={styles.xpRow}>
-          <XPCard value={focusScore} label="Focus" color={C.green} delay={100} bgCard={C.bgCard} border={C.border} />
-          <XPCard value={`+${xpEarned}`} label="XP" color={C.purple} delay={220} bgCard={C.bgCard} border={C.border} />
-          <XPCard value={newStreak} label="Streak" color={C.amber} delay={340} bgCard={C.bgCard} border={C.border} />
+          <XPCard value={displayFocusScore} label="Focus" color={C.green} delay={100} bgCard={C.bgCard} border={C.border} />
+          <XPCard value={`+${displayXpEarned}`} label="XP" color={C.purple} delay={220} bgCard={C.bgCard} border={C.border} />
+          <XPCard value={displayStreak} label="Streak" color={C.amber} delay={340} bgCard={C.bgCard} border={C.border} />
         </View>
 
         <Text style={[styles.sectionLabel, { color: C.textTertiary }]}>{prompt}</Text>
         <View style={styles.feelRow}>
-          {FEELINGS.map((f) => {
-            const isActive = feeling === f.key;
-            return (
-              <KeycapButton
-                key={f.key}
-                radius={Radius.md}
-                style={styles.feelBtnWrapper}
-                contentStyle={styles.feelBtnFace}
-                faceColor={isActive ? C.purpleDim : C.bgInput}
-                depthColor={isActive ? C.purpleBorder : C.borderMid}
-                borderColor={isActive ? C.purpleBorder : C.border}
-                onPress={() => {
-                  setFeeling(f.key);
-                  if (savedSessionId) {
-                    updateSessionFeelingMutation({ sessionId: savedSessionId as any, feeling: f.key }).catch((e) =>
-                      console.error('Failed to update feeling in Convex', e)
-                    );
-                  }
-                  Haptics.selectionAsync();
-                }}
-              >
-                <Text style={[styles.feelText, { color: C.textTertiary }, isActive && { color: C.purple }]}>
-                  {f.label}
-                </Text>
-              </KeycapButton>
-            );
-          })}
+
+          {FEELINGS.map((f) => (
+            <Pressable
+              key={f.key}
+              style={[
+                styles.feelBtn,
+                { backgroundColor: C.bgInput, borderColor: C.border },
+                feeling === f.key && { backgroundColor: C.purpleDim, borderColor: C.purpleBorder },
+              ]}
+              onPress={() => {
+                setFeeling(f.key);
+                if (savedSessionId) {
+                  addFeedbackMutation({ 
+                    sessionId: savedSessionId as any, 
+                    rating: f.key === 'solid' ? 4 : f.key === 'good' ? 3 : 1 
+                  }).catch((e) => 
+                    console.error('Failed to add feedback in Convex', e)
+                  );
+                }
+                Haptics.selectionAsync();
+              }}
+            >
+              <Text style={[styles.feelText, { color: C.textTertiary }, feeling === f.key && { color: C.purple }]}>
+                {f.label}
+              </Text>
+            </Pressable>
+          ))}
         </View>
 
         <View style={[styles.sageCard, { backgroundColor: C.bgCard, borderColor: C.border }]}>
@@ -388,6 +364,13 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: Spacing.sm,
   },
+feelBtn: {
+  flex: 1,
+  paddingVertical: Spacing.md,
+  alignItems: 'center',
+  borderWidth: 0.5,
+  borderRadius: Radius.md,
+},
   feelBtnWrapper: {
     flex: 1,
   },

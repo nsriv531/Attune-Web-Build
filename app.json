@@ -1,23 +1,32 @@
 {
   "expo": {
-    "name": "StudyLoop",
-    "slug": "studyloop",
+    "name": "Attune",
+    "slug": "attune",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0e0e12",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.studyloop.app",
+      "bundleIdentifier": "com.attune.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "StudyLoop uses your camera to optionally detect attention during study sessions. All processing happens on your device — nothing is recorded or uploaded.",
+        "NSCameraUsageDescription": "Attune uses your camera to optionally detect attention during study sessions. All processing happens on your device. Nothing is recorded or uploaded.",
         "UIBackgroundModes": [
           "audio"
         ]
       }
     },
     "android": {
-      "package": "com.studyloop.app"
+      "package": "com.attuneorg.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0e0e12"
+      },
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -28,11 +37,29 @@
       "expo-font",
       "expo-audio",
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "packagingOptions": {
+              "pickFirst": [
+                "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+              ]
+            }
+          }
+        }
+      ]
     ],
-    "scheme": "studyloop",
+    "scheme": "attune",
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e6620514-02fe-4761-bfb5-5080780f5ce5"
+      }
     }
   }
 }

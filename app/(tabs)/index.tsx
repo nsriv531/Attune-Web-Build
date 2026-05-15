@@ -20,15 +20,18 @@ import Animated, {
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
-import { useSessionStore } from '@/stores/sessionStore';
-import { useUserStore } from '@/stores/userStore';
+import { useSessionStore } from '@/backend/stores/sessionStore';
+import { useUserStore } from '@/backend/stores/userStore';
 import TopAppBar from '@/components/TopAppBar';
 import { KeycapSurface, KeycapButton } from '@/components/KeycapSurface';
 import { useRitualAudio } from '@/hooks/useAudioPlayer';
 import { RiveIconSet, ToviAvatar } from '@/components/Mascots';
 import { ProfileSidebar } from '@/components/ProfileSidebar';
-import { useFontStore } from '@/stores/fontStore';
+import { useFontStore } from '@/backend/stores/fontStore';
 import type { RitualSound } from '@/types';
+import { useUser } from '@clerk/clerk-expo';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 
 class RiveBoundary extends React.Component<{ children: React.ReactNode }, { crashed: boolean }> {
   state = { crashed: false };
@@ -160,7 +163,22 @@ function SoundPill({ sound, isActive, onPress, font }: {
 // ── Main home screen ──────────────────────────────────────────────────────
 export default function HomeScreen() {
   const router = useRouter();
-  const { name, streakDays, sessions } = useUserStore();
+
+  const { isSignedIn } = useUser();
+  const convexSessions = useQuery(api.sessions.list, isSignedIn ? { limit: 50 } : "skip");
+  const convexStats = useQuery(api.sessions.getStats, isSignedIn ? {} : "skip");
+
+  const { name, streakDays: localStreakDays, sessions: localSessions } = useUserStore();
+  const sessions = isSignedIn ? (convexSessions ?? []) : localSessions;
+  const streakDays = isSignedIn ? (convexStats?.streakDays ?? 0) : localStreakDays;
+
+  // Background streak enforcement
+  const enforceStreakMutation = useMutation(api.sessions.enforceStreak);
+  useEffect(() => {
+    if (isSignedIn) {
+      enforceStreakMutation();
+    }
+  }, [isSignedIn, enforceStreakMutation]);
   const { durationMinutes, setDuration, startSession, ritualSound, setRitualSound } = useSessionStore();
   const { previewTimerActive } = useRitualAudio(true);
   const { current: currentFont, cycle: cycleFont } = useFontStore();
@@ -190,6 +208,7 @@ export default function HomeScreen() {
 
   // Preview progress bar — reset on every new sound selection
   const previewProgress = useSharedValue(0);
+
   useEffect(() => {
     if (previewTimerActive) {
       previewProgress.value = 1;
@@ -203,14 +222,31 @@ export default function HomeScreen() {
   }));
 
   // Today's focused minutes
-  const todayMinutes = React.useMemo(() => {
+  const todayMinutes = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return sessions.reduce((total, session) => {
+
+    return sessions.reduce((total: number, session: any) => {
       if (!session.startedAt) return total;
-      const d = new Date(session.startedAt);
-      d.setHours(0, 0, 0, 0);
-      return d.getTime() === today.getTime() ? total + (session.durationMinutes || 0) : total;
+
+      const sessionDate = new Date(session.startedAt);
+      sessionDate.setHours(0, 0, 0, 0);
+
+      if (sessionDate.getTime() !== today.getTime()) {
+        return total;
+      }
+
+      let minutes = 0;
+
+      if (typeof session.durationMinutes === 'number') {
+        minutes = session.durationMinutes;
+      } else if (typeof session.plannedDuration === 'number') {
+        minutes = session.plannedDuration;
+      } else if (typeof session.timeOverall === 'number') {
+        minutes = session.timeOverall / 60;
+      }
+
+      return total + Math.round(minutes);
     }, 0);
   }, [sessions]);
 
@@ -249,6 +285,7 @@ export default function HomeScreen() {
             <Text style={styles.greetingSubtitle}>The light is perfect for deep work today.</Text>
           </View>
         </FadeSlideUp>
+
 
         {/* ── Font Tester ── */}
         <FadeSlideUp delay={70}>
@@ -318,7 +355,7 @@ export default function HomeScreen() {
           <View style={styles.soundSection}>
             <Text style={styles.soundSectionTitle}>Ritual Sound</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.soundScroll}>
-              {(['silence', 'lofi', 'rain', 'forest', 'white-noise'] as RitualSound[]).map(sound => (
+              {(['silence', 'lofi', 'rain', 'forest', 'white-noise'] as RitualSound[]).map((sound) => (
                 <SoundPill
                   key={sound}
                   sound={sound}
@@ -525,9 +562,6 @@ export default function HomeScreen() {
   );
 }
 
-const cardShadow = Platform.OS === 'ios'
-  ? { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10 }
-  : { elevation: 2 };
 
 const makeStyles = (font: string) => StyleSheet.create({
   safe: {
