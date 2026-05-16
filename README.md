@@ -40,8 +40,8 @@ Scan the QR code with **Expo Go** (iOS App Store / Google Play Store) and you're
 After running setup, open `.env.local` and fill in your Convex credentials:
 
 ```env
-EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+EXPO_PUBLIC_CONVEX_URL=n/a
+EXPO_PUBLIC_CONVEX_SITE_URL=n/a
 ```
 
 Get these from [supabase.com](https://supabase.com) → your project → Settings → API.
@@ -127,9 +127,3 @@ Download Node LTS from https://nodejs.org — needs v20.17.0 or higher.
 ```bash
 npx expo start --port 8082
 ```
-
-**App shows blank screen**
-Press `r` in the terminal to reload, or shake your phone and tap "Reload".
-=======
-# react-native-app
->>>>>>> 63294e82514e4b1ca3dac237035aa3066d689f6b

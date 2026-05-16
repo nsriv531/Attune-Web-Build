@@ -1,14 +1,14 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export type SageForm = 'orb' | 'crystal' | 'flame' | 'constellation';
+export type SoliForm = string;
 export type CoachingStyle = 'gentle' | 'steady' | 'direct';
 export type TimeOfDay = 'morning' | 'afternoon' | 'evening' | 'late-night';
 export type GoalType = 'deep-work' | 'daily-homework' | 'exam-prep' | 'building-habit';
 export type OnboardingDuration = 15 | 25 | 50;
 
 interface OnboardingState {
-  sageForm: SageForm;
+  soliForm: string;
   coachingStyle: CoachingStyle;
   subjects: string[];
   timeOfDay: TimeOfDay | null;
@@ -17,7 +17,7 @@ interface OnboardingState {
   sessionDuration: OnboardingDuration;
   hasCompletedOnboarding: boolean | null;
 
-  setSageForm: (f: SageForm) => void;
+  setSoliForm: (f: string) => void;
   setCoachingStyle: (s: CoachingStyle) => void;
   setSubjects: (s: string[]) => void;
   setTimeOfDay: (t: TimeOfDay) => void;
@@ -32,7 +32,7 @@ interface OnboardingState {
 export const ONBOARDING_STORAGE_KEY = 'attune_onboarding_v1';
 
 export const useOnboardingStore = create<OnboardingState>((set) => ({
-  sageForm: 'orb',
+  soliForm: 'focus',
   coachingStyle: 'steady',
   subjects: [],
   timeOfDay: null,
@@ -41,7 +41,7 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
   sessionDuration: 25,
   hasCompletedOnboarding: null,
 
-  setSageForm: (sageForm) => set({ sageForm }),
+  setSoliForm: (soliForm) => set({ soliForm }),
   setCoachingStyle: (coachingStyle) => set({ coachingStyle }),
   setSubjects: (subjects) => set({ subjects }),
   setTimeOfDay: (timeOfDay) => set({ timeOfDay }),

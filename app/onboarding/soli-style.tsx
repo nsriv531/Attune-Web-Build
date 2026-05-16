@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -10,6 +10,7 @@ import Animated, {
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { OnboardingLayout, CTAButton } from '@/components/OnboardingLayout';
+import { KeycapButton } from '@/components/KeycapSurface';
 import { useOnboardingStore, type CoachingStyle } from '@/backend/stores/onboardingStore';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 
@@ -17,17 +18,17 @@ const STYLES: { key: CoachingStyle; label: string; description: string }[] = [
   {
     key: 'gentle',
     label: 'Gentle',
-    description: 'Soft nudges. Sage waits before stepping in.',
+    description: 'Soft nudges. Soli waits before stepping in.',
   },
   {
     key: 'steady',
     label: 'Steady',
-    description: 'Balanced. Sage checks in at the right moments.',
+    description: 'Balanced. Soli checks in at the right moments.',
   },
   {
     key: 'direct',
     label: 'Direct',
-    description: "Honest. Sage tells you when you're slipping.",
+    description: "Honest. Soli tells you when you're slipping.",
   },
 ];
 
@@ -40,36 +41,30 @@ function StyleCard({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const scale = useSharedValue(1);
-
   function handlePress() {
-    scale.value = withSpring(0.97, { damping: 20 }, () => {
-      scale.value = withSpring(1, { damping: 14 });
-    });
     Haptics.selectionAsync();
     onSelect();
   }
 
-  const cardStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
   return (
-    <Pressable onPress={handlePress}>
-      <Animated.View style={[styles.card, selected && styles.cardSelected, cardStyle]}>
-        <View style={styles.cardRow}>
-          <Text style={[styles.cardLabel, selected && styles.cardLabelSelected]}>
-            {item.label}
-          </Text>
-          {selected && <View style={styles.dot} />}
-        </View>
-        <Text style={styles.cardDesc}>{item.description}</Text>
-      </Animated.View>
-    </Pressable>
+    <KeycapButton
+      accent={selected}
+      radius={Radius.xl}
+      contentStyle={styles.cardFace}
+      onPress={handlePress}
+    >
+      <View style={styles.cardRow}>
+        <Text style={[styles.cardLabel, selected && styles.cardLabelSelected]}>
+          {item.label}
+        </Text>
+        {selected && <View style={styles.dot} />}
+      </View>
+      <Text style={[styles.cardDesc, selected && styles.cardDescSelected]}>{item.description}</Text>
+    </KeycapButton>
   );
 }
 
-export default function SageStyleScreen() {
+export default function SoliStyleScreen() {
   const router = useRouter();
   const { coachingStyle, setCoachingStyle } = useOnboardingStore();
   const [selected, setSelected] = useState<CoachingStyle>(coachingStyle);
@@ -95,7 +90,7 @@ export default function SageStyleScreen() {
   return (
     <OnboardingLayout step={4}>
       <Animated.View style={[styles.container, contentStyle]}>
-        <Text style={styles.headline}>How should Sage coach you?</Text>
+        <Text style={styles.headline}>How should Soli coach you?</Text>
 
         <View style={styles.list}>
           {STYLES.map((s) => (
@@ -124,7 +119,7 @@ const styles = StyleSheet.create({
   headline: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size['2xl'],
-    fontWeight: Typography.weight.semibold,
+    fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: Spacing['2xl'],
     lineHeight: 34,
@@ -133,17 +128,9 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: Spacing.md,
   },
-  card: {
-    backgroundColor: Colors.bgCard,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.xl,
+  cardFace: {
     padding: Spacing.base,
     gap: Spacing.xs,
-  },
-  cardSelected: {
-    borderColor: 'rgba(167,139,250,0.6)',
-    backgroundColor: Colors.purpleDim,
   },
   cardRow: {
     flexDirection: 'row',
@@ -153,23 +140,26 @@ const styles = StyleSheet.create({
   cardLabel: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.md,
-    fontWeight: Typography.weight.semibold,
+    fontWeight: '600',
     color: Colors.textSecondary,
   },
   cardLabelSelected: {
-    color: Colors.purple,
+    color: '#2C2000',
   },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: Colors.purple,
+    backgroundColor: '#2C2000',
   },
   cardDesc: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.sm,
     color: Colors.textTertiary,
     lineHeight: 20,
+  },
+  cardDescSelected: {
+    color: 'rgba(44,32,0,0.65)',
   },
   ctaWrap: {
     paddingVertical: Spacing['2xl'],

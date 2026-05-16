@@ -1,24 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSpring,
   Easing,
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { OnboardingLayout, CTAButton } from '@/components/OnboardingLayout';
+import { KeycapButton } from '@/components/KeycapSurface';
+import { SoliAvatar } from '@/components/Mascots';
 import { SageAvatar } from '@/components/SageAvatar';
-import { useOnboardingStore, type SageForm } from '@/backend/stores/onboardingStore';
+import { useOnboardingStore} from '@/backend/stores/onboardingStore';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 
-const FORMS: { key: SageForm; label: string; hint: string }[] = [
-  { key: 'orb',           label: 'Orb',           hint: 'Grounded' },
-  { key: 'crystal',       label: 'Crystal',        hint: 'Precise' },
-  { key: 'flame',         label: 'Flame',          hint: 'Dynamic' },
-  { key: 'constellation', label: 'Constellation',  hint: 'Expansive' },
+const VIBES: { key: string; label: string; hint: string }[] = [
+  { key: 'focus',   label: 'Deep Focus',   hint: 'Warmth' },
+  { key: 'calm',    label: 'Calm Study',   hint: 'Serene' },
+  { key: 'energy',  label: 'High Energy',  hint: 'Radiant' },
+  { key: 'steady',  label: 'Steady Flow',  hint: 'Constant' },
 ];
 
 function FormCard({
@@ -26,49 +27,38 @@ function FormCard({
   selected,
   onSelect,
 }: {
-  item: typeof FORMS[0];
+  item: typeof VIBES[0];
   selected: boolean;
   onSelect: () => void;
 }) {
-  const scale = useSharedValue(1);
-
   function handlePress() {
-    scale.value = withSpring(0.95, { damping: 20 }, () => {
-      scale.value = withSpring(1, { damping: 14 });
-    });
     Haptics.selectionAsync();
     onSelect();
   }
 
-  const cardStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
   return (
-    <Pressable onPress={handlePress} style={styles.cardPressable}>
-      <Animated.View
-        style={[
-          styles.card,
-          selected && styles.cardSelected,
-          cardStyle,
-        ]}
-      >
-        <SageAvatar size={52} state="watching" form={item.key} />
-        <View style={styles.cardText}>
-          <Text style={[styles.cardLabel, selected && styles.cardLabelSelected]}>
-            {item.label}
-          </Text>
-          <Text style={styles.cardHint}>{item.hint}</Text>
-        </View>
-      </Animated.View>
-    </Pressable>
+    <KeycapButton
+      accent={selected}
+      radius={Radius.xl}
+      style={styles.cardOuter}
+      contentStyle={styles.cardFace}
+      onPress={handlePress}
+    >
+      <SoliAvatar size={52} state="watching" />
+      <View style={styles.cardText}>
+        <Text style={[styles.cardLabel, selected && styles.cardLabelSelected]}>
+          {item.label}
+        </Text>
+        <Text style={[styles.cardHint, selected && styles.cardHintSelected]}>{item.hint}</Text>
+      </View>
+    </KeycapButton>
   );
 }
 
 export default function SageFormScreen() {
   const router = useRouter();
-  const { sageForm, setSageForm } = useOnboardingStore();
-  const [selected, setSelected] = useState<SageForm>(sageForm);
+  const { soliForm, setSoliForm } = useOnboardingStore();
+  const [selected, setSelected] = useState<string>(soliForm);
 
   const contentOpacity = useSharedValue(0);
   const contentY = useSharedValue(12);
@@ -84,22 +74,22 @@ export default function SageFormScreen() {
   }));
 
   function handleNext() {
-    setSageForm(selected);
-    router.push('/onboarding/sage-style' as never);
+    setSoliForm(selected);
+    router.push('/onboarding/soli-style' as never);
   }
 
   return (
     <OnboardingLayout step={3}>
       <Animated.View style={[styles.container, contentStyle]}>
-        <Text style={styles.headline}>Shape Sage.</Text>
+        <Text style={styles.headline}>Meet Soli.</Text>
 
         <View style={styles.grid}>
-          {FORMS.map((f) => (
+          {VIBES.map((v) => (
             <FormCard
-              key={f.key}
-              item={f}
-              selected={selected === f.key}
-              onSelect={() => setSelected(f.key)}
+              key={v.key}
+              item={v}
+              selected={selected === v.key}
+              onSelect={() => setSelected(v.key as any)}
             />
           ))}
         </View>
@@ -120,7 +110,7 @@ const styles = StyleSheet.create({
   headline: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size['2xl'],
-    fontWeight: Typography.weight.semibold,
+    fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: Spacing['2xl'],
   },
@@ -130,23 +120,15 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     flex: 1,
   },
-  cardPressable: {
+  cardOuter: {
     width: '47%',
   },
-  card: {
-    backgroundColor: Colors.bgCard,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.xl,
-    padding: Spacing.base,
+  cardFace: {
     alignItems: 'center',
     gap: Spacing.sm,
     aspectRatio: 1,
     justifyContent: 'center',
-  },
-  cardSelected: {
-    borderColor: 'rgba(167,139,250,0.6)',
-    backgroundColor: Colors.purpleDim,
+    padding: Spacing.base,
   },
   cardText: {
     alignItems: 'center',
@@ -155,17 +137,22 @@ const styles = StyleSheet.create({
   cardLabel: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.base,
-    fontWeight: Typography.weight.medium,
+    fontWeight: '500',
     color: Colors.textSecondary,
+    textAlign: 'center',
   },
   cardLabelSelected: {
-    color: Colors.purple,
+    color: '#2C2000',
+    fontWeight: '700',
   },
   cardHint: {
     fontFamily: Typography.fontMono,
     fontSize: Typography.size.xs,
     color: Colors.textTertiary,
     letterSpacing: 0.5,
+  },
+  cardHintSelected: {
+    color: 'rgba(44,32,0,0.50)',
   },
   ctaWrap: {
     paddingVertical: Spacing['2xl'],

@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSpring,
   Easing,
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { OnboardingLayout, CTAButton } from '@/components/OnboardingLayout';
+import { KeycapButton } from '@/components/KeycapSurface';
 import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 
 const ENERGY_OPTIONS = ['Heavy', 'Okay', 'Sharp'];
@@ -25,26 +25,20 @@ function ChoiceChip({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const scale = useSharedValue(1);
-
   function handlePress() {
-    scale.value = withSpring(0.94, { damping: 20 }, () => {
-      scale.value = withSpring(1, { damping: 14 });
-    });
     Haptics.selectionAsync();
     onSelect();
   }
 
-  const chipStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
   return (
-    <Pressable onPress={handlePress}>
-      <Animated.View style={[styles.chip, selected && styles.chipSelected, chipStyle]}>
-        <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
-      </Animated.View>
-    </Pressable>
+    <KeycapButton
+      accent={selected}
+      radius={Radius.full}
+      contentStyle={styles.chipFace}
+      onPress={handlePress}
+    >
+      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
+    </KeycapButton>
   );
 }
 
@@ -87,7 +81,6 @@ export default function ReflectionScreen() {
         <Text style={styles.headline}>How did that feel?</Text>
 
         <View style={styles.sections}>
-          {/* Energy */}
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Energy</Text>
             <View style={styles.chipRow}>
@@ -102,7 +95,6 @@ export default function ReflectionScreen() {
             </View>
           </View>
 
-          {/* Focus quality */}
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Focus quality</Text>
             <View style={styles.chipRow}>
@@ -117,7 +109,6 @@ export default function ReflectionScreen() {
             </View>
           </View>
 
-          {/* One word */}
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>One word for the session</Text>
             <View style={styles.wordGrid}>
@@ -153,7 +144,7 @@ const styles = StyleSheet.create({
   headline: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size['2xl'],
-    fontWeight: Typography.weight.semibold,
+    fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: Spacing['2xl'],
   },
@@ -180,26 +171,19 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: Spacing.sm,
   },
-  chip: {
-    backgroundColor: Colors.bgCard,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.full,
+  chipFace: {
     paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.sm,
-  },
-  chipSelected: {
-    backgroundColor: Colors.purpleDim,
-    borderColor: 'rgba(167,139,250,0.6)',
   },
   chipText: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.sm,
     color: Colors.textSecondary,
-    fontWeight: Typography.weight.medium,
+    fontWeight: '500',
   },
   chipTextSelected: {
-    color: Colors.purple,
+    color: '#2C2000',
+    fontWeight: '700',
   },
   ctaWrap: {
     paddingVertical: Spacing['2xl'],
