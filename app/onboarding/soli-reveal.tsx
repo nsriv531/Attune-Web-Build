@@ -9,25 +9,26 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { OnboardingLayout, CTAButton } from '@/components/OnboardingLayout';
+import { SoliAvatar } from '@/components/Mascots';
 import { SageAvatar } from '@/components/SageAvatar';
 import { useOnboardingStore } from '@/backend/stores/onboardingStore';
 import { Colors, Typography, Spacing } from '@/constants/theme';
 
 export default function SageRevealScreen() {
   const router = useRouter();
-  const { sageForm } = useOnboardingStore();
+  const { soliForm } = useOnboardingStore();
   const [showSecondLine, setShowSecondLine] = useState(false);
   const [showCTA, setShowCTA] = useState(false);
 
-  const sageScale = useSharedValue(0.5);
-  const sageOpacity = useSharedValue(0);
+  const soliScale = useSharedValue(0.5);
+  const soliOpacity = useSharedValue(0);
   const line1Opacity = useSharedValue(0);
   const line2Opacity = useSharedValue(0);
   const ctaOpacity = useSharedValue(0);
 
   useEffect(() => {
-    sageScale.value = withSpring(1, { damping: 14, stiffness: 160 });
-    sageOpacity.value = withTiming(1, { duration: 800 });
+    soliScale.value = withSpring(1, { damping: 14, stiffness: 160 });
+    soliOpacity.value = withTiming(1, { duration: 800 });
 
     const t1 = setTimeout(() => {
       line1Opacity.value = withTiming(1, { duration: 600 });
@@ -50,9 +51,9 @@ export default function SageRevealScreen() {
     };
   }, []);
 
-  const sageStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: sageScale.value }],
-    opacity: sageOpacity.value,
+  const soliStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: soliScale.value }],
+    opacity: soliOpacity.value,
   }));
   const line1Style = useAnimatedStyle(() => ({ opacity: line1Opacity.value }));
   const line2Style = useAnimatedStyle(() => ({ opacity: line2Opacity.value }));
@@ -63,18 +64,18 @@ export default function SageRevealScreen() {
       <View style={styles.container}>
         <View style={styles.glow} pointerEvents="none" />
 
-        <Animated.View style={[styles.avatarWrap, sageStyle]}>
-          <SageAvatar size={96} state="watching" form={sageForm} />
+        <Animated.View style={[styles.avatarWrap, soliStyle]}>
+          <SoliAvatar size={96} state="watching" />
         </Animated.View>
 
         <View style={styles.copy}>
           <Animated.Text style={[styles.line1, line1Style]}>
-            This is Sage.
+            This is Soli.
           </Animated.Text>
 
           {showSecondLine && (
             <Animated.Text style={[styles.line2, line2Style]}>
-              Sage watches your focus sessions and learns what helps you stay sharp.
+              Soli watches your focus sessions and learns what helps you stay sharp.
             </Animated.Text>
           )}
         </View>
@@ -83,7 +84,7 @@ export default function SageRevealScreen() {
           <Animated.View style={[styles.ctaWrap, ctaStyle]}>
             <CTAButton
               label="Continue"
-              onPress={() => router.push('/onboarding/sage-form' as never)}
+              onPress={() => router.push('/onboarding/soli-form' as never)}
             />
           </Animated.View>
         )}

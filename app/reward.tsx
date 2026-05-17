@@ -4,10 +4,10 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   Pressable,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -17,12 +17,16 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Typography, Spacing, Radius } from '@/constants/theme';
+import { Typography, Spacing, Radius, Colors } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
+
+import { SoliAvatar } from '@/components/Mascots';
+import { KeycapButton } from '@/components/KeycapSurface';
+import { generateSageSuggestion } from '@/lib/claude';
+import type { FocusFeeling, Session } from '@/types';
 import { useSessionStore } from '@/backend/stores/sessionStore';
 import { useUserStore } from '@/backend/stores/userStore';
 import { SageAvatar } from '@/components/SageAvatar';
-import type { FocusFeeling } from '@/types';
 import { useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { useAuth } from '@clerk/clerk-expo';
@@ -31,6 +35,14 @@ const FEELINGS: { key: FocusFeeling; label: string }[] = [
   { key: 'solid', label: 'Solid' },
   { key: 'good',  label: 'Good' },
   { key: 'rough', label: 'Rough' },
+];
+
+const REFLECTION_PROMPTS = [
+  "What was the most challenging part?",
+  "What helped you stay focused?",
+  "Is there anything you'd change for next time?",
+  "How do you feel about your progress?",
+  "What's one thing you learned today?",
 ];
 
 function XPCard({
@@ -114,23 +126,27 @@ export default function RewardScreen() {
     handleSessionEnd();
   }, []);
 
-  async function handleSessionEnd() {
-    setLoadingInsights(true);
-    
+async function handleSessionEnd() {
+  setLoadingInsights(true);
+
+  try {
     const result = await saveCompletedSession();
 
     if (result.success && result.results) {
       setSessionResults(result.results);
       setSavedSessionId(result.savedSessionId || null);
-      
+
       generateLocalSuggestion({
         durationMinutes,
         focusScore: result.results.focusScore,
       });
     }
-    
+  } catch (e) {
+    console.error('Failed to save completed session', e);
+  } finally {
     setLoadingInsights(false);
   }
+}
 
   // Fallback values while loading or offline
   const displayFocusScore = sessionResults?.focusScore ?? 0;
@@ -147,10 +163,15 @@ export default function RewardScreen() {
     router.replace('/(tabs)');
   }
 
-  function handleViewInsights() {
-    reset();
-    router.replace('/(tabs)/insights');
-  }
+function handleViewInsights() {
+  reset();
+  router.replace('/(tabs)/insights');
+}
+
+const prompt = React.useMemo(
+  () => REFLECTION_PROMPTS[Math.floor(Math.random() * REFLECTION_PROMPTS.length)],
+  []
+);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
@@ -161,12 +182,14 @@ export default function RewardScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View style={sageStyle}>
-          <SageAvatar size={80} state="celebrate" />
+          <SoliAvatar size={80} state="celebrate" />
         </Animated.View>
 
-        <Text style={[styles.title, { color: C.textPrimary }]}>Session complete!</Text>
+        <Text style={[styles.title, { color: C.textPrimary }]}>
+          {useSessionStore.getState().wasEndedEarly ? 'Session saved' : 'Focus Star Earned!'}
+        </Text>
         <Text style={[styles.subtitle, { color: C.textTertiary }]}>
-          {durationMinutes} min · {subject}
+          {useSessionStore.getState().wasEndedEarly ? `${durationMinutes} min · ${subject}` : `Great work, ${name}!`}
         </Text>
 
         {distractionCount > 0 && (
@@ -183,8 +206,9 @@ export default function RewardScreen() {
           <XPCard value={displayStreak} label="Streak" color={C.amber} delay={340} bgCard={C.bgCard} border={C.border} />
         </View>
 
-        <Text style={[styles.sectionLabel, { color: C.textTertiary }]}>How did it feel?</Text>
+        <Text style={[styles.sectionLabel, { color: C.textTertiary }]}>{prompt}</Text>
         <View style={styles.feelRow}>
+
           {FEELINGS.map((f) => (
             <Pressable
               key={f.key}
@@ -215,8 +239,8 @@ export default function RewardScreen() {
 
         <View style={[styles.sageCard, { backgroundColor: C.bgCard, borderColor: C.border }]}>
           <View style={styles.sageCardTop}>
-            <SageAvatar size={30} state="watching" />
-            <Text style={[styles.sageName, { color: C.purple }]}>Sage says</Text>
+            <SoliAvatar size={30} state="watching" />
+            <Text style={[styles.sageName, { color: C.purple }]}>Soli says</Text>
           </View>
           <Text style={[styles.sageMsg, { color: C.textSecondary }]}>
             {focusScore >= 85
@@ -227,19 +251,38 @@ export default function RewardScreen() {
           </Text>
         </View>
 
-        <Pressable style={[styles.primaryBtn, { backgroundColor: C.purple }]} onPress={handleViewInsights}>
+        <KeycapButton
+          radius={Radius.lg}
+          style={styles.primaryBtnWrapper}
+          contentStyle={styles.primaryBtnFace}
+          faceColor={C.purple}
+          depthColor={Colors.keycapAccentDepthColor}
+          borderColor={C.purpleBorder}
+          onPress={handleViewInsights}
+        >
           <Text style={styles.primaryBtnText}>See my insights</Text>
-        </Pressable>
+        </KeycapButton>
 
-        <Pressable style={[styles.secondaryBtn, { backgroundColor: C.bgInput, borderColor: C.border }]} onPress={handleDone}>
+        <KeycapButton
+          radius={Radius.lg}
+          style={styles.secondaryBtnWrapper}
+          contentStyle={styles.secondaryBtnFace}
+          faceColor={C.bgInput}
+          depthColor={C.borderMid}
+          borderColor={C.border}
+          onPress={handleDone}
+        >
           <Text style={[styles.secondaryBtnText, { color: C.textTertiary }]}>Back to setup</Text>
-        </Pressable>
+        </KeycapButton>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+  },
   glow: {
     position: 'absolute',
     width: 300,
@@ -321,10 +364,17 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: Spacing.sm,
   },
-  feelBtn: {
+feelBtn: {
+  flex: 1,
+  paddingVertical: Spacing.md,
+  alignItems: 'center',
+  borderWidth: 0.5,
+  borderRadius: Radius.md,
+},
+  feelBtnWrapper: {
     flex: 1,
-    borderWidth: 0.5,
-    borderRadius: Radius.md,
+  },
+  feelBtnFace: {
     paddingVertical: Spacing.md,
     alignItems: 'center',
   },
@@ -356,12 +406,13 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  primaryBtn: {
+  primaryBtnWrapper: {
     width: '100%',
-    borderRadius: Radius.lg,
+    marginTop: Spacing.sm,
+  },
+  primaryBtnFace: {
     paddingVertical: Spacing.base,
     alignItems: 'center',
-    marginTop: Spacing.sm,
   },
   primaryBtnText: {
     fontFamily: Typography.fontSans,
@@ -369,10 +420,10 @@ const styles = StyleSheet.create({
     fontWeight: Typography.weight.semibold,
     color: '#fff',
   },
-  secondaryBtn: {
+  secondaryBtnWrapper: {
     width: '100%',
-    borderWidth: 0.5,
-    borderRadius: Radius.lg,
+  },
+  secondaryBtnFace: {
     paddingVertical: Spacing.base,
     alignItems: 'center',
   },

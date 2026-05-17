@@ -4,14 +4,8 @@
     "slug": "attune",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0e0e12",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0e0e12"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.attune.app",
@@ -23,11 +17,11 @@
       }
     },
     "android": {
+      "package": "com.attuneorg.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0e0e12"
       },
-      "package": "com.attuneorg.app",
       "versionCode": 1,
       "permissions": [
         "android.permission.RECORD_AUDIO",
@@ -36,8 +30,7 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/favicon.png"
+      "output": "static"
     },
     "plugins": [
       "expo-router",

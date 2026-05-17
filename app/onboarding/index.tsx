@@ -103,12 +103,12 @@ export default function WelcomeScreen() {
             Focus that learns you back.
           </Animated.Text>
           <Animated.Text style={[styles.subline, subStyle]}>
-            Meet Sage, your focus companion.
+            Meet Soli, your focus companion.
           </Animated.Text>
         </View>
 
         <Animated.View style={[styles.ctaWrap, ctaStyle]}>
-          <CTAButton label="Begin" onPress={() => router.push('/onboarding/sage-reveal' as never)} />
+          <CTAButton label="Begin" onPress={() => router.push('/onboarding/soli-reveal' as never)} />
         </Animated.View>
       </View>
     </OnboardingLayout>

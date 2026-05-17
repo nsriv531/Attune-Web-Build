@@ -1,31 +1,32 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSpring,
   withRepeat,
   withSequence,
   Easing,
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { TimerRing } from '@/components/TimerRing';
+import { KeycapButton, KeycapSurface } from '@/components/KeycapSurface';
+import { SoliAvatar, SoliState } from '@/components/Mascots';
 import { SageAvatar } from '@/components/SageAvatar';
 import { useOnboardingStore } from '@/backend/stores/onboardingStore';
 import { Colors, Typography, Spacing } from '@/constants/theme';
 
 const SESSION_SECONDS = 60;
 
-type MicroSageState = 'watching' | 'nudge' | 'celebrate';
+type MicroSoliState = 'watching' | 'nudge' | 'celebrate';
 
 export default function MicroSessionScreen() {
   const router = useRouter();
-  const { sageForm, subjects, completeOnboarding } = useOnboardingStore();
+  const { soliForm, subjects, completeOnboarding } = useOnboardingStore();
 
   const [countdown, setCountdown] = useState(SESSION_SECONDS);
-  const [sageState, setSageState] = useState<MicroSageState>('watching');
-  const [sageMessage, setSageMessage] = useState('');
+  const [soliState, setSoliState] = useState<MicroSoliState>('watching');
+  const [soliMessage, setSoliMessage] = useState('');
   const [showMessage, setShowMessage] = useState(false);
   const [done, setDone] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -46,7 +47,7 @@ export default function MicroSessionScreen() {
         const next = c - 1;
         if (next <= 0) {
           if (intervalRef.current) clearInterval(intervalRef.current);
-          setSageState('celebrate');
+          setSoliState('celebrate');
           return 0;
         }
         return next;
@@ -58,17 +59,16 @@ export default function MicroSessionScreen() {
     };
   }, []);
 
-  // Scripted moment at 30s remaining: Sage transitions to nudge with "I'm here."
   useEffect(() => {
-    if (countdown === 30 && sageState === 'watching') {
-      setSageState('nudge');
-      setSageMessage("I'm here.");
+    if (countdown === 30 && soliState === 'watching') {
+      setSoliState('nudge');
+      setSoliMessage("I'm here.");
       setShowMessage(true);
       messageOpacity.value = withTiming(1, { duration: 400 });
       messageY.value = withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) });
 
       const t = setTimeout(() => {
-        setSageState('watching');
+        setSoliState('watching');
         setShowMessage(false);
         messageOpacity.value = withTiming(0, { duration: 300 });
       }, 3000);
@@ -77,7 +77,6 @@ export default function MicroSessionScreen() {
     }
   }, [countdown]);
 
-  // On session complete: ring pulse + navigate
   const doneRef = useRef(false);
   useEffect(() => {
     if (countdown === 0 && !doneRef.current) {
@@ -110,41 +109,35 @@ export default function MicroSessionScreen() {
   }));
 
   const subject = subjects[0] ?? 'Focus';
-  const minutes = Math.floor(countdown / 60);
-  const seconds = countdown % 60;
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
-        {/* Subject label */}
         <Text style={styles.subject}>{subject.toUpperCase()}</Text>
 
-        {/* Timer ring */}
         <Animated.View style={ringWrapStyle}>
           <TimerRing secondsRemaining={countdown} totalSeconds={SESSION_SECONDS} />
         </Animated.View>
 
-        {/* Sage avatar */}
         <View style={styles.sageWrap}>
-          <SageAvatar size={56} state={sageState} form={sageForm} />
+          <SoliAvatar size={56} state={soliState as any} />
           {showMessage && (
-            <Animated.View style={[styles.messageBubble, messageStyle]}>
-              <Text style={styles.messageText}>{sageMessage}</Text>
+            <Animated.View style={messageStyle}>
+              <KeycapSurface radius={12} contentStyle={styles.messageBubbleFace}>
+                <Text style={styles.messageText}>{soliMessage}</Text>
+              </KeycapSurface>
             </Animated.View>
           )}
         </View>
 
-        {/* Status label */}
         <View style={styles.statusRow}>
           <View
             style={[
               styles.statusDot,
               {
                 backgroundColor:
-                  sageState === 'nudge'
+                  soliState === 'nudge'
                     ? Colors.amber
-                    : sageState === 'celebrate'
-                    ? Colors.green
                     : Colors.green,
               },
             ]}
@@ -154,28 +147,29 @@ export default function MicroSessionScreen() {
               styles.statusText,
               {
                 color:
-                  sageState === 'nudge'
+                  soliState === 'nudge'
                     ? Colors.amber
-                    : sageState === 'celebrate'
-                    ? Colors.green
                     : Colors.green,
               },
             ]}
           >
-            {sageState === 'celebrate' ? 'Complete' : sageState === 'nudge' ? 'Drifting...' : 'In flow'}
+            {soliState === 'celebrate' ? 'Complete' : soliState === 'nudge' ? 'Drifting...' : 'In flow'}
           </Text>
         </View>
 
-        {/* Micro-session note */}
         <Text style={styles.note}>
-          {countdown === 0 ? 'Session complete.' : 'Stay with it. Sage is watching.'}
+          {countdown === 0 ? 'Session complete.' : 'Stay with it. Soli is watching.'}
         </Text>
 
-        {/* Exit button */}
         {countdown > 0 && !done && (
-          <TouchableOpacity style={styles.exitButton} onPress={handleExitEarly}>
+          <KeycapButton
+            radius={8}
+            style={styles.exitBtnOuter}
+            contentStyle={styles.exitBtnFace}
+            onPress={handleExitEarly}
+          >
             <Text style={styles.exitButtonText}>Exit Early</Text>
-          </TouchableOpacity>
+          </KeycapButton>
         )}
       </View>
     </SafeAreaView>
@@ -204,11 +198,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.sm,
   },
-  messageBubble: {
-    backgroundColor: Colors.bgCard,
-    borderWidth: 0.5,
-    borderColor: Colors.borderMid,
-    borderRadius: 12,
+  messageBubbleFace: {
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
   },
@@ -231,7 +221,7 @@ const styles = StyleSheet.create({
   statusText: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.sm,
-    fontWeight: Typography.weight.medium,
+    fontWeight: '500',
   },
   note: {
     fontFamily: Typography.fontMono,
@@ -240,19 +230,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: 0.3,
   },
-  exitButton: {
+  exitBtnOuter: {
+    marginTop: Spacing.md,
+  },
+  exitBtnFace: {
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    backgroundColor: Colors.bgCard,
-    borderWidth: 1,
-    borderColor: Colors.borderMid,
-    borderRadius: 8,
-    marginTop: Spacing.md,
   },
   exitButtonText: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.sm,
-    fontWeight: Typography.weight.medium,
+    fontWeight: '500',
     color: Colors.textSecondary,
     textAlign: 'center',
   },

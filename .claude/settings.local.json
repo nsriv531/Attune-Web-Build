@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Kevin\\\\Documents\\\\Attune App\\\\react-native-app\" -Recurse -Depth 2 -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Get-ChildItem \"c:\\\\Users\\\\Kevin\\\\Documents\\\\Attune App\\\\react-native-app\\\\app\" -Recurse -Name)",
+      "Bash(Sort-Object)",
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }

@@ -1,35 +1,42 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, SafeAreaView, StyleSheet, Pressable, ActivityIndicator, Linking } from 'react-native';
+import {
+  ActivityIndicator,
+  Linking,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { useAuth } from '@clerk/clerk-expo';
+import { useAction, useQuery } from 'convex/react';
+
+import { api } from '@/convex/_generated/api';
 import { Typography, Spacing, Radius } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useQuery, useAction } from 'convex/react';
-import { api } from '@/convex/_generated/api';
-import { useAuth } from '@clerk/clerk-expo';
 import { useUserStore } from '@/backend/stores/userStore';
 import { useResourceService } from '@/backend/services/useResourceService';
 
 export default function ResourcesScreen() {
   const C = useThemeColors();
   const { isSignedIn } = useAuth();
-  
-  // Backend Hooks
+
   const resources = useQuery(api.resources.listAll, { limit: 50 });
-  const cloudBookmarks = useQuery(api.resources.getBookmarks, isSignedIn ? {} : "skip");
+  const cloudBookmarks = useQuery(api.resources.getBookmarks, isSignedIn ? {} : 'skip');
   const syncResourcesAction = useAction(api.resources.syncExternalResources);
   const { toggleBookmark } = useResourceService();
 
-  // Local Hooks
   const localBookmarks = useUserStore((state) => state.bookmarkedResourceIds);
-
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // Determine current bookmarks based on auth state
-  const bookmarkedIds = isSignedIn ? (cloudBookmarks ?? []) : localBookmarks;
+  const bookmarkedIds = (isSignedIn ? cloudBookmarks ?? [] : localBookmarks ?? []) as readonly string[];
 
   const handleSync = async () => {
     setIsSyncing(true);
+
     try {
-      await syncResourcesAction();
+      await syncResourcesAction({});
     } catch (e) {
       console.error('Failed to sync resources:', e);
     } finally {
@@ -38,10 +45,15 @@ export default function ResourcesScreen() {
   };
 
   const handleToggleBookmark = async (resourceId: string) => {
-    await toggleBookmark(resourceId);
+    try {
+      await toggleBookmark(resourceId);
+    } catch (e) {
+      console.error('Failed to toggle bookmark:', e);
+    }
   };
 
-  const handleOpenLink = (url: string) => {
+  const handleOpenLink = (url?: string) => {
+    if (!url) return;
     Linking.openURL(url).catch((err) => console.error("Couldn't load page", err));
   };
 
@@ -52,56 +64,48 @@ export default function ResourcesScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.title, { color: C.textPrimary }]}>Resources</Text>
-          <Text style={[styles.subtitle, { color: C.textSecondary }]}>
-            Learn how to deepen your focus practice.
-          </Text>
+          <Text style={[styles.subtitle, { color: C.textSecondary }]}>Learn how to deepen your focus practice.</Text>
         </View>
 
-        {/* DEV Tool: Sync Button */}
-        <Pressable 
-          style={[styles.syncButton, { backgroundColor: C.amberDim, borderColor: C.amber }]} 
+        <Pressable
+          style={[styles.syncButton, { backgroundColor: C.amberDim, borderColor: C.amber }]}
           onPress={handleSync}
           disabled={isSyncing}
         >
           {isSyncing ? (
             <ActivityIndicator color={C.amber} size="small" />
           ) : (
-            <Text style={[styles.syncButtonText, { color: C.amber }]}>
-              [DEV] Sync External Articles
-            </Text>
+            <Text style={[styles.syncButtonText, { color: C.amber }]}>[DEV] Sync External Articles</Text>
           )}
         </Pressable>
 
-        {/* Resources List */}
         {resources === undefined ? (
           <ActivityIndicator color={C.purple} style={{ marginTop: 40 }} />
         ) : resources.length === 0 ? (
-          <View style={[styles.card, { backgroundColor: C.bgCard, borderColor: C.border }]}>
+          <View style={[styles.card, { backgroundColor: C.bgCard, borderColor: C.border }]}> 
             <Text style={[styles.cardTitle, { color: C.textPrimary }]}>Library Empty</Text>
-            <Text style={[styles.cardText, { color: C.textSecondary }]}>
-              Tap the Sync button above to fetch articles from the backend!
-            </Text>
+            <Text style={[styles.cardText, { color: C.textSecondary }]}>Tap the Sync button above to fetch articles from the backend.</Text>
           </View>
         ) : (
           resources.map((resource) => {
-            const isBookmarked = bookmarkedIds.includes(resource._id);
-            
+            const resourceId = String(resource._id);
+            const isBookmarked = bookmarkedIds.includes(resourceId);
+
             return (
               <Pressable
-                key={resource._id}
+                key={resourceId}
                 style={[styles.resourceCard, { backgroundColor: C.bgCard, borderColor: C.border }]}
                 onPress={() => handleOpenLink(resource.url)}
               >
                 <View style={styles.cardTop}>
-                  <View style={[styles.categoryBadge, { backgroundColor: C.purpleDim }]}>
+                  <View style={[styles.categoryBadge, { backgroundColor: C.purpleDim }]}> 
                     <Text style={[styles.categoryText, { color: C.purple }]}>{resource.category}</Text>
                   </View>
-                  <Pressable 
-                    style={styles.bookmarkBtn} 
-                    onPress={() => handleToggleBookmark(resource._id)}
+                  <Pressable
+                    style={styles.bookmarkBtn}
+                    onPress={() => handleToggleBookmark(resourceId)}
                     hitSlop={10}
                   >
                     <Text style={{ fontSize: 20, color: isBookmarked ? C.amber : C.textTertiary }}>
@@ -112,7 +116,7 @@ export default function ResourcesScreen() {
 
                 <Text style={[styles.resourceTitle, { color: C.textPrimary }]}>{resource.title}</Text>
                 <Text style={[styles.resourceDesc, { color: C.textSecondary }]} numberOfLines={2}>
-                  {resource.description}
+                  {resource.description || 'No description available.'}
                 </Text>
               </Pressable>
             );
@@ -124,9 +128,13 @@ export default function ResourcesScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { padding: Spacing.xl, paddingBottom: 40 },
-
-  header: { marginBottom: Spacing.lg },
+  content: {
+    padding: Spacing.xl,
+    paddingBottom: 40,
+  },
+  header: {
+    marginBottom: Spacing.lg,
+  },
   title: {
     fontFamily: Typography.fontSans,
     fontSize: Typography.size['2xl'],
@@ -137,7 +145,6 @@ const styles = StyleSheet.create({
     fontFamily: Typography.fontSans,
     fontSize: Typography.size.base,
   },
-
   syncButton: {
     borderWidth: 1,
     borderRadius: Radius.md,
@@ -149,7 +156,6 @@ const styles = StyleSheet.create({
     fontFamily: Typography.fontSans,
     fontWeight: Typography.weight.semibold,
   },
-
   card: {
     borderWidth: 0.5,
     borderRadius: Radius.lg,
@@ -167,7 +173,6 @@ const styles = StyleSheet.create({
     fontSize: Typography.size.base,
     lineHeight: 22,
   },
-
   resourceCard: {
     borderWidth: 0.5,
     borderRadius: Radius.lg,

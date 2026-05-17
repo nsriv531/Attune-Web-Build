@@ -11,6 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { OnboardingLayout } from '@/components/OnboardingLayout';
+import { SoliAvatar } from '@/components/Mascots';
 import { SageAvatar } from '@/components/SageAvatar';
 import { useOnboardingStore } from '@/backend/stores/onboardingStore';
 import { Colors, Typography, Spacing } from '@/constants/theme';
@@ -18,7 +19,7 @@ import { Colors, Typography, Spacing } from '@/constants/theme';
 const LINES = [
   "Reading your distraction profile...",
   "Calibrating session length...",
-  "Tuning Sage's coaching style...",
+  "Tuning Soli's coaching style...",
 ];
 
 function FadeLine({ text, delay }: { text: string; delay: number }) {
@@ -37,7 +38,7 @@ function FadeLine({ text, delay }: { text: string; delay: number }) {
 
 export default function SageLearningScreen() {
   const router = useRouter();
-  const { sageForm } = useOnboardingStore();
+  const { soliForm } = useOnboardingStore();
 
   const breathScale = useSharedValue(1);
 
@@ -52,7 +53,7 @@ export default function SageLearningScreen() {
     );
 
     const t = setTimeout(() => {
-      router.push('/onboarding/sage-plan' as never);
+      router.push('/onboarding/soli-plan' as never);
     }, 3800);
 
     return () => clearTimeout(t);
@@ -68,7 +69,7 @@ export default function SageLearningScreen() {
         <View style={styles.glow} pointerEvents="none" />
 
         <Animated.View style={sageStyle}>
-          <SageAvatar size={88} state="watching" form={sageForm} />
+          <SoliAvatar size={88} state="watching" />
         </Animated.View>
 
         <View style={styles.lines}>

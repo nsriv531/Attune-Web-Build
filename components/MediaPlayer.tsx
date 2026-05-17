@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { Typography, Spacing, Radius } from '@/constants/theme';
+import { Colors, Typography, Spacing, Radius } from '@/constants/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAudioPlayerStatus } from 'expo-audio';
 import type { FreeToUseTrack } from '@/lib/freetouse';
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: 'rgba(167,139,250,0.1)',
+    backgroundColor: Colors.amberDim,
     alignItems: 'center',
     justifyContent: 'center',
   },
